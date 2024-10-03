@@ -5,7 +5,7 @@
   Jan Christopher Reyes Francisco - https://github.com/jcfrancisco0103
   Kirk Clarenz Gozon - https://github.com/kbgozon
   Jouie Embudo - https://github.com/Jouie201
-  Euri Maxwell Lascano - https://github.com/Yanskitodo
+  Euri Marxell Lascano - https://github.com/Yanskitodo
   John Marvin Sumalinog - https://github.com/Marvin029
 
 
