@@ -4,8 +4,7 @@
 
   Jan Christopher Reyes Francisco - https://github.com/jcfrancisco0103
   Kirk Clarenz Gozon - https://github.com/kbgozon
+  Sean Marcus Maglaque - smmaglaque@student.apc.edu.ph
   Jouie Embudo - https://github.com/Jouie201
   Euri Marxell Lascano - https://github.com/Yanskitodo
   John Marvin Sumalinog - https://github.com/Marvin029
-
-
