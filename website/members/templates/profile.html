@@ -1,0 +1,54 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Profile</title>
+    <link rel="stylesheet" href="{% static 'cssjs/profile.css' %}">
+</head>
+<body>
+    <!-- Profile Container -->
+    <div class="profile-container">
+        <!-- Profile Header -->
+        <div class="profile-header">
+            <img src="{% static 'images/profile-picture.jpg' %}" alt="Profile Picture" class="profile-picture">
+            <h1 class="customer-name">John Doe</h1>
+            <p class="customer-email">john.doe@example.com</p>
+            <button class="edit-profile-btn">Edit Profile</button>
+        </div>
+
+        <!-- Personal Details Section -->
+        <div class="personal-details">
+            <h2>Personal Details</h2>
+            <ul>
+                <li><strong>Full Name:</strong> John Doe</li>
+                <li><strong>Email:</strong> john.doe@example.com</li>
+                <li><strong>Phone:</strong> (123) 456-7890</li>
+                <li><strong>Address:</strong> 123 Main St, City, Country</li>
+            </ul>
+        </div>
+
+        <!-- Recent Orders Section -->
+        <div class="recent-orders">
+            <h2>Recent Orders</h2>
+            <div class="order-card">
+                <p><strong>Order ID:</strong> #12345</p>
+                <p><strong>Date:</strong> November 10, 2024</p>
+                <p><strong>Total:</strong> $50.00</p>
+                <button class="view-order-btn">View Order</button>
+            </div>
+            <div class="order-card">
+                <p><strong>Order ID:</strong> #12344</p>
+                <p><strong>Date:</strong> November 5, 2024</p>
+                <p><strong>Total:</strong> $35.00</p>
+                <button class="view-order-btn">View Order</button>
+            </div>
+            <!-- Additional orders can be added here -->
+        </div>
+    </div>
+
+    <!-- Link to JavaScript if needed -->
+    <script src="{% static 'js/profile.js' %}"></script>
+</body>
+</html>
