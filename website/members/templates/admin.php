@@ -12,12 +12,12 @@
         <h1>E-commerce Admin Panel</h1>
         <nav>
             <ul>
-                <li><a href="dashboard.html">Dashboard</a></li>
-                <li><a href="products.html">Products</a></li>
-                <li><a href="orders.html">Orders</a></li>
-                <li><a href="customers.html">Customers</a></li>
-                <li><a href="reports.html">Reports</a></li>
-                <li><a href="settings.html">Settings</a></li>
+                <li><a href="dashboard.php">Dashboard</a></li>
+                <li><a href="products.php">Products</a></li>
+                <li><a href="orders.php">Orders</a></li>
+                <li><a href="customers.php">Customers</a></li>
+                <li><a href="reports.php">Reports</a></li>
+                <li><a href="settings.php">Settings</a></li>
             </ul>
         </nav>
     </header>
@@ -28,15 +28,15 @@
             <div class="dashboard-stats">
                 <div class="stat">
                     <h3>Total Orders</h3>
-                    <p>125</p>
+                    <p><?php echo 125; ?></p>
                 </div>
                 <div class="stat">
                     <h3>Total Sales</h3>
-                    <p>$15,000</p>
+                    <p><?php echo '$15,000'; ?></p>
                 </div>
                 <div class="stat">
                     <h3>Total Customers</h3>
-                    <p>500</p>
+                    <p><?php echo 500; ?></p>
                 </div>
             </div>
             <div class="charts">
@@ -47,7 +47,7 @@
     </main>
 
     <footer>
-        <p>&copy; 2023 Your E-commerce Store</p>
+        <p>&copy; <?php echo date('Y'); ?> Your E-commerce Store</p>
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> 

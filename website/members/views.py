@@ -28,3 +28,9 @@ def profile(request):
 
 def myfirst(request):
     return render(request, 'myfirst.html')
+
+def admin(request):
+    return render(request, 'admin.html')
+
+def adminlogin(request):
+    return render(request, 'adminlogin.php')
