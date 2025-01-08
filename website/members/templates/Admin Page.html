@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jersey Customization Website</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            background: #333;
+            color: white;
+            padding: 1rem;
+            text-align: center;
+        }
+        nav ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            background: #444;
+        }
+        nav ul li {
+            margin: 0 1rem;
+        }
+        nav ul li a {
+            text-decoration: none;
+            color: white;
+        }
+        section {
+            padding: 2rem;
+        }
+        form {
+            margin: 1rem 0;
+        }
+        input, textarea, button {
+            display: block;
+            margin: 0.5rem 0;
+            padding: 0.5rem;
+            width: 100%;
+            max-width: 500px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        table, th, td {
+            border: 1px solid #ccc;
+        }
+        th, td {
+            padding: 0.5rem;
+            text-align: left;
+        }
+        
+    </style>
+</head>
+<body>
+    <header>
+        <img src="worksss.png" alt="Jersey Customization Website" style="width: 100%; height: auto;">
+    </header>
+
+    <nav>
+        <ul>
+            <li><a href="#login">Login</a></li>
+            <li><a href="#dashboard">Dashboard</a></li>
+            <li><a href="#product-management">Product Management</a></li>
+            <li><a href="#order-management">Order Management</a></li>
+            <li><a href="#customer-management">Customer Management</a></li>
+            <li><a href="#sales-marketing">Sales & Marketing</a></li>
+            <li><a href="#account-settings">Account Settings</a></li>
+            <li><a href="#feedback-reviews">Feedback & Reviews</a></li>
+        </ul>
+    </nav>
+
+
+    <!-- Dashboard -->
+    <section id="dashboard">
+        <h2>Dashboard</h2>
+        <p>Welcome to the dashboard! Navigate to the sections above to manage the website content.</p>
+    </section>
+
+    <!-- Product Management -->
+    <section id="product-management">
+        <h2>Product Management</h2>
+        <form action="add_product.php" method="POST">
+            <input type="text" name="product_name" placeholder="Product Name" required>
+            <input type="number" name="price" placeholder="Price" required>
+            <textarea name="description" placeholder="Description"></textarea>
+            <button type="submit">Add Product</button>
+        </form>
+        <h3>Product List</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Product Name</th>
+                    <th>Price</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Products dynamically loaded from the backend -->
+            </tbody>
+        </table>
+    </section>
+
+    <!-- Order Management -->
+    <section id="order-management">
+        <h2>Order Management</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Order ID</th>
+                    <th>Customer Name</th>
+                    <th>Product</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Orders dynamically loaded from the backend -->
+            </tbody>
+        </table>
+    </section>
+
+    <!-- Customer Management -->
+    <section id="customer-management">
+        <h2>Customer Management</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Customer ID</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Customers dynamically loaded from the backend -->
+            </tbody>
+        </table>
+    </section>
+
+    <!-- Sales and Marketing -->
+    <section id="sales-marketing">
+        <h2>Sales & Marketing</h2>
+        <p>Manage marketing campaigns, analyze sales data, and create promotions here.</p>
+    </section>
+
+    <!-- Account Settings -->
+    <section id="account-settings">
+        <h2>Account Settings</h2>
+        <form action="update_account.php" method="POST">
+            <input type="text" name="username" placeholder="New Username">
+            <input type="password" name="password" placeholder="New Password">
+            <button type="submit">Update Account</button>
+        </form>
+    </section>
+
+    <!-- Feedback and Reviews -->
+    <section id="feedback-reviews">
+        <h2>Feedback & Reviews</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Customer Name</th>
+                    <th>Feedback</th>
+                    <th>Rating</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Feedback dynamically loaded from the backend -->
+            </tbody>
+        </table>
+    </section>
+</body>
+</html>
