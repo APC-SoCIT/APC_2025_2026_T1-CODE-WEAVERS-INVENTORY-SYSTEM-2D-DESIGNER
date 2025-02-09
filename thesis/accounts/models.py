@@ -8,3 +8,11 @@ class UserProfile(models.Model):
 
     def __str__(self):
         return self.user.username
+    
+class Order(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    design_image = models.ImageField(upload_to='designs/')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Order {self.id} by {self.user.username}"

@@ -5,6 +5,8 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.decorators import login_required
 from .forms import RegisterForm, ProfileForm
 from .models import UserProfile
+from .forms import OrderForm
+from .models import Order
 
 def register(request):
     if request.method == 'POST':
@@ -47,6 +49,22 @@ def logout_view(request):
 def profile(request):
     user_profile, created = UserProfile.objects.get_or_create(user=request.user)
     return render(request, 'accounts/profile.html', {'user_profile': user_profile})
+
+@login_required
+def place_order(request):
+    if request.method == 'POST':
+        form = OrderForm(request.POST, request.FILES)
+        if form.is_valid():
+            order = form.save(commit=False)
+            order.user = request.user
+            order.save()
+            return JsonResponse({'success': True})
+        else:
+            return JsonResponse({'success': False, 'errors': form.errors})
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+def order_success(request):
+    return render(request, 'accounts/order_success.html')
 
 @login_required
 def admin_dashboard(request):
