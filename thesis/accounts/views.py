@@ -3,10 +3,8 @@ from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.decorators import login_required
-from .forms import RegisterForm, ProfileForm
-from .models import UserProfile
-from .forms import OrderForm
-from .models import Order
+from .forms import RegisterForm, ProfileForm, PreOrderForm
+from .models import UserProfile, PreOrder
 
 def register(request):
     if request.method == 'POST':
@@ -51,28 +49,23 @@ def profile(request):
     return render(request, 'accounts/profile.html', {'user_profile': user_profile})
 
 @login_required
-def place_order(request):
-    if request.method == 'POST':
-        form = OrderForm(request.POST, request.FILES)
-        if form.is_valid():
-            order = form.save(commit=False)
-            order.user = request.user
-            order.save()
-            return JsonResponse({'success': True})
-        else:
-            return JsonResponse({'success': False, 'errors': form.errors})
-    return JsonResponse({'success': False, 'error': 'Invalid request method'})
-
-def order_success(request):
-    return render(request, 'accounts/order_success.html')
-
-@login_required
-def admin_dashboard(request):
-    return render(request, 'accounts/admin-dashboard.html')
-
 def home(request):
     return render(request, 'accounts/home.html')
 
+@login_required
 def create(request):
     return render(request, 'accounts/create.html')
+
+@login_required
+def preorder(request):
+    if request.method == 'POST':
+        form = PreOrderForm(request.POST, request.FILES)
+        if form.is_valid():
+            preorder = form.save(commit=False)
+            preorder.user = request.user
+            preorder.save()
+            return redirect('home')
+    else:
+        form = PreOrderForm()
+    return render(request, 'accounts/preorder.html', {'form': form})
 

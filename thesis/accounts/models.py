@@ -8,11 +8,11 @@ class UserProfile(models.Model):
 
     def __str__(self):
         return self.user.username
-    
-class Order(models.Model):
+
+class PreOrder(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    design_image = models.ImageField(upload_to='designs/')
+    design = models.ImageField(upload_to='designs/')
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Order {self.id} by {self.user.username}"
+        return f"PreOrder by {self.user.username} on {self.created_at}"

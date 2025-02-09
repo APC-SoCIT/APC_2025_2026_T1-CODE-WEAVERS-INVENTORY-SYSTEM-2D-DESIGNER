@@ -11,13 +11,11 @@
         <h1 class="header-title">WorksTeamWear</h1>
     </header>
     <nav class="navbar-brand">
-        <ul class="nav-links">
-            <li class="nav-item"><a class="nav-link" href="{% url 'index' %}">Home</a></li>
-            <li class="nav-item"><a class="nav-link" href="{% url 'resume' %}">Join Us</a></li>
-            <li class="nav-item"><a class="nav-link" href="{% url 'store' %}">Products</a></li>
-            <li class="nav-item"><a class="nav-link" href="{% url 'projects' %}">Create</a></li>
-            <li class="nav-item"><a class="nav-link" href="{% url 'contact' %}">Contact Us</a></li>
-            <li class="nav-item"><a class="nav-link" href="{% url 'signin' %}">Logout</a></li>
+        <ul>
+            <li><a href="{% url 'home' %}">Home</a></li>
+            <li><a href="#">Pre-order now!</a></li>
+            <li><a href="{% url 'create' %}">Create</a></li>
+            <li><a href="#">About Us</a></li>
         </ul>
     </nav>
     

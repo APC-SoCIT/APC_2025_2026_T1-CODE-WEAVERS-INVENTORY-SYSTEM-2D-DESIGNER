@@ -1,7 +1,6 @@
 from django import forms
 from django.contrib.auth.models import User
-from .models import UserProfile
-from .models import Order
+from .models import UserProfile, PreOrder
 
 class RegisterForm(forms.ModelForm):
     password = forms.CharField(widget=forms.PasswordInput)
@@ -15,7 +14,7 @@ class ProfileForm(forms.ModelForm):
         model = UserProfile
         fields = ['phone', 'address']
 
-class OrderForm(forms.ModelForm):
+class PreOrderForm(forms.ModelForm):
     class Meta:
-        model = Order
-        fields = ['design_image']
+        model = PreOrder
+        fields = ['design']
