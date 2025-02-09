@@ -99,7 +99,7 @@
     <div class="container">
         <div class="hero">
             <h1>Pre-order Your Custom Jersey</h1>
-            <a href="#">Import your Design!</a>
+            <a href="{% url 'create' %}">Don't have yet? Create here!</a>
         </div>
         <form method="post" enctype="multipart/form-data">
             {% csrf_token %}
