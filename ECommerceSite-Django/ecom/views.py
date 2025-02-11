@@ -556,3 +556,14 @@ def contactus_view(request):
             send_mail(str(name)+' || '+str(email),message, settings.EMAIL_HOST_USER, settings.EMAIL_RECEIVING_USER, fail_silently = False)
             return render(request, 'ecom/contactussuccess.html')
     return render(request, 'ecom/contactus.html', {'form':sub})
+
+def my_profile_view(request):
+    try:
+        user_profile = get_object_or_404(UserProfile, user=request.user)
+        if not user_profile.profile_pic:
+            raise ValueError("The 'profile_pic' attribute has no file associated with it.")
+    except ObjectDoesNotExist:
+        # Handle the case where the user profile does not exist
+        user_profile = None
+
+    return render(request, 'my_profile.html', {'user_profile': user_profile})
