@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Custom Sportswear</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    <style>
+
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;700&display=swap');
+        body {
+            font-family: 'Montserrat', sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 30px; /* Increased top and bottom padding */
+    background-color: white;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    color: black;
+    height: 80px;
+}
+
+.nav-links {
+    list-style: none;
+    display: flex;
+    gap: 30px;
+    margin-left: 0;
+    padding-left: 0;
+    justify-content: center; /* Centers the links */
+    flex-grow: 1; /* Allows nav links to take up remaining space and stay centered */
+}
+
+.nav-links a {
+    text-decoration: none;
+    color: black;
+    font-weight: 300;
+    font-size: 1.2em;
+    font-family: 'Arial', sans-serif;
+    padding: 5px 0; /* Add padding to increase space around the links */
+}
+
+        .icons i {
+            margin-left: 15px;
+            cursor: pointer;
+        }
+        .sports-bar {
+           display: flex;
+           justify-content: center;
+           gap: 20px;
+           background: #ffffff;
+           padding: 10px 0;
+           font-size: 0.8em; /* Adjust the font size for all text inside the sports bar */
+}
+
+        .sports-bar span {
+           font-size: 1.4em; /* Adjust the font size for each sport name */
+           color: black; /* Text color for the sport names */
+}
+
+        .sport-logo {
+            width: 30px; /* Adjust size of the logo */
+            height: 30px; /* Adjust size of the logo */
+}
+
+        .hero {
+            background: url('redback.png') no-repeat center center/cover;
+            color: white;
+            text-align: left;
+            padding: 200px 160px;
+
+        .hero-text {
+            position: relative;
+            top: -130px; /* Moves the text up */
+}
+        }
+        .hero h1 {
+            font-size: 3.0em;
+            line-height: 1.2; /* Adjust spacing between lines */
+            text-transform: capitalize;
+}
+        .hero p {
+            margin-top: 20px; /* Adjust space above p */
+            font-size: 1.5em; /* Adjust as needed */
+            line-height: 1.5; /* Improves readability */
+}
+
+
+        .hero h2 {
+            font-size: 3.0em;
+        }
+        .btn {
+            padding: 15px 30px;
+            margin: 10px;
+            border: none;
+            cursor: pointer;
+            font-size: 1.2em;
+        }
+        .btn.black {
+            background: black;
+            color: white;
+        }
+        
+        .btn.white {
+            display: block; /* Places it below the black button */
+            margin-top: 10px; /* Added space between buttons */
+}
+
+        .sports-item {
+    display: flex;
+    align-items: center; /* Align logo and text vertically */
+    gap: 10px; /* Space between logo and name */
+}
+
+.sport-logo {
+    width: 20px; /* Adjust size of the logo */
+    height: 20px; /* Adjust size of the logo */
+}
+
+.sport-name {
+    font-size: 18px; /* Adjust text size */
+    font-weight: bold; /* Optional: for emphasis */
+}
+
+.dropdown {
+      position: relative;
+      display: inline-block;
+    }
+
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      background-color: #f9f9f9;
+      min-width: 160px;
+      box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+      z-index: 1;
+    }
+
+    .dropdown:hover .dropdown-content {
+      display: block;
+    }
+
+    .navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1px 40px; /* Increased the top and bottom padding */
+    background-color: white; /* White background */
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+    color: black; /* Black text color */
+    height: 80px; /* Increased the header height slightly */
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    font-size: 1.5em;
+    font-weight: bold;
+    color: black;
+}
+
+.logo-img {
+    width: 50px;  /* Larger logo */
+    height: 50px;
+    margin-right: 10px; /* Space between logo and text */
+}
+
+.nav-links {
+    list-style: none;
+    display: flex;
+    gap: 90px; /* Increased gap between nav links */
+}
+
+.nav-links a {
+    text-decoration: none;
+    color: black; /* Black text color */
+    font-weight: 300; /* Lighter font weight */
+    font-size: 1.2em; /* Size of the links */
+    font-family: 'Arial', sans-serif; /* Change font family to a thinner one */
+}
+
+.icons i {
+    margin-left: 25px;
+    cursor: pointer;
+    color: black; /* Black icon color */
+}
+
+
+.icon-btn {
+    width: 50px;  /* Increase the button size to match the others */
+    height: 50px; /* Same size for consistency */
+    cursor: pointer;
+    transition: transform 0.2s ease-in-out;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.icon-btn img {
+    width: 100%;  /* Make the image fill the button */
+    height: 100%; /* Ensure image fills the button */
+    object-fit: contain; /* Ensure the image doesn't stretch */
+}
+
+.icon-btn:hover {
+    transform: scale(1.1); /* Slightly enlarges the image on hover */
+}
+
+/* Optional: Align the icons in a row */
+.icons {
+    display: flex;
+    align-items: center;
+    gap: 20px; /* Space between the icons */
+}
+
+
+/* Optionally, adjust the dropdown */
+.dropdown-content {
+    transition: opacity 0.3s ease-in-out;
+    min-width: 160px;
+    right: 0;
+    top: 40px;
+    background-color: #f9f9f9;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+}
+
+.dropdown-content a {
+    padding: 12px 16px;
+    text-decoration: none;
+    display: block;
+}
+
+
+.dropdown-content a:hover {
+    background-color: #ddd;
+}
+
+/* Optional: Add a little delay before dropdown appears */
+.dropdown-content {
+    transition: opacity 0.3s ease-in-out;
+}
+
+  /* Style the logo image */
+  .logo {
+            display: flex;
+            align-items: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #333;
+        }
+    
+        .logo-img {
+            width: 220px;  /* Adjust size of the logo */
+            height: 60px; /* Adjust size of the logo */
+            margin-right: 10px; /* Space between logo and text */
+        }
+    
+    </style>
+</head>
+<body>
+    <header>
+        <nav class="navbar">
+            <!-- Logo Section: Add the logo image beside the text -->
+            <div class="logo">
+                <img src="new logo1.png" alt="Logo" class="logo-img">
+
+            </div>
+            <ul class="nav-links">
+                <li><a href="#">Home</a></li>
+                <li><a href="#">Products</a></li>
+                <li><a href="#">Help & Contact</a></li>
+                <li><a href="#">About us</a></li>
+                <li><a href="#">Reviews</a></li>
+            </ul>
+            <div class="icons">
+            <!-- Language Button -->
+<div class="dropdown">
+    <div class="icon-btn">
+        <img src="lang.png" alt="Language">
+    </div>
+    <div class="dropdown-content" id="languageDropdown">
+        <a href="#">Tagalog</a>
+        <a href="#">English</a>
+    </div>
+</div>
+
+<!-- Sign In Button -->
+<div class="dropdown">
+    <div class="icon-btn">
+        <img src="sign in.png" alt="Sign In">
+    </div>
+    <div class="dropdown-content" id="signInDropdown">
+        <a href="#">Sign In</a>
+        <a href="#">Register</a>
+    </div>
+</div>
+
+<!-- Cart Button -->
+<div class="dropdown">
+    <div class="icon-btn">
+        <img src="cart.png" alt="Cart">
+    </div>
+    <div class="dropdown-content" id="cartDropdown">
+        <a href="#">View Cart</a>
+        <a href="#">Checkout</a>
+    </div>
+</div>
+</div>
+
+                </div>
+            </div>
+        </nav>
+    </header>
+    
+    <style>
+    </style>
+    
+    <section class="sports-bar">
+        <img src="football.png" alt="Sport Logo" class="sport-logo">
+        <span><i class="fas fa-futbol"></i> Football</span>
+        <img src="basketball.png" alt="Sport Logo" class="sport-logo">
+        <span><i class="fas fa-basketball-ball"></i> Basketball</span>
+        <img src="volleybal.png" alt="Sport Logo" class="sport-logo">
+        <span><i class="fas fa-running"></i> Volleyball</span>
+        <img src="cycling.png" alt="Sport Logo" class="sport-logo">
+        <span><i class="fas fa-volleyball-ball"></i> Cycling</span>
+        <img src="esports.png" alt="Sport Logo" class="sport-logo">
+        <span><i class="fas fa-gamepad"></i> eSports</span>
+    </section>
+
+    <section class="hero">
+        <div class="hero-text">
+            <h1><strong>Customised sportswear</strong><br>for you and your team</h1>
+            <p>With our 2D configurator, you can easily design<br>professional-quality sportswear.</p>
+            <button class="btn black">Design sportswear now</button>
+            <button class="btn white">Open 2D configurator</button>
+        </div>
+        
+    </section>
+
+<script src="java.js"></script>
+</body>
+</html>
