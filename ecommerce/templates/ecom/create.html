@@ -1,0 +1,310 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GearCraftWorks | Jersey Customizer</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .jersey-container {
+            width: 600px;
+            height: 700px;
+            position: relative;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .jersey-svg {
+            width: 100%;
+            height: 100%;
+        }
+        .jersey-body, .jersey-sleeve {
+            transition: fill 0.3s ease;
+        }
+        .color-option {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid #ddd;
+            display: inline-block;
+            margin: 5px;
+        }
+        .color-option.active {
+            border-color: #000;
+        }
+        .customization-panel {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        #player-name-display, #player-number-display {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            pointer-events: none;
+        }
+        #player-name-display {
+            top: 100px;
+        }
+        #player-number-display {
+            top: 250px;
+            font-size: 120px;
+        }
+        #uploaded-logo {
+            position: absolute;
+            left: 50%;
+            top: 180px;
+            transform: translate(-50%, -50%);
+            max-width: 100px;
+            max-height: 100px;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">GearCraftWorks</a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="{% url 'customer-home' %}">Home</a>
+                <a class="nav-link" href="#">Pre-order</a>
+                <a class="nav-link" href="create">Create</a>
+                <a class="nav-link" href="#">About Us</a>
+                <a class="nav-link" href="#">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-lg-7">
+                <div class="jersey-container" id="jersey-container">
+                    <!-- Jersey SVG will be loaded here -->
+                    <div id="player-name-display"></div>
+                    <div id="player-number-display"></div>
+                    <img id="uploaded-logo" style="display: none;">
+                </div>
+            </div>
+            <div class="col-lg-5">
+                <div class="customization-panel">
+                    <h3>Customize Your Jersey</h3>
+                    
+                    <div class="accordion" id="customizationAccordion">
+                        <!-- Colors Section -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#colorsSection">
+                                    Jersey Colors
+                                </button>
+                            </h2>
+                            <div id="colorsSection" class="accordion-collapse collapse show">
+                                <div class="accordion-body">
+                                    <h6>Primary Color</h6>
+                                    <div id="primary-colors">
+                                        <div class="color-option active" data-color="#ffffff" style="background-color: #ffffff"></div>
+                                        <div class="color-option" data-color="#000000" style="background-color: #000000"></div>
+                                        <div class="color-option" data-color="#ff0000" style="background-color: #ff0000"></div>
+                                        <div class="color-option" data-color="#0000ff" style="background-color: #0000ff"></div>
+                                        <div class="color-option" data-color="#00ff00" style="background-color: #00ff00"></div>
+                                        <div class="color-option" data-color="#ffff00" style="background-color: #ffff00"></div>
+                                    </div>
+                                    
+                                    <h6 class="mt-3">Secondary Color</h6>
+                                    <div id="secondary-colors">
+                                        <div class="color-option" data-color="#ffffff" style="background-color: #ffffff"></div>
+                                        <div class="color-option active" data-color="#000000" style="background-color: #000000"></div>
+                                        <div class="color-option" data-color="#ff0000" style="background-color: #ff0000"></div>
+                                        <div class="color-option" data-color="#0000ff" style="background-color: #0000ff"></div>
+                                        <div class="color-option" data-color="#00ff00" style="background-color: #00ff00"></div>
+                                        <div class="color-option" data-color="#ffff00" style="background-color: #ffff00"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Text Section -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#textSection">
+                                    Text and Numbers
+                                </button>
+                            </h2>
+                            <div id="textSection" class="accordion-collapse collapse">
+                                <div class="accordion-body">
+                                    <div class="mb-3">
+                                        <label class="form-label">Player Name</label>
+                                        <input type="text" id="player-name" class="form-control" maxlength="15">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Player Number</label>
+                                        <input type="number" id="player-number" class="form-control" min="0" max="99">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Text Color</label>
+                                        <input type="color" id="text-color" class="form-control form-control-color" value="#000000">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Logo Section -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#logoSection">
+                                    Logo Upload
+                                </button>
+                            </h2>
+                            <div id="logoSection" class="accordion-collapse collapse">
+                                <div class="accordion-body">
+                                    <div class="mb-3">
+                                        <label class="form-label">Upload Logo</label>
+                                        <input type="file" id="logo-upload" class="form-control" accept="image/*">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Logo Size</label>
+                                        <input type="range" id="logo-size" class="form-range" min="30" max="200" value="100">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <button id="clear-all" class="btn btn-warning me-2">Clear All</button>
+                        <button id="download-design" class="btn btn-success">Download Design</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <script>
+        // Load the SVG template
+        fetch("{% static 'images/jersey_template.svg' %}")
+            .then(response => response.text())
+            .then(svgContent => {
+                document.querySelector('.jersey-container').insertAdjacentHTML('afterbegin', svgContent);
+                initializeJersey();
+            });
+
+        function initializeJersey() {
+            const jerseyBody = document.querySelector('.jersey-body');
+            const jerseySleeveElements = document.querySelectorAll('.jersey-sleeve');
+            
+            // Initialize with default colors
+            updateJerseyColors('#ffffff', '#000000');
+
+            // Color picker functionality
+            document.querySelectorAll('#primary-colors .color-option').forEach(option => {
+                option.addEventListener('click', function() {
+                    document.querySelectorAll('#primary-colors .color-option').forEach(opt => opt.classList.remove('active'));
+                    this.classList.add('active');
+                    updateJerseyColors(this.dataset.color, null);
+                });
+            });
+
+            document.querySelectorAll('#secondary-colors .color-option').forEach(option => {
+                option.addEventListener('click', function() {
+                    document.querySelectorAll('#secondary-colors .color-option').forEach(opt => opt.classList.remove('active'));
+                    this.classList.add('active');
+                    updateJerseyColors(null, this.dataset.color);
+                });
+            });
+
+            // Text update functionality
+            document.getElementById('player-name').addEventListener('input', updatePlayerName);
+            document.getElementById('player-number').addEventListener('input', updatePlayerNumber);
+            document.getElementById('text-color').addEventListener('input', updateTextColor);
+
+            // Logo upload functionality
+            document.getElementById('logo-upload').addEventListener('change', handleLogoUpload);
+            document.getElementById('logo-size').addEventListener('input', updateLogoSize);
+
+            // Clear and Download functionality
+            document.getElementById('clear-all').addEventListener('click', clearAll);
+            document.getElementById('download-design').addEventListener('click', downloadDesign);
+        }
+
+        function updateJerseyColors(primary = null, secondary = null) {
+            const jerseyBody = document.querySelector('.jersey-body');
+            const jerseySleeveElements = document.querySelectorAll('.jersey-sleeve');
+
+            if (primary) jerseyBody.style.fill = primary;
+            if (secondary) jerseySleeveElements.forEach(sleeve => sleeve.style.fill = secondary);
+        }
+
+        function updatePlayerName() {
+            const nameDisplay = document.getElementById('player-name-display');
+            nameDisplay.textContent = this.value.toUpperCase();
+            nameDisplay.style.color = document.getElementById('text-color').value;
+        }
+
+        function updatePlayerNumber() {
+            const numberDisplay = document.getElementById('player-number-display');
+            numberDisplay.textContent = this.value;
+            numberDisplay.style.color = document.getElementById('text-color').value;
+        }
+
+        function updateTextColor() {
+            const color = this.value;
+            document.getElementById('player-name-display').style.color = color;
+            document.getElementById('player-number-display').style.color = color;
+        }
+
+        function handleLogoUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const logo = document.getElementById('uploaded-logo');
+                    logo.src = e.target.result;
+                    logo.style.display = 'block';
+                    updateLogoSize();
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function updateLogoSize() {
+            const logo = document.getElementById('uploaded-logo');
+            const size = document.getElementById('logo-size').value;
+            logo.style.width = `${size}px`;
+        }
+
+        function clearAll() {
+            // Reset colors
+            updateJerseyColors('#ffffff', '#000000');
+            
+            // Reset text
+            document.getElementById('player-name').value = '';
+            document.getElementById('player-number').value = '';
+            document.getElementById('player-name-display').textContent = '';
+            document.getElementById('player-number-display').textContent = '';
+            
+            // Reset logo
+            document.getElementById('uploaded-logo').style.display = 'none';
+            document.getElementById('logo-upload').value = '';
+            
+            // Reset color pickers
+            document.querySelectorAll('.color-option').forEach(opt => opt.classList.remove('active'));
+            document.querySelector('#primary-colors .color-option[data-color="#ffffff"]').classList.add('active');
+            document.querySelector('#secondary-colors .color-option[data-color="#000000"]').classList.add('active');
+        }
+
+        function downloadDesign() {
+            html2canvas(document.querySelector('.jersey-container')).then(canvas => {
+                const link = document.createElement('a');
+                link.download = 'custom-jersey.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            });
+        }
+    </script>
+</body>
+</html>
