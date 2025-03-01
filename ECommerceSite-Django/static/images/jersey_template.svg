@@ -1,8 +1,0 @@
-<svg width="600" height="700" viewBox="0 0 600 700" xmlns="http://www.w3.org/2000/svg">
-    <!-- Jersey Body -->
-    <path d="M150,50 C150,50 200,20 300,20 C400,20 450,50 450,50 L500,650 L100,650 Z" class="jersey-body"/>
-    <!-- Left Sleeve -->
-    <path d="M150,50 C150,50 100,80 50,200 L120,200 Z" class="jersey-sleeve"/>
-    <!-- Right Sleeve -->
-    <path d="M450,50 C450,50 500,80 550,200 L480,200 Z" class="jersey-sleeve"/>
-</svg>
