@@ -125,6 +125,20 @@
       line-height: 1.7em;
     }
 
+    .market-update-right i.fa.fa-money {
+      font-size: 3em;
+      color: #343A40;
+      width: 80px;
+      height: 80px;
+      background: #fff;
+      text-align: center;
+      border-radius: 49px;
+      -webkit-border-radius: 49px;
+      -moz-border-radius: 49px;
+      -o-border-radius: 49px;
+      line-height: 1.7em;
+    }
+
     .market-update-left {
       padding: 0px;
     }
@@ -171,10 +185,22 @@
         <div class="col-md-8 market-update-left">
           <h3>{{ordercount}}</h3>
           <h4>Total Orders</h4>
-
         </div>
         <div class="col-md-4 market-update-right">
           <i class="fa fa-bar-chart"> </i>
+        </div>
+        <div class="clearfix"> </div>
+      </div>
+    </div>
+
+    <div class="col-md-4 market-update-gd">
+      <div class="market-update-block clr-block-1">
+        <div class="col-md-8 market-update-left">
+          <h3>₱{{total_sales}}</h3>
+          <h4>Total Sales</h4>
+        </div>
+        <div class="col-md-4 market-update-right">
+          <i class="fa fa-money"></i>
         </div>
         <div class="clearfix"> </div>
       </div>

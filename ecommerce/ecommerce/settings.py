@@ -147,9 +147,4 @@ EMAIL_HOST_PASSWORD = 'xyz' # host email password required
 # this process is required because google blocks apps authentication by default
 EMAIL_RECEIVING_USER = ['to@gmail.com'] # email on which you will receive messages sent from website
 
-CSRF_TRUSTED_ORIGINS = [
-    "https://localhost:8000",
-    "http://127.0.0.1:8000",
-]
-
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

@@ -435,7 +435,7 @@ img {
                 </div>
 
                 <a class="cart" href="{% url 'add-to-cart' p.id  %}?next_page={{ request.path }}">
-                  <span class="price">${{p.price}}</span>
+                  <span class="price">₱{{p.price}}</span>
                   <span class="add-to-cart">
                     <span class="txt"><i class="fa fa-shopping-cart"></i> Add To Cart</span>
                   </span>
