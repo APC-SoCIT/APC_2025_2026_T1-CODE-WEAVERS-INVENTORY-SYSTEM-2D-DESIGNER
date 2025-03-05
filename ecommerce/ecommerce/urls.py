@@ -50,5 +50,7 @@ urlpatterns = [
     path('home', views.home,name='home'),
     path('view_customer', views.view_customer_view, name='view_customer'),
 
+    
+
 
 ]

@@ -260,12 +260,14 @@ body {
             <ul class="largenav pull-right">
 
                 <li class="upper-links"><a class="links" href="/my-order">Track Orders</a></li>
-                <li class="upper-links"><a class="links" href="/create">Edit</a></li>
+                <li class="upper-links"><a class="links" href="/create">2D Design</a></li>
                 <li class="upper-links"><a class="links" href="/my-profile">Profile</a></li>
-                <form method="post" action="{% url 'logout' %}">
-                  {% csrf_token %}
-                  <button type="submit">Logout</button>
-              </form>
+                <li class="upper-links">
+                  <form method="post" action="{% url 'logout' %}" style="margin: 0; padding: 0;">
+                      {% csrf_token %}
+                      <button type="submit" class="links" style="background: none; border: none; padding: 0; margin: 0; font-size: 12px;">Logout</button>
+                  </form>
+              </li>
                 
             </ul>
         </div>
