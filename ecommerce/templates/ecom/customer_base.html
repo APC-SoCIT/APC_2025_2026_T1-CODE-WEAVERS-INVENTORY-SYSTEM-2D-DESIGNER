@@ -246,7 +246,35 @@ body {
   height: 105px; /* Adjust size */
   width: auto;  /* Maintain aspect ratio */
   margin-top: -15px; /* Move logo up */
-  margin-left: -50px; /* Move logo left */
+  margin-left: -20px; /* Move logo left */
+}
+
+.search-container {
+    position: relative;
+    width: 100%;
+}
+
+.search-suggestions {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    background: white;
+    border: 1px solid #ccc;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    z-index: 1000;
+}
+
+.search-suggestions li {
+    padding: 10px;
+    cursor: pointer;
+}
+
+.search-suggestions li:hover {
+    background-color: #f1f1f1;
 }
 
 
@@ -282,16 +310,28 @@ body {
             </div>
 
             <div class="navbar-search smallsearch col-sm-7 col-xs-11">
-              <form  action="/search" method="get">
-                <div class="row"> <input class="navbar-input col-xs-11" value="{% if search_text %}{{ search_text }}{% endif %}" type="search" placeholder="Search for Products and More" name="query" id="query">
-                  <button class="navbar-button col-xs-1" type="submit">
-                    <svg width="15px" height="15px">
-                            <path d="M11.618 9.897l4.224 4.212c.092.09.1.23.02.312l-1.464 1.46c-.08.08-.222.072-.314-.02L9.868 11.66M6.486 10.9c-2.42 0-4.38-1.955-4.38-4.367 0-2.413 1.96-4.37 4.38-4.37s4.38 1.957 4.38 4.37c0 2.412-1.96 4.368-4.38 4.368m0-10.834C2.904.066 0 2.96 0 6.533 0 10.105 2.904 13 6.486 13s6.487-2.895 6.487-6.467c0-3.572-2.905-6.467-6.487-6.467 "></path>
-                    </svg>
-                  </button>
-                </div>
+              <form action="/search" method="get">
+                  <div class="search-container">
+                      <input class="navbar-input col-xs-11" value="{% if search_text %}{{ search_text }}{% endif %}" 
+                             type="search" placeholder="Search for Products and More" 
+                             name="query" id="query" onfocus="showSuggestions()" onblur="hideSuggestions()">
+          
+                      <button class="navbar-button col-xs-1" type="submit">
+                          <svg width="15px" height="15px">
+                              <path d="M11.618 9.897l4.224 4.212c.092.09.1.23.02.312l-1.464 1.46c-.08.08-.222.072-.314-.02L9.868 11.66M6.486 10.9c-2.42 0-4.38-1.955-4.38-4.367 0-2.413 1.96-4.37 4.38-4.37s4.38 1.957 4.38 4.37c0 2.412-1.96 4.368-4.38 4.368m0-10.834C2.904.066 0 2.96 0 6.533 0 10.105 2.904 13 6.486 13s6.487-2.895 6.487-6.467c0-3.572-2.905-6.467-6.487-6.467 "></path>
+                          </svg>
+                      </button>
+          
+                      <!-- Suggestions Box -->
+                      <ul class="search-suggestions" id="search-suggestions">
+                          <li onclick="selectSuggestion('Jersey for Boys')">Jersey for Boys</li>
+                          <li onclick="selectSuggestion('Jersey for Girls')">Jersey for Girls</li>
+                          <li onclick="selectSuggestion('Jersey with Sleeves')">Jersey with Sleeves</li>
+                      </ul>
+                  </div>
               </form>
-            </div>
+          </div>
+          
 
 
             <div class="cart1 largenav col-sm-2"> <a class="cart-button" href="/cart"> <svg class="cart-svg " width="16 " height="16 " viewBox="0 0 16 16 ">
@@ -338,6 +378,21 @@ document.body.style.backgroundColor = "rgba(0,0,0,0.4)";
 function closeNav() {
 document.getElementById("mySidenav").style.width = "0";
 document.body.style.backgroundColor = "rgba(0,0,0,0)";
+}
+
+function showSuggestions() {
+    document.getElementById("search-suggestions").style.display = "block";
+}
+
+function hideSuggestions() {
+    setTimeout(() => {
+        document.getElementById("search-suggestions").style.display = "none";
+    }, 200);
+}
+
+function selectSuggestion(text) {
+    document.getElementById("query").value = text;
+    document.getElementById("search-suggestions").style.display = "none";
 }
 
 
