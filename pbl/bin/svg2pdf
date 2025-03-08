@@ -1,4 +1,4 @@
-#!/workspaces/APC-2024-2025-T1-11-E-commerce-inventory-system/pbl/bin/python
+#!/root/projects/APC-2024-2025-T1-11-E-commerce-inventory-system/pbl/bin/python3
 """A simple converter from SVG to PDF.
 
 For further information please check the file README.txt!

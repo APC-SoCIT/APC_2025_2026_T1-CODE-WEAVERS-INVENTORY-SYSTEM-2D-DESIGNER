@@ -217,16 +217,6 @@ body {
           margin-top: 30px;
         }
 
-        .fa-whatsapp {
-          background: #25d366;
-          color: white;
-        }
-
-        .fa-twitter {
-          background: #55ACEE;
-          color: white;
-        }
-
         .fa-instagram {
           background: #125688;
           color: white;
@@ -305,10 +295,8 @@ body {
   <br>
 
   <p>
-    <a href="#" class="fa fa-facebook"></a>
-    <a href="#" class="fa fa-whatsapp"></a>
-    <a href="#" class="fa fa-instagram"></a>
-    <a href="#" class="fa fa-twitter"></a>
+    <a href="{% url 'facebook' %}" target="_blank" class="fa fa-facebook"></a>
+    <a href="{% url 'instagram' %}" target="_blank" class="fa fa-instagram"></a>
   </p>
 
   <br>

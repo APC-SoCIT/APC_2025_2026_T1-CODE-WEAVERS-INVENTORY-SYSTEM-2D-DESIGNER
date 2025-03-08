@@ -7,6 +7,7 @@ from django.contrib.auth.decorators import login_required,user_passes_test
 from django.contrib import messages
 from django.conf import settings
 from .models import Customer
+from django.urls import reverse
 
 def home_view(request):
     products=models.Product.objects.all()
@@ -471,7 +472,12 @@ def my_order_view(request):
         ordered_products.append(ordered_product)
 
     return render(request,'ecom/my_order.html',{'data':zip(ordered_products,orders)})
- 
+
+def my_view(request):
+    facebook_url = reverse('facebook')
+    
+def my_view(request):
+    instagram_url = reverse('instagram')
 
 
 

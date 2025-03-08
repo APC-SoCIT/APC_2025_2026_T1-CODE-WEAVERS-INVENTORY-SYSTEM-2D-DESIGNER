@@ -2,6 +2,8 @@ from django.contrib import admin
 from django.urls import path
 from ecom import views
 from django.contrib.auth.views import LoginView,LogoutView
+from django.views.generic import RedirectView
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('',views.home_view,name=''),
@@ -49,6 +51,10 @@ urlpatterns = [
     path('create', views.create,name='create'),
     path('home', views.home,name='home'),
     path('view_customer', views.view_customer_view, name='view_customer'),
+    path('update-order/<int:pk>', views.update_order_view,name='update-order'),
+    path('delete-order/<int:pk>', views.delete_order_view,name='delete-order'),
+    path('facebook/', RedirectView.as_view(url='https://www.facebook.com/worksteamwear'), name='facebook'),
+    path('instagram/', RedirectView.as_view(url='https://www.instagram.com/worksteamwear/'), name='instagram'),
 
     
 
