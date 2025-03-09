@@ -9,6 +9,7 @@ from django.conf import settings
 from .models import Customer
 from django.urls import reverse
 
+@login_required(login_url='customerlogin')
 def home_view(request):
     products=models.Product.objects.all()
     if 'product_ids' in request.COOKIES:
@@ -23,7 +24,7 @@ def home_view(request):
     
 
 
-#for showing login button for admin(by sumit)
+@login_required(login_url='adminlogin')
 def adminclick_view(request):
     if request.user.is_authenticated:
         return HttpResponseRedirect('afterlogin')
