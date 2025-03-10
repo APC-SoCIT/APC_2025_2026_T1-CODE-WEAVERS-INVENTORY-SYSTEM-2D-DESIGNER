@@ -483,23 +483,6 @@ def my_view(request):
     instagram_url = reverse('instagram')
 
 
-
-# @login_required(login_url='customerlogin')
-# @user_passes_test(is_customer)
-# def my_order_view2(request):
-
-#     products=models.Product.objects.all()
-#     if 'product_ids' in request.COOKIES:
-#         product_ids = request.COOKIES['product_ids']
-#         counter=product_ids.split('|')
-#         product_count_in_cart=len(set(counter))
-#     else:
-#         product_count_in_cart=0
-#     return render(request,'ecom/my_order.html',{'products':products,'product_count_in_cart':product_count_in_cart})    
-
-
-
-#--------------for discharge patient bill (pdf) download and printing
 import io
 from xhtml2pdf import pisa
 from django.template.loader import get_template
@@ -539,8 +522,8 @@ def download_invoice_view(request,orderID,productID):
     return render_to_pdf('ecom/download_invoice.html',mydict)
 
 
-
-
+def pre_order(request):
+    return render(request, 'ecom/pre_order.html')
 
 
 @login_required(login_url='customerlogin')
@@ -575,7 +558,7 @@ def edit_profile_view(request):
 #------------------------ ABOUT US AND CONTACT US VIEWS START --------------------
 #---------------------------------------------------------------------------------
 def aboutus_view(request):
-    return render(request,'ecom/aboutus.html')
+    return render(request,'ecom/about.html')
 
 def contactus_view(request):
     sub = forms.ContactusForm()
@@ -589,8 +572,9 @@ def contactus_view(request):
             return render(request, 'ecom/contactussuccess.html')
     return render(request, 'ecom/contactus.html', {'form':sub})
 
-def create(request):
-    return render(request, 'ecom/create.html')
+def jersey_customizer(request):
+    return render(request, 'ecom/customizer.html')
+
 
 def home(request):
     return render(request, 'ecom/home.html')
