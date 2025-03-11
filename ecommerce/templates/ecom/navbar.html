@@ -1,3 +1,4 @@
+{% load static%}
 <html>
 <head>
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.0/css/bootstrap.min.css">
@@ -190,6 +191,7 @@ body {
         margin: 0px
     }
 }
+
 </style>
 </head>
 <body>
@@ -209,16 +211,15 @@ body {
                 
             </ul>
         </div>
-        <div class="row row2">
+        
+        <div class="logo">
             <div class="col-sm-3">
-                <h2 style="margin:0px;"><a style="text-decoration:none; color:white;" href="/"><span class="largenav">WorksTeamWear</span></a></h2>
+              <h2 style="margin:0px;">
+                <a style="text-decoration:none; color:white;" href="/">
+                  <img src="{% static 'images/new logo.png' %}" alt="WorksTeamWear Logo" class="logo">
+                </a>
+              </h2>
             </div>
-                </div>
-              </form>
-            </div
-        </div>
-    </div>
-</div>
 
 <script>
 $(document).ready(function(){
