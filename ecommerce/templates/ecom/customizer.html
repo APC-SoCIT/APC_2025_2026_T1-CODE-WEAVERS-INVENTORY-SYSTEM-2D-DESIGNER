@@ -1,0 +1,169 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GearCraftWorks | Jersey Customizer</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <script src="{% static 'jersey_customizer/js/customizer.js' %}" defer></script>
+</head>
+<body>
+  <div class="flex flex-col h-screen">
+      <!-- Navigation -->
+      <nav class="bg-gray-900">
+          <div class="max-w-7xl mx-auto px-4">
+              <div class="flex items-center justify-between h-16">
+                  <div class="text-white text-xl font-bold">GearCraftWorks</div>
+                  <div class="flex space-x-4">
+                      <a href="{% url 'customer-home' %}" class="text-gray-300 hover:text-white px-3 py-2">Home</a>
+                      <a href="{% url 'pre_order' %}" class="text-gray-300 hover:text-white px-3 py-2">Pre-order</a>
+                      <a href="{% url 'customizer' %}" class="text-white px-3 py-2">2d Designer</a>
+                      <a href="{% url 'about' %}" class="text-gray-300 hover:text-white px-3 py-2">About Us</a>
+                      <a href="{% url 'logout' %}" class="text-gray-300 hover:text-white px-3 py-2">Logout</a>
+                  </div>
+              </div>
+          </div>
+      </nav>
+
+      <div class="flex flex-1 overflow-hidden">
+          <!-- 3D Viewport -->
+          <div class="relative flex-1 bg-gray-900">
+              <div id="canvas-container" class="w-full h-full"></div>
+              
+              <!-- Reset View Button -->
+              <div class="absolute bottom-4 right-4">
+                  <button id="reset-view" class="bg-white text-gray-900 px-4 py-2 rounded shadow hover:bg-gray-100">
+                      Reset View
+                  </button>
+              </div>
+          </div>
+
+          <!-- Controls Panel -->
+          <div class="w-96 overflow-y-auto border-l border-gray-200 bg-white">
+              <div class="p-4">
+                  <h2 class="text-xl font-bold mb-4">Customize Your Jersey</h2>
+                  <div class="space-y-4">
+                      <div>
+                          <label class="block mb-2">Jersey Type</label>
+                          <select id="jersey-type" class="w-full p-2 border rounded">
+                              <option value="tshirt">T-Shirt Style</option>
+                              <option value="sleeveless">Sleeveless Style</option>
+                          </select>
+                      </div>
+                      <div>
+                          <label class="block mb-2">Edit View</label>
+                          <div class="flex space-x-2">
+                              <button id="front-view" class="px-4 py-2 rounded bg-white shadow text-gray-900">Front</button>
+                              <button id="back-view" class="px-4 py-2 rounded text-gray-600">Back</button>
+                          </div>
+                      </div>
+                      <div>
+                          <label class="block mb-2">Primary Color</label>
+                          <input type="color" id="primary-color" value="#ffffff" class="w-full h-10">
+                      </div>
+                      <div>
+                          <label class="block mb-2">Secondary Color</label>
+                          <input type="color" id="secondary-color" value="#000000" class="w-full h-10">
+                      </div>
+                      <div>
+                          <label class="block mb-2">Pattern</label>
+                          <select id="pattern" class="w-full p-2 border rounded">
+                              <option value="none">None</option>
+                              {% for pattern in patterns %}
+                                  <option value="{{ pattern }}">{{ pattern|title }}</option>
+                              {% endfor %}
+                          </select>
+                      </div>
+                      <div id="front-options">
+                          <div>
+                              <label class="block mb-2">Number (Upper Right)</label>
+                              <input type="number" id="front-number" class="w-full p-2 border rounded" min="0" max="99">
+                          </div>
+                      </div>
+                      <div id="back-options" style="display: none;">
+                          <div>
+                              <label class="block mb-2">Name (Upper Middle)</label>
+                              <input type="text" id="back-name" class="w-full p-2 border rounded" maxlength="15">
+                          </div>
+                          <div>
+                              <label class="block mb-2">Number (Center)</label>
+                              <input type="number" id="back-number" class="w-full p-2 border rounded" min="0" max="99">
+                          </div>
+                      </div>
+                      <div>
+                          <label class="block mb-2">Text Color</label>
+                          <input type="color" id="text-color" value="#000000" class="w-full h-10">
+                      </div>
+                      <div>
+                          <label class="block mb-2">Logo</label>
+                          <input type="file" id="logo-upload" class="w-full p-2 border rounded" accept="image/*">
+                      </div>
+                      <div id="logo-size-container" style="display: none;">
+                          <label class="block mb-2">Logo Size</label>
+                          <input type="range" id="logo-size" min="0.1" max="1" step="0.1" value="0.5" class="w-full">
+                      </div>
+                      <div class="pt-4 border-t border-gray-200 space-y-2">
+                          <button id="clear-all" class="w-full p-2 border border-gray-300 rounded hover:bg-gray-50">
+                              Clear All
+                          </button>
+                          <button id="download-design" class="w-full p-2 bg-green-600 text-white rounded hover:bg-green-700">
+                              Download Design
+                          </button>
+                          <a href="{% url 'pre_order' %}" class="block w-full p-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 text-center">
+                              Pre-order This Design
+                          </a>
+                      </div>
+                  </div>
+              </div>
+          </div>
+      </div>
+  </div>
+
+    <!-- Alpine.js for UI interactions -->
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
+    <!-- Custom JavaScript -->
+    <script src="{% static 'jersey_customizer/js/customizer.js' %}"></script>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col md:flex-row justify-between">
+                <!-- Company Info -->
+                <div class="mb-4 md:mb-0">
+                    <h3 class="text-xl font-bold">GearCraftWorks</h3>
+                    <p class="mt-2 text-gray-400">Custom Jersey Design</p>
+                </div>
+    
+                <!-- Contact Info -->
+                <div>
+                    <h4 class="text-lg font-semibold">Contact Info</h4>
+                    <p class="mt-2 flex items-center text-gray-400">
+                        📞 <span class="ml-2">0998 854 8632</span>
+                    </p>
+                    <p class="mt-2 flex items-center text-gray-400">
+                        ✉️ <span class="ml-2">wtw104dante@gmail.com</span>
+                    </p>
+                </div>
+    
+                <!-- Categories -->
+                <div>
+                    <h4 class="text-lg font-semibold">Categories</h4>
+                    <p class="mt-2 flex items-center text-gray-400">
+                        👕 <span class="ml-2">Clothing (Brand)</span>
+                    </p>
+                </div>
+            </div>
+    
+            <!-- Copyright -->
+            <div class="mt-6 text-center text-gray-400">
+                &copy; 2025 GearCraftWorks. All rights reserved.
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>

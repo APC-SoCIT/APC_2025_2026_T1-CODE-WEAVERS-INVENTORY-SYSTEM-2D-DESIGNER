@@ -1,11 +1,9 @@
-{% extends 'ecom/homebase.html' %}
+{% extends 'ecom/customer_base.html' %}
 {% load static %}
 {% block content %}
-{% if redirect_to %}
-<script>
-  location.replace("{{redirect_to}}")
-</script>
-{% endif %}
+
+
+
   <style media="screen">
     body,
 html {
@@ -35,7 +33,8 @@ html {
 }
 
 body {
-  background-color:#f7f7f7;
+  background-color:#ffffff;
+
 }
 
 .page-wrapper {
@@ -52,9 +51,9 @@ body {
   width: 360px;
   padding: 15px;
   margin: 15px auto;
-  background-color: #fff;
+  background-color: #b1b1b168;
   border-radius: 0px;
-  box-shadow: 2px 2px 5px #9b9b9b;
+  box-shadow: 2px 2px 5px #000000;
 }
 
 @media (max-width: 991px) {
@@ -346,7 +345,7 @@ img {
   display: inline-block;
   width: 16px;
   height: 16px;
-  background: #fff;
+  background: #898686;
   border-radius: 50px;
   margin: 0 .2em 1em;
   &:hover {
@@ -374,14 +373,21 @@ img {
 }
 
 .slide-1 {
-  background-image: url("{% static 'images/banner1.jpg' %}");
+  background-image: url("{% static 'images/b2.webp' %}");
 }
 .slide-2 {
-  background-image: url("{% static 'images/banner2.jpg' %}");
+  background-image: url("{% static 'images/b4.webp' %}");
 }
 .slide-3 {
-  background-image: url("{% static 'images/banner3.jpg' %}");
+  background-image: url("{% static 'images/b3.webp' %}");
 }
+
+.separator {
+  width: 100%;
+  height: 5px; /* Thickness of the line */
+  background-color: #232323; /* Change color as needed */
+}
+
   </style>
 
 <div class="row">
@@ -395,19 +401,23 @@ img {
       
       <input id="slide-dot-1" type="radio" name="slides" checked>
         <div class="slide slide-1"></div>
+      
       <input id="slide-dot-2" type="radio" name="slides">
         <div class="slide slide-2"></div>
+      
       <input id="slide-dot-3" type="radio" name="slides">
         <div class="slide slide-3"></div>
     </div>
   </div>
 </div>
 
-{%if products%}
-<h3 style="text-align:center; color:#3E454C;">{{word}}</h3>
-<br>
+<div class="separator"></div>
 
-<!-- products data starttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttt -->
+  {%if products%}
+  <h3 style="text-align:center; color:#3E454C;">{{word}}</h3>
+  <br>
+  
+  <!-- products data start -->
   <div class="row">
 
       {% for p in products %}
@@ -433,8 +443,8 @@ img {
                   <div class="h-bg-inner"></div>
                 </div>
 
-                <a class="cart" href="{% url 'add-to-cart' p.id  %}">
-                  <span class="price">${{p.price}}</span>
+                <a class="cart" href="{% url 'add-to-cart' p.id  %}?next_page={{ request.path }}">
+                  <span class="price">₱{{p.price}}</span>
                   <span class="add-to-cart">
                     <span class="txt"><i class="fa fa-shopping-cart"></i> Add To Cart</span>
                   </span>
@@ -448,14 +458,15 @@ img {
 <!-- card1 end -->
 {% if forloop.counter|divisibleby:"3" %}
     </div>
-
     <div class="row">
-
           <br><br><br><br><br>
 {% endif %}
+
   {% endfor %}
 </div>
-<!-- products data enddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd -->
+<!-- products data end -->
+
+
 {%else%}
 <h3 style="text-align:center; color:#3E454C;">No Search Found</h3>
 {%endif%}
@@ -469,5 +480,8 @@ img {
 </script>
 <br><br><br>
 <br><br><br><br><br><br><br><br><br><br><br><br>
+
+
+
 
 {% endblock content %}
