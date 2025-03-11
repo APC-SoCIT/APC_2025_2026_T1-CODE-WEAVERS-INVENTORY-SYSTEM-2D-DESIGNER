@@ -533,7 +533,6 @@ def my_profile_view(request):
     return render(request,'ecom/my_profile.html',{'customer':customer})
 
 
-@login_required(login_url='customerlogin')
 @user_passes_test(is_customer)
 def edit_profile_view(request):
     customer=models.Customer.objects.get(user_id=request.user.id)
@@ -543,14 +542,16 @@ def edit_profile_view(request):
     mydict={'userForm':userForm,'customerForm':customerForm}
     if request.method=='POST':
         userForm=forms.CustomerUserForm(request.POST,instance=user)
-        customerForm=forms.CustomerForm(request.POST,instance=customer)
+        customerForm=forms.CustomerForm(request.POST,request.FILES,instance=customer)
         if userForm.is_valid() and customerForm.is_valid():
             user=userForm.save()
             user.set_password(user.password)
             user.save()
             customerForm.save()
-            return HttpResponseRedirect('my-profile')
+            messages.success(request, 'Account Information saved!')
+            return render(request,'ecom/edit_profile.html',context=mydict)
     return render(request,'ecom/edit_profile.html',context=mydict)
+
 
 
 
