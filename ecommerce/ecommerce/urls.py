@@ -3,9 +3,12 @@ from django.urls import path
 from ecom import views
 from django.contrib.auth.views import LoginView,LogoutView
 from django.views.generic import RedirectView
+from ecom.views import manage_inventory, update_stock 
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('manage-inventory/', manage_inventory, name='manage-inventory'),
+    path('update-stock/<int:item_id>/', update_stock, name='update-stock'),
     path('',views.home_view,name=''),
     path('afterlogin', views.afterlogin_view,name='afterlogin'),
     path('logout/', LogoutView.as_view(template_name='ecom/logout.html', next_page='customerlogin'), name='logout'),

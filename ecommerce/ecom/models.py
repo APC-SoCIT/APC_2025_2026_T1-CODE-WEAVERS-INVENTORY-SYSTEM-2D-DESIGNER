@@ -16,6 +16,15 @@ class Customer(models.Model):
         return self.user.first_name
 
 
+class InventoryItem(models.Model):
+    name = models.CharField(max_length=50)
+    quantity = models.PositiveIntegerField(default=0)
+    description = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return self.name
+
+
 class Product(models.Model):
     name = models.CharField(max_length=40)
     product_image = models.ImageField(upload_to='product_image/', null=True, blank=True)
