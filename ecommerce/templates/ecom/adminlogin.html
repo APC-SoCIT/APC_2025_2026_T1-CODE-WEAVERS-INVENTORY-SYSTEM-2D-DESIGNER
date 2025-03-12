@@ -1,39 +1,28 @@
-{% load static %}
-<!DOCTYPE html> {% load widget_tweaks %}
+<!DOCTYPE html> {% load widget_tweaks %} {% load static %}
 <html lang="en" dir="ltr">
 
 <head>
     <meta charset="utf-8">
     <title>WorksTeamWear Admin</title>
     <style media="screen">
+        div#admin-box-holder {
+            justify-content: center;
+            display: flex;
+            align-items: center;
+            padding: 2em 0;
+            background: rgba(255, 255, 255, 0.1);
+        }
 
-    body {
+        body {
         margin: 0;
         padding: 0;
         font-family: 'Crimson Text', serif; 
+        background: url('{% static "images/background.jpg" %}') no-repeat center center fixed;
         background-size: cover;
+        text-align: center;
+        transition: 0.25s;
+        border-radius: 20px;
       }
-      #admin-box-holder .panel {
-    background-color: transparent;
-    border: none;
-    box-shadow: none;
-}
-
-#admin-box-holder .box {
-    background-color: transparent;
-    border: none;
-    box-shadow: none;
-}
-        .panel {
-            background-color: transparent;
-            border: none;
-            box-shadow: none;
-        }
-        .box {
-            background-color: transparent;
-            border: none;
-            box-shadow: none;
-        }
     </style>
 </head>
 

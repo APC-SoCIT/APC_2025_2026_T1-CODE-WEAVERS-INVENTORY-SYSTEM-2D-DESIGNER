@@ -9,6 +9,8 @@
     .market-update-block {
       padding: 2em 2em;
       background: #999;
+      margin-bottom: 1em;
+      border-radius: 10px;
     }
 
     .market-update-block h3 {
@@ -142,7 +144,8 @@
     .market-update-left {
       padding: 0px;
     }
-    .fa{
+
+    .fa {
       padding-top: 0.2em;
     }
   </style>
@@ -153,59 +156,57 @@
 </head>
 
 <body>
-  <div class="market-updates">
-    <div class="col-md-4 market-update-gd">
-      <div class="market-update-block clr-block-1">
-        <div class="col-md-8 market-update-left">
-          <h3>{{customercount}}</h3>
-          <h4>Registered Customer</h4>
-
+  <div class="container">
+    <div class="row market-updates">
+      <div class="col-md-6 market-update-gd">
+        <div class="market-update-block clr-block-1">
+          <div class="col-md-8 market-update-left">
+            <h3>{{customercount}}</h3>
+            <h4>Registered Customer</h4>
+          </div>
+          <div class="col-md-4 market-update-right">
+            <i class="fa fa-users"></i>
+          </div>
+          <div class="clearfix"> </div>
         </div>
-        <div class="col-md-4 market-update-right">
-          <i class="fa fa-users"></i>
+      </div>
+      <div class="col-md-6 market-update-gd">
+        <div class="market-update-block clr-block-2">
+          <div class="col-md-8 market-update-left">
+            <h3>{{productcount}}</h3>
+            <h4>Total Product</h4>
+          </div>
+          <div class="col-md-4 market-update-right">
+            <i class="fa fa-shopping-cart"></i>
+          </div>
+          <div class="clearfix"> </div>
         </div>
-        <div class="clearfix"> </div>
+      </div>
+      <div class="col-md-6 market-update-gd">
+        <div class="market-update-block clr-block-3">
+          <div class="col-md-8 market-update-left">
+            <h3>{{ordercount}}</h3>
+            <h4>Total Orders</h4>
+          </div>
+          <div class="col-md-4 market-update-right">
+            <i class="fa fa-bar-chart"> </i>
+          </div>
+          <div class="clearfix"> </div>
+        </div>
+      </div>
+      <div class="col-md-6 market-update-gd">
+        <div class="market-update-block clr-block-1">
+          <div class="col-md-8 market-update-left">
+            <h3>₱{{total_sales}}</h3>
+            <h4>Total Sales</h4>
+          </div>
+          <div class="col-md-4 market-update-right">
+            <i class="fa fa-money"></i>
+          </div>
+          <div class="clearfix"> </div>
+        </div>
       </div>
     </div>
-    <div class="col-md-4 market-update-gd">
-      <div class="market-update-block clr-block-2">
-        <div class="col-md-8 market-update-left">
-          <h3>{{productcount}}</h3>
-          <h4>Total Product</h4>
-
-        </div>
-        <div class="col-md-4 market-update-right">
-          <i class="fa fa-shopping-cart"></i>
-        </div>
-        <div class="clearfix"> </div>
-      </div>
-    </div>
-    <div class="col-md-4 market-update-gd">
-      <div class="market-update-block clr-block-3">
-        <div class="col-md-8 market-update-left">
-          <h3>{{ordercount}}</h3>
-          <h4>Total Orders</h4>
-        </div>
-        <div class="col-md-4 market-update-right">
-          <i class="fa fa-bar-chart"> </i>
-        </div>
-        <div class="clearfix"> </div>
-      </div>
-    </div>
-
-    <div class="col-md-4 market-update-gd">
-      <div class="market-update-block clr-block-1">
-        <div class="col-md-8 market-update-left">
-          <h3>₱{{total_sales}}</h3>
-          <h4>Total Sales</h4>
-        </div>
-        <div class="col-md-4 market-update-right">
-          <i class="fa fa-money"></i>
-        </div>
-        <div class="clearfix"> </div>
-      </div>
-    </div>
-
   </div>
   <br><br>
 </body>
