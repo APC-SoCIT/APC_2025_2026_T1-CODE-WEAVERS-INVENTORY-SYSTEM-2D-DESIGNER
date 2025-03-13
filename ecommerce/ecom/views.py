@@ -614,3 +614,9 @@ def manage_profile(request):
 
 def create(request):
     return render(request, 'ecom/create.html')
+
+def jersey_customizer(request):
+    return render(request, 'ecom/jersey_customizer.html')
+
+def jersey_customizer_advanced(request):
+    return render(request, 'ecom/jersey_customizer_advanced.html')
