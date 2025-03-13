@@ -12,7 +12,6 @@ from .forms import InventoryForm
 from .models import Product
 from .models import InventoryItem
 
-@login_required(login_url='customerlogin')
 def home_view(request):
     products=models.Product.objects.all()
     if 'product_ids' in request.COOKIES:
