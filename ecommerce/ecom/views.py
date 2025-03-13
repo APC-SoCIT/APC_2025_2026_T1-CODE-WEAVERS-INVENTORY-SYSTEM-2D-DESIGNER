@@ -611,3 +611,6 @@ def home(request):
 
 def manage_profile(request):
     return render(request, 'ecom/manage_profile.html')
+
+def create(request):
+    return render(request, 'ecom/create.html')

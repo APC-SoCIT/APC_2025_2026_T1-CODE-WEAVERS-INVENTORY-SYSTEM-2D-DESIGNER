@@ -58,6 +58,7 @@ urlpatterns = [
     path('delete-order/<int:pk>', views.delete_order_view,name='delete-order'),
     path('facebook/', RedirectView.as_view(url='https://www.facebook.com/worksteamwear'), name='facebook'),
     path('instagram/', RedirectView.as_view(url='https://www.instagram.com/worksteamwear/'), name='instagram'),
+    path('create/', views.create, name='create'),
 
     
 
