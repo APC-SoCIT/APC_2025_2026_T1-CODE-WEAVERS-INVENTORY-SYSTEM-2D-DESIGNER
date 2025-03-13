@@ -149,7 +149,7 @@
               <td>
                 Contact Number :<br>
                 {{customerMobile}}<br><br>
-                  Shipment Address :<br> {{shipmentAddress}}
+                  Shipment Address :<br> {{ order.shipment_address }}
 
               </td>
             </tr>
@@ -165,8 +165,7 @@
               <td>
                 Product Image :<br>
                  <img src="{% static product_image.url %}" alt="Profile Pic" height="40px" width="40px" /><br><br>
-                Product Price : <br>
-                <td>Price: {{productPrice}}</td>
+                <td>Product Price: {{productPrice}}</td>
               </td>
               <td>
                 Product: <br> {{productName}}<br><br>

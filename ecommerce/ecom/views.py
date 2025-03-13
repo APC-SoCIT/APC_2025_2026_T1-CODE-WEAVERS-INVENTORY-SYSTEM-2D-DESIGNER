@@ -285,10 +285,17 @@ def cart_page(request):
         return redirect("orders")  # Redirect to order history page
     else:
         return HttpResponse("Invalid payment information")
+
+
 def search_view(request):
-    # whatever user write in search box we get in query
     query = request.GET.get('query')
-    products=models.Product.objects.all().filter(name__icontains=query)
+    if query is not None and query != '':
+        products = models.Product.objects.all().filter(name__icontains=query)
+    else:
+        products = models.Product.objects.all()
+
+    word = "Search Results for: " + query if query else ("Welcome, Guest" if not request.user.is_authenticated else "Welcome, " + request.user.username)
+
     if 'product_ids' in request.COOKIES:
         product_ids = request.COOKIES['product_ids']
         counter=product_ids.split('|')
@@ -296,14 +303,7 @@ def search_view(request):
     else:
         product_count_in_cart=0
 
-    # word variable will be shown in html when user click on search button
-    word="Searched Result :"
-
-    products = models.Product.objects.all().filter(name__icontains=query)
-
-    if request.user.is_authenticated:
-        return render(request,'ecom/customer_home.html',{'products':products,'word':word,'product_count_in_cart':product_count_in_cart, 'search_text': query})
-    return render(request,'ecom/index.html',{'products':products,'word':word,'product_count_in_cart':product_count_in_cart, 'search_text': query})
+    return render(request,'ecom/customer_home.html',{'products':products,'word':word,'product_count_in_cart':product_count_in_cart, 'search_text': query})
 
 
 # any one can add product to cart, no need of signin
@@ -473,18 +473,8 @@ def customer_address_view(request):
             return response
     return render(request,'ecom/customer_address.html',{'addressForm':addressForm,'product_in_cart':product_in_cart,'product_count_in_cart':product_count_in_cart})
 
-
-
-
-# here we are just directing to this view...actually we have to check whther payment is successful or not
-#then only this view should be accessed
 @login_required(login_url='customerlogin')
 def payment_success_view(request):
-    # Here we will place order | after successful payment
-    # we will fetch customer  mobile, address, Email
-    # we will fetch product id from cookies then respective details from db
-    # then we will create order objects and store in db
-    # after that we will delete cookies because after order placed...cart should be empty
     customer=models.Customer.objects.get(user_id=request.user.id)
     products=None
     email=None
@@ -510,7 +500,8 @@ def payment_success_view(request):
     # there will be lot of redundant data in orders table...but its become more complicated if we normalize it
     for product in products:
         models.Orders.objects.get_or_create(customer=customer,product=product,status='Pending',email=email,mobile=mobile,address=address)
-
+        order.shipment_address = address  # Add this line to include the shipment address
+        order.save()
     # after order placed cookies should be deleted
     response = render(request,'ecom/payment_success.html')
     response.delete_cookie('product_ids')
@@ -558,8 +549,8 @@ def render_to_pdf(template_src, context_dict):
         return HttpResponse(result.getvalue(), content_type='application/pdf')
     return None
 
-@login_required(login_url='customerlogin')
-@user_passes_test(is_customer)
+
+
 def download_invoice_view(request,orderID,productID):
     order=models.Orders.objects.get(id=orderID)
     product=models.Product.objects.get(id=productID)
