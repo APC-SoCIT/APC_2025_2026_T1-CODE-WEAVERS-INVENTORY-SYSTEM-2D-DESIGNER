@@ -8,6 +8,9 @@ from django.contrib import messages
 from django.conf import settings
 from .models import Customer
 from django.urls import reverse
+from .forms import InventoryForm
+from .models import Product
+from .models import InventoryItem
 
 @login_required(login_url='customerlogin')
 def home_view(request):
@@ -21,7 +24,33 @@ def home_view(request):
     if request.user.is_authenticated:
         return HttpResponseRedirect('afterlogin')
     return render(request,'ecom/index.html',{'products':products,'product_count_in_cart':product_count_in_cart})
-    
+
+@login_required(login_url='adminlogin')
+def manage_inventory(request):
+    inventory_items = InventoryItem.objects.all()
+    if request.method == "POST":
+        form = InventoryForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('manage-inventory')
+    else:
+        form = InventoryForm()
+
+    return render(request, 'ecom/manage_inventory.html', {'form': form, 'inventory_items': inventory_items})
+
+def update_stock(request, item_id):
+    item = get_object_or_404(InventoryItem, id=item_id)
+    if request.method == "POST":
+        form = InventoryForm(request.POST, instance=item)
+        if form.is_valid():
+            form.save()
+            return redirect('manage-inventory')
+    else:
+        form = InventoryForm(instance=item)
+
+    return render(request, 'ecom/update_stock.html', {'form': form, 'item': item})
+
+
 
 
 @login_required(login_url='adminlogin')
@@ -582,3 +611,6 @@ def home(request):
 
 def manage_profile(request):
     return render(request, 'ecom/manage_profile.html')
+
+def create(request):
+    return render(request, 'ecom/create.html')

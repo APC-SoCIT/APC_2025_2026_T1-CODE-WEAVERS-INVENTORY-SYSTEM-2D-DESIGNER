@@ -4,7 +4,7 @@
 <html lang="en" dir="ltr">
   <head>
     <meta charset="utf-8">
-    <title>Works Team Wear</title>
+    <title>WorksTeamWear</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda+SC:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&display=swap" rel="stylesheet">
@@ -170,7 +170,7 @@
           <div class="card">
             <form class="box" method="post" enctype="multipart/form-data">
               {% csrf_token %}
-              <h1>Customer Sign Up</h1>
+              <h1>Sign Up</h1>
               {% render_field userForm.first_name class="form-control" placeholder="First Name" %}
               {% render_field userForm.last_name class="form-control" placeholder="Last Name" %}
               {% render_field userForm.username class="form-control" placeholder="Username" %}
@@ -178,6 +178,7 @@
               {% render_field customerForm.address class="form-control" placeholder="Address" %}
               {% render_field customerForm.mobile class="form-control" placeholder="Contact" %}
               <input type="submit" name="" value="Create">
+              <a href="/customerlogin" class="btn btn-primary">Have an account? Login Here!</a>
             </form>
           </div>
         </div>
