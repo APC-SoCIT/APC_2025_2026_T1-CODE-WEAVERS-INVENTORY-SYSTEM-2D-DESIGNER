@@ -255,6 +255,37 @@ def view_feedback_view(request):
 #---------------------------------------------------------------------------------
 #------------------------ PUBLIC CUSTOMER RELATED VIEWS START ---------------------
 #---------------------------------------------------------------------------------
+
+def cart_page(request):
+    return render(request, "cart.html", {"paypal_client_id": settings.PAYPAL_CLIENT_ID})
+
+
+    user = request.user
+    paypal_transaction_id = request.GET.get("paypal-payment-id")
+    custid = request.GET.get("custid")
+
+    try:
+        customer = Customer.objects.get(id=custid)
+    except Customer.DoesNotExist:
+        return HttpResponse("Invalid Customer ID")
+
+    cart_items = Cart.objects.filter(user=user)
+
+    # Check if the payment was made with PayPal
+    if paypal_transaction_id:
+        for cart in cart_items:
+            OrderPlaced.objects.create(
+                user=user,
+                customer=customer,
+                product=cart.product,
+                quantity=cart.quantity,
+                transaction_id=paypal_transaction_id,
+            )
+            cart.delete()  # Clear the cart after placing the order
+        
+        return redirect("orders")  # Redirect to order history page
+    else:
+        return HttpResponse("Invalid payment information")
 def search_view(request):
     # whatever user write in search box we get in query
     query = request.GET.get('query')

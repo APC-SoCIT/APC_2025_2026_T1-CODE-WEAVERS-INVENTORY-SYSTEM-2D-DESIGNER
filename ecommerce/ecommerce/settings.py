@@ -148,3 +148,7 @@ EMAIL_HOST_PASSWORD = 'xyz' # host email password required
 EMAIL_RECEIVING_USER = ['to@gmail.com'] # email on which you will receive messages sent from website
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# PayPal API Credentials
+PAYPAL_CLIENT_ID = 'AclKm4-7owCTrFj2yEIVlVIQJNXEbGX743w3s0xH1O3utxC8s3vJh1Za8alADJLTDkBIsi-q2_rXJQ58'
+PAYPAL_SECRET_KEY = 'EHnmmLG0tRRJ9agOWQcJRd9H8JbUZSxudRLkNQPDl3Bzy_gJXQ4fGGejqXleK5kNgCZ-1sPJ5UQr0WtW'

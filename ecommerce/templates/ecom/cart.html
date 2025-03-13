@@ -12,61 +12,52 @@
   <link href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
   <script src="//netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js"></script>
   <script src="//code.jquery.com/jquery-1.11.1.min.js"></script>
-<style media="screen">
-  .button {
-  display: inline-block;
-  border-radius: 4px;
-  background-color: #f4511e;
-  border: none;
-  color: #FFFFFF;
-  text-align: center;
-  font-size: 28px;
-  padding: 20px;
-  width: 200px;
-  transition: all 0.5s;
-  cursor: pointer;
-  margin: 5px;
-}
 
-.button span {
-  cursor: pointer;
-  display: inline-block;
-  position: relative;
-  transition: 0.5s;
-}
+  <script src="https://www.paypal.com/sdk/js?client-id=AclKm4-7owCTrFj2yEIVlVIQJNXEbGX743w3s0xH1O3utxC8s3vJh1Za8alADJLTDkBIsi-q2_rXJQ58&currency=PHP"></script>
 
-.button span:after {
-  content: '\00bb';
-  position: absolute;
-  opacity: 0;
-  top: 0;
-  right: -20px;
-  transition: 0.5s;
-}
+  <style media="screen">
+    .button {
+      display: inline-block;
+      border-radius: 4px;
+      background-color: #f4511e;
+      border: none;
+      color: #FFFFFF;
+      text-align: center;
+      font-size: 28px;
+      padding: 20px;
+      width: 200px;
+      transition: all 0.5s;
+      cursor: pointer;
+      margin: 5px;
+    }
 
-.button:hover span {
-  padding-right: 25px;
-}
+    .button span {
+      cursor: pointer;
+      display: inline-block;
+      position: relative;
+      transition: 0.5s;
+    }
 
-.button:hover span:after {
-  opacity: 1;
-  right: 0;
-}
+    .button span:after {
+      content: '\00bb';
+      position: absolute;
+      opacity: 0;
+      top: 0;
+      right: -20px;
+      transition: 0.5s;
+    }
 
-.button2 {
-  background-color: white;
-  color: black;
-  border: 2px solid #008CBA;
-}
+    .button:hover span {
+      padding-right: 25px;
+    }
 
-.button2:hover {
-  background-color: #008CBA;
-  color: white;
-}
-
-</style>
-
+    .button:hover span:after {
+      opacity: 1;
+      right: 0;
+    }
+  </style>
 </head>
+
 <br><br><br><br>
 
 <div class="container">
@@ -82,35 +73,72 @@
           <th>Price</th>
           <th>Description</th>
           <th>Action</th>
-
         </tr>
       </thead>
+
+      {% if products %}
       {% for p in products %}
-  {% if p %}
-
       <tr>
-        <td> {{p.name}}</td>
-        <td> <img src="{% static p.product_image.url %}" alt="Profile Pic" height="50px" width="50px" /></td>
-        <td>₱ {{p.price}}</td>
-        <td>{{p.description}}</td>
-
-        <td><a class="btn btn-danger btn-xs" href="{% url 'remove-from-cart' p.id  %}?next_page={{request.path}}"><span class="glyphicon glyphicon-trash"></span></a></td>
-
+        <td>{{ p.name }}</td>
+        <td><img src="{% static p.product_image.url %}" alt="Product Image" height="50px" width="50px"></td>
+        <td>₱ {{ p.price|floatformat:2 }}</td>
+        <td>{{ p.description }}</td>
+        <td>
+          <a class="btn btn-danger btn-xs" href="{% url 'remove-from-cart' p.id %}?next_page={{request.path}}">
+            <span class="glyphicon glyphicon-trash"></span>
+          </a>
+        </td>
       </tr>
-      {%else%}
-      <br><br><br>
-      <h1>no products</h1>
-      {% endif %}
       {% endfor %}
+      {% else %}
+      <tr>
+        <td colspan="5" style="text-align:center;">
+          <h3>No products in cart</h3>
+        </td>
+      </tr>
+      {% endif %}
     </table>
+
+    <!-- ✅ Display Total -->
+    <h3 style="text-align:right; margin-right:20px;">
+      <strong>Total: ₱ {{ total|floatformat:2 }}</strong>
+    </h3>
+
+    <div class="d-flex justify-content-center mt-4">
+      <div id="paypal-button-container"></div>
   </div>
 </div>
+
 <br><br><br>
-<div style="text-align: center;">
-  <button class="btn btn-danger btn-lg">Total ₱{{total}}</button>
-  <a href="/customer-address"><button class="btn btn-success btn-lg" ><span>Purchase </span></button></a>
+
+
+
+  <script>
+    paypal.Buttons({
+        createOrder: function (data, actions) {
+            return actions.order.create({
+                purchase_units: [{
+                    amount: {
+                        currency_code: "PHP",  // ✅ Set currency to PHP
+                        value: '{{ total|floatformat:2 }}' // ✅ Use Django total
+                    }
+                }]
+            });
+        },
+        onApprove: function (data, actions) {
+            return actions.order.capture().then(function (details) {
+                const paypalPaymentId = details.id; // Get PayPal transaction ID
+                const custId = "123";  // Replace with actual customer ID
+
+                // Redirect to Django backend for order processing
+                window.location.href = `/payment-success`;
+            });
+        }
+    }).render('#paypal-button-container');
+</script>
+
 </div>
 
-
 <br><br><br><br><br>
+
 {% endblock content %}
