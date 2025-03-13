@@ -4,18 +4,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Advanced Jersey Customizer</title>
+    <title>Advanced Sports Apparel Customizer</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        .jersey-viewport {
+        .apparel-viewport {
             width: 100%;
-            height: 600px;
+            height: 700px;
             position: relative;
             perspective: 1200px;
             margin: 0 auto;
         }
         
-        .jersey-container {
+        .apparel-container {
             width: 100%;
             height: 100%;
             position: absolute;
@@ -23,7 +23,7 @@
             transition: transform 1s ease;
         }
         
-        .jersey-side {
+        .apparel-side {
             position: absolute;
             width: 100%;
             height: 100%;
@@ -35,13 +35,13 @@
             border-radius: 10px;
         }
         
-        .jersey-back {
+        .apparel-back {
             transform: rotateY(180deg);
         }
         
-        .jersey-svg {
-            max-width: 80%;
-            max-height: 80%;
+        .apparel-svg {
+            max-width: 90%;
+            max-height: 90%;
         }
         
         .controls {
@@ -49,46 +49,22 @@
             text-align: center;
         }
         
-        .text-overlay {
-            position: absolute;
-            text-align: center;
-            pointer-events: none;
-            font-family: 'Arial', sans-serif;
-        }
-        
-        .name-overlay {
-            top: 25%;
-            width: 100%;
-            font-size: 24px;
-            font-weight: bold;
-            letter-spacing: 1px;
-        }
-        
-        .number-overlay {
-            top: 40%;
-            width: 100%;
-            font-size: 72px;
-            font-weight: bold;
-        }
-        
-        .back-number-overlay {
-            top: 30%;
-            width: 100%;
-            font-size: 120px;
-            font-weight: bold;
-        }
-        
         .logo-overlay {
             position: absolute;
-            top: 15%;
             width: 100%;
-            text-align: center;
+            height: 100%;
             pointer-events: none;
         }
         
         .logo-image {
-            max-width: 80px;
-            max-height: 80px;
+            position: absolute;
+            max-width: 150px;
+            max-height: 150px;
+            cursor: move;
+            pointer-events: auto;
+            top: 20%;
+            left: 50%;
+            transform: translateX(-50%);
         }
         
         .color-swatch {
@@ -105,6 +81,20 @@
             border-color: #000;
         }
         
+        .gradient-swatch {
+            width: 60px;
+            height: 30px;
+            display: inline-block;
+            margin: 5px;
+            border: 2px solid #ddd;
+            border-radius: 15px;
+            cursor: pointer;
+        }
+        
+        .gradient-swatch.active {
+            border-color: #000;
+        }
+        
         .rotation-controls {
             display: flex;
             justify-content: center;
@@ -116,38 +106,226 @@
             width: 100%;
             margin-top: 10px;
         }
+        
+        .logo-controls {
+            display: none;
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            border: 1px solid #dee2e6;
+        }
+        
+        .size-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+        
+        .logo-size-value {
+            font-weight: bold;
+        }
+        
+        .apparel-type-toggle {
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        
+        .apparel-type-toggle .btn {
+            min-width: 120px;
+        }
+        
+        .gradient-controls {
+            display: none;
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            border: 1px solid #dee2e6;
+        }
+        
+        .gradient-preview {
+            height: 30px;
+            border-radius: 15px;
+            margin-bottom: 10px;
+            border: 1px solid #dee2e6;
+        }
     </style>
 </head>
 <body>
     <div class="container mt-5">
-        <h1 class="text-center mb-4">Advanced Jersey Customizer</h1>
+        <h1 class="text-center mb-4">Advanced Sports Apparel Customizer</h1>
+        
+        <div class="apparel-type-toggle">
+            <div class="btn-group" role="group">
+                <button type="button" class="btn btn-primary" id="jerseyToggle">Jersey</button>
+                <button type="button" class="btn btn-outline-primary" id="shortsToggle">Shorts</button>
+            </div>
+        </div>
         
         <div class="row">
             <div class="col-lg-8">
-                <div class="jersey-viewport">
-                    <div class="jersey-container" id="jerseyContainer">
-                        <!-- Front Side -->
-                        <div class="jersey-side jersey-front">
-                            <svg class="jersey-svg" id="frontJerseySvg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-                                <path class="jersey-body" d="M50,0 L150,0 L150,150 L100,200 L50,150 Z" fill="#ffffff" stroke="#000000" stroke-width="2"/>
-                                <path class="jersey-sleeve left-sleeve" d="M50,0 L30,50 L50,50 L50,0 Z" fill="#000000" stroke="#000000" stroke-width="2"/>
-                                <path class="jersey-sleeve right-sleeve" d="M150,0 L170,50 L150,50 L150,0 Z" fill="#000000" stroke="#000000" stroke-width="2"/>
+                <div class="apparel-viewport">
+                    <div class="apparel-container" id="apparelContainer">
+                        <!-- Jersey Front -->
+                        <div class="apparel-side apparel-front" id="jerseyFront">
+                            <svg class="apparel-svg" id="frontJerseySvg" viewBox="0 0 300 400" xmlns="http://www.w3.org/2000/svg">
+                                <!-- Jersey Body -->
+                                <path class="jersey-body" d="M75,50 C75,50 100,20 150,20 C200,20 225,50 225,50 
+                                    L225,350 C225,350 200,370 150,370 C100,370 75,350 75,350 Z" 
+                                    fill="#ffffff" stroke="#000000" stroke-width="2"/>
+                                
+                                <!-- Collar -->
+                                <path class="jersey-collar" d="M125,50 L175,50 C175,50 170,30 150,30 C130,30 125,50 125,50 Z 
+                                    M140,50 L160,50 L160,70 C160,75 150,75 150,70 C150,75 140,75 140,70 Z" 
+                                    fill="#dddddd" stroke="#000000" stroke-width="2"/>
+                                
+                                <!-- Left Sleeve -->
+                                <path class="jersey-sleeve" d="M75,50 C75,50 60,60 40,80 L20,100 L30,140 L75,120 Z" 
+                                    fill="#dddddd" stroke="#000000" stroke-width="2"/>
+                                
+                                <!-- Right Sleeve -->
+                                <path class="jersey-sleeve" d="M225,50 C225,50 240,60 260,80 L280,100 L270,140 L225,120 Z" 
+                                    fill="#dddddd" stroke="#000000" stroke-width="2"/>
+                                
+                                <!-- Seams and Details -->
+                                <path class="jersey-seam" d="M150,50 L150,350" stroke="#000000" stroke-width="0.5" stroke-dasharray="2,2"/>
+                                <path class="jersey-seam" d="M100,50 C100,60 100,70 100,80" stroke="#000000" stroke-width="0.5"/>
+                                <path class="jersey-seam" d="M200,50 C200,60 200,70 200,80" stroke="#000000" stroke-width="0.5"/>
+                                
+                                <!-- Sleeve Cuffs -->
+                                <path class="jersey-cuff" d="M30,140 L75,120" stroke="#000000" stroke-width="3"/>
+                                <path class="jersey-cuff" d="M270,140 L225,120" stroke="#000000" stroke-width="3"/>
+                                
+                                <!-- Bottom Hem -->
+                                <path class="jersey-hem" d="M75,350 C75,350 100,370 150,370 C200,370 225,350 225,350" 
+                                    stroke="#000000" stroke-width="3" fill="none"/>
+                                
+                                <!-- Number Placeholder -->
+                                <text id="frontNumberText" x="150" y="200" font-family="Arial" font-size="80" text-anchor="middle" fill="#000000"></text>
                             </svg>
-                            <div class="logo-overlay" id="frontLogoOverlay">
-                                <img class="logo-image" id="frontLogoImage" style="display: none;">
+                            <div class="logo-overlay" id="frontJerseyLogoOverlay">
+                                <img class="logo-image" id="frontJerseyLogoImage" style="display: none;">
                             </div>
-                            <div class="text-overlay number-overlay" id="frontNumberOverlay"></div>
                         </div>
                         
-                        <!-- Back Side -->
-                        <div class="jersey-side jersey-back">
-                            <svg class="jersey-svg" id="backJerseySvg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-                                <path class="jersey-body" d="M50,0 L150,0 L150,150 L100,200 L50,150 Z" fill="#ffffff" stroke="#000000" stroke-width="2"/>
-                                <path class="jersey-sleeve left-sleeve" d="M50,0 L30,50 L50,50 L50,0 Z" fill="#000000" stroke="#000000" stroke-width="2"/>
-                                <path class="jersey-sleeve right-sleeve" d="M150,0 L170,50 L150,50 L150,0 Z" fill="#000000" stroke="#000000" stroke-width="2"/>
+                        <!-- Jersey Back -->
+                        <div class="apparel-side apparel-back" id="jerseyBack">
+                            <svg class="apparel-svg" id="backJerseySvg" viewBox="0 0 300 400" xmlns="http://www.w3.org/2000/svg">
+                                <!-- Jersey Body -->
+                                <path class="jersey-body" d="M75,50 C75,50 100,20 150,20 C200,20 225,50 225,50 
+                                    L225,350 C225,350 200,370 150,370 C100,370 75,350 75,350 Z" 
+                                    fill="#ffffff" stroke="#000000" stroke-width="2"/>
+                                
+                                <!-- Collar -->
+                                <path class="jersey-collar" d="M125,50 L175,50 C175,50 170,30 150,30 C130,30 125,50 125,50 Z" 
+                                    fill="#dddddd" stroke="#000000" stroke-width="2"/>
+                                
+                                <!-- Left Sleeve -->
+                                <path class="jersey-sleeve" d="M75,50 C75,50 60,60 40,80 L20,100 L30,140 L75,120 Z" 
+                                    fill="#dddddd" stroke="#000000" stroke-width="2"/>
+                                
+                                <!-- Right Sleeve -->
+                                <path class="jersey-sleeve" d="M225,50 C225,50 240,60 260,80 L280,100 L270,140 L225,120 Z" 
+                                    fill="#dddddd" stroke="#000000" stroke-width="2"/>
+                                
+                                <!-- Seams and Details -->
+                                <path class="jersey-seam" d="M150,50 L150,350" stroke="#000000" stroke-width="0.5" stroke-dasharray="2,2"/>
+                                <path class="jersey-seam" d="M100,50 C100,60 100,70 100,80" stroke="#000000" stroke-width="0.5"/>
+                                <path class="jersey-seam" d="M200,50 C200,60 200,70 200,80" stroke="#000000" stroke-width="0.5"/>
+                                
+                                <!-- Sleeve Cuffs -->
+                                <path class="jersey-cuff" d="M30,140 L75,120" stroke="#000000" stroke-width="3"/>
+                                <path class="jersey-cuff" d="M270,140 L225,120" stroke="#000000" stroke-width="3"/>
+                                
+                                <!-- Bottom Hem -->
+                                <path class="jersey-hem" d="M75,350 C75,350 100,370 150,370 C200,370 225,350 225,350" 
+                                    stroke="#000000" stroke-width="3" fill="none"/>
+                                
+                                <!-- Name Placeholder -->
+                                <text id="backNameText" x="150" y="100" font-family="Arial" font-size="24" text-anchor="middle" fill="#000000"></text>
+                                
+                                <!-- Number Placeholder -->
+                                <text id="backNumberText" x="150" y="200" font-family="Arial" font-size="80" text-anchor="middle" fill="#000000"></text>
                             </svg>
-                            <div class="text-overlay name-overlay" id="nameOverlay"></div>
-                            <div class="text-overlay back-number-overlay" id="backNumberOverlay"></div>
+                            <div class="logo-overlay" id="backJerseyLogoOverlay">
+                                <img class="logo-image" id="backJerseyLogoImage" style="display: none;">
+                            </div>
+                        </div>
+                        
+                        <!-- Shorts Front -->
+                        <div class="apparel-side apparel-front" id="shortsFront" style="display: none;">
+                            <svg class="apparel-svg" id="frontShortsSvg" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
+                                <!-- Shorts Waistband -->
+                                <path class="shorts-waistband" d="M75,20 L225,20 L225,40 L75,40 Z" 
+                                    fill="#dddddd" stroke="#000000" stroke-width="2"/>
+                                
+                                <!-- Shorts Body -->
+                                <path class="shorts-body" d="M75,40 L225,40 L240,200 L180,200 L150,280 L120,200 L60,200 Z" 
+                                    fill="#ffffff" stroke="#000000" stroke-width="2"/>
+                                
+                                <!-- Center Seam -->
+                                <path class="shorts-seam" d="M150,40 L150,280" stroke="#000000" stroke-width="0.5" stroke-dasharray="2,2"/>
+                                
+                                <!-- Side Seams -->
+                                <path class="shorts-seam" d="M75,40 L60,200" stroke="#000000" stroke-width="0.5"/>
+                                <path class="shorts-seam" d="M225,40 L240,200" stroke="#000000" stroke-width="0.5"/>
+                                
+                                <!-- Leg Openings -->
+                                <path class="shorts-leg-left" d="M60,200 L120,200" stroke="#000000" stroke-width="3"/>
+                                <path class="shorts-leg-right" d="M180,200 L240,200" stroke="#000000" stroke-width="3"/>
+                                
+                                <!-- Leg Extensions -->
+                                <path class="shorts-leg-extension-left" d="M120,200 L150,280" stroke="#000000" stroke-width="2" fill="none"/>
+                                <path class="shorts-leg-extension-right" d="M180,200 L150,280" stroke="#000000" stroke-width="2" fill="none"/>
+                                
+                                <!-- Pocket Outlines (Optional) -->
+                                <path class="shorts-pocket-left" d="M90,80 C90,80 100,70 110,80 C120,90 120,110 110,120 C100,130 90,120 90,110 Z" 
+                                    stroke="#000000" stroke-width="0.5" fill="none" stroke-dasharray="3,2"/>
+                                <path class="shorts-pocket-right" d="M210,80 C210,80 200,70 190,80 C180,90 180,110 190,120 C200,130 210,120 210,110 Z" 
+                                    stroke="#000000" stroke-width="0.5" fill="none" stroke-dasharray="3,2"/>
+                                
+                                <!-- Number Placeholder -->
+                                <text id="frontShortsNumberText" x="150" y="120" font-family="Arial" font-size="40" text-anchor="middle" fill="#000000"></text>
+                            </svg>
+                            <div class="logo-overlay" id="frontShortsLogoOverlay">
+                                <img class="logo-image" id="frontShortsLogoImage" style="display: none;">
+                            </div>
+                        </div>
+                        
+                        <!-- Shorts Back -->
+                        <div class="apparel-side apparel-back" id="shortsBack" style="display: none;">
+                            <svg class="apparel-svg" id="backShortsSvg" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
+                                <!-- Shorts Waistband -->
+                                <path class="shorts-waistband" d="M75,20 L225,20 L225,40 L75,40 Z" 
+                                    fill="#dddddd" stroke="#000000" stroke-width="2"/>
+                                
+                                <!-- Shorts Body -->
+                                <path class="shorts-body" d="M75,40 L225,40 L240,200 L180,200 L150,280 L120,200 L60,200 Z" 
+                                    fill="#ffffff" stroke="#000000" stroke-width="2"/>
+                                
+                                <!-- Center Seam -->
+                                <path class="shorts-seam" d="M150,40 L150,280" stroke="#000000" stroke-width="0.5" stroke-dasharray="2,2"/>
+                                
+                                <!-- Side Seams -->
+                                <path class="shorts-seam" d="M75,40 L60,200" stroke="#000000" stroke-width="0.5"/>
+                                <path class="shorts-seam" d="M225,40 L240,200" stroke="#000000" stroke-width="0.5"/>
+                                
+                                <!-- Leg Openings -->
+                                <path class="shorts-leg-left" d="M60,200 L120,200" stroke="#000000" stroke-width="3"/>
+                                <path class="shorts-leg-right" d="M180,200 L240,200" stroke="#000000" stroke-width="3"/>
+                                
+                                <!-- Leg Extensions -->
+                                <path class="shorts-leg-extension-left" d="M120,200 L150,280" stroke="#000000" stroke-width="2" fill="none"/>
+                                <path class="shorts-leg-extension-right" d="M180,200 L150,280" stroke="#000000" stroke-width="2" fill="none"/>
+                                
+                                <!-- Number Placeholder -->
+                                <text id="backShortsNumberText" x="150" y="120" font-family="Arial" font-size="40" text-anchor="middle" fill="#000000"></text>
+                            </svg>
+                            <div class="logo-overlay" id="backShortsLogoOverlay">
+                                <img class="logo-image" id="backShortsLogoImage" style="display: none;">
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -158,39 +336,105 @@
                         <button class="btn btn-outline-primary" id="showBackBtn">Back</button>
                     </div>
                     <input type="range" class="form-range rotation-slider" id="rotationSlider" min="0" max="180" value="0">
+                    
+                    <!-- Logo Size Controls -->
+                    <div class="logo-controls" id="logoControls">
+                        <div class="size-label">
+                            <span>Logo Size:</span>
+                            <span class="logo-size-value" id="logoSizeValue">100%</span>
+                        </div>
+                        <input type="range" class="form-range" id="logoSizeSlider" min="20" max="200" value="100">
+                    </div>
                 </div>
             </div>
             
             <div class="col-lg-4">
                 <div class="card">
                     <div class="card-header">
-                        <h5>Customize Your Jersey</h5>
+                        <h5>Customize Your <span id="apparelTypeText">Jersey</span></h5>
                     </div>
                     <div class="card-body">
                         <div class="mb-3">
-                            <label class="form-label">Jersey Color</label>
-                            <div class="d-flex flex-wrap">
-                                <div class="color-swatch active" style="background-color: #ffffff;" data-color="#ffffff" data-target="jersey"></div>
-                                <div class="color-swatch" style="background-color: #ff0000;" data-color="#ff0000" data-target="jersey"></div>
-                                <div class="color-swatch" style="background-color: #0000ff;" data-color="#0000ff" data-target="jersey"></div>
-                                <div class="color-swatch" style="background-color: #00ff00;" data-color="#00ff00" data-target="jersey"></div>
-                                <div class="color-swatch" style="background-color: #ffff00;" data-color="#ffff00" data-target="jersey"></div>
-                                <div class="color-swatch" style="background-color: #000000;" data-color="#000000" data-target="jersey"></div>
+                            <label class="form-label">Color Type</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="colorType" id="solidColorRadio" checked>
+                                <label class="form-check-label" for="solidColorRadio">
+                                    Solid Color
+                                </label>
                             </div>
-                            <input type="color" class="form-control form-control-color mt-2" id="jerseyColor" value="#ffffff">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="colorType" id="gradientColorRadio">
+                                <label class="form-check-label" for="gradientColorRadio">
+                                    Gradient Color
+                                </label>
+                            </div>
                         </div>
                         
-                        <div class="mb-3">
-                            <label class="form-label">Sleeve Color</label>
-                            <div class="d-flex flex-wrap">
-                                <div class="color-swatch" style="background-color: #ffffff;" data-color="#ffffff" data-target="sleeve"></div>
-                                <div class="color-swatch" style="background-color: #ff0000;" data-color="#ff0000" data-target="sleeve"></div>
-                                <div class="color-swatch" style="background-color: #0000ff;" data-color="#0000ff" data-target="sleeve"></div>
-                                <div class="color-swatch" style="background-color: #00ff00;" data-color="#00ff00" data-target="sleeve"></div>
-                                <div class="color-swatch" style="background-color: #ffff00;" data-color="#ffff00" data-target="sleeve"></div>
-                                <div class="color-swatch active" style="background-color: #000000;" data-color="#000000" data-target="sleeve"></div>
+                        <!-- Solid Color Options -->
+                        <div id="solidColorOptions">
+                            <div class="mb-3">
+                                <label class="form-label">Main Color</label>
+                                <div class="d-flex flex-wrap">
+                                    <div class="color-swatch active" style="background-color: #ffffff;" data-color="#ffffff" data-target="main"></div>
+                                    <div class="color-swatch" style="background-color: #ff0000;" data-color="#ff0000" data-target="main"></div>
+                                    <div class="color-swatch" style="background-color: #0000ff;" data-color="#0000ff" data-target="main"></div>
+                                    <div class="color-swatch" style="background-color: #00ff00;" data-color="#00ff00" data-target="main"></div>
+                                    <div class="color-swatch" style="background-color: #ffff00;" data-color="#ffff00" data-target="main"></div>
+                                    <div class="color-swatch" style="background-color: #000000;" data-color="#000000" data-target="main"></div>
+                                </div>
+                                <input type="color" class="form-control form-control-color mt-2" id="mainColor" value="#ffffff">
                             </div>
-                            <input type="color" class="form-control form-control-color mt-2" id="sleeveColor" value="#000000">
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Secondary Color</label>
+                                <div class="d-flex flex-wrap">
+                                    <div class="color-swatch" style="background-color: #ffffff;" data-color="#ffffff" data-target="secondary"></div>
+                                    <div class="color-swatch" style="background-color: #ff0000;" data-color="#ff0000" data-target="secondary"></div>
+                                    <div class="color-swatch" style="background-color: #0000ff;" data-color="#0000ff" data-target="secondary"></div>
+                                    <div class="color-swatch" style="background-color: #00ff00;" data-color="#00ff00" data-target="secondary"></div>
+                                    <div class="color-swatch" style="background-color: #ffff00;" data-color="#ffff00" data-target="secondary"></div>
+                                    <div class="color-swatch active" style="background-color: #dddddd;" data-color="#dddddd" data-target="secondary"></div>
+                                </div>
+                                <input type="color" class="form-control form-control-color mt-2" id="secondaryColor" value="#dddddd">
+                            </div>
+                        </div>
+                        
+                        <!-- Gradient Color Options -->
+                        <div id="gradientColorOptions" style="display: none;">
+                            <div class="mb-3">
+                                <label class="form-label">Gradient Preview</label>
+                                <div class="gradient-preview" id="gradientPreview"></div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Gradient Presets</label>
+                                <div class="d-flex flex-wrap">
+                                    <div class="gradient-swatch" style="background-image: linear-gradient(to right, #ff0000, #0000ff);" data-colors="#ff0000,#0000ff"></div>
+                                    <div class="gradient-swatch" style="background-image: linear-gradient(to right, #00ff00, #ffff00);" data-colors="#00ff00,#ffff00"></div>
+                                    <div class="gradient-swatch" style="background-image: linear-gradient(to right, #000000, #ffffff);" data-colors="#000000,#ffffff"></div>
+                                    <div class="gradient-swatch" style="background-image: linear-gradient(to right, #ff00ff, #00ffff);" data-colors="#ff00ff,#00ffff"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Start Color</label>
+                                <input type="color" class="form-control form-control-color w-100" id="gradientStartColor" value="#ff0000">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">End Color</label>
+                                <input type="color" class="form-control form-control-color w-100" id="gradientEndColor" value="#0000ff">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Gradient Direction</label>
+                                <select class="form-select" id="gradientDirection">
+                                    <option value="to right">Horizontal</option>
+                                    <option value="to bottom">Vertical</option>
+                                    <option value="to bottom right">Diagonal</option>
+                                    <option value="circle at center">Radial</option>
+                                </select>
+                            </div>
                         </div>
                         
                         <div class="mb-3">
@@ -218,6 +462,7 @@
                         <div class="mb-3">
                             <label class="form-label">Team Logo</label>
                             <input type="file" class="form-control" id="logoUpload" accept="image/*">
+                            <div class="form-text mt-1">Upload a logo, then drag to position and adjust size.</div>
                         </div>
                         
                         <div class="mb-3">
@@ -232,31 +477,76 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Elements
-            const jerseyContainer = document.getElementById('jerseyContainer');
+            const apparelContainer = document.getElementById('apparelContainer');
             const showFrontBtn = document.getElementById('showFrontBtn');
             const showBackBtn = document.getElementById('showBackBtn');
             const rotationSlider = document.getElementById('rotationSlider');
-            const jerseyColor = document.getElementById('jerseyColor');
-            const sleeveColor = document.getElementById('sleeveColor');
+            const mainColor = document.getElementById('mainColor');
+            const secondaryColor = document.getElementById('secondaryColor');
             const playerName = document.getElementById('playerName');
             const playerNumber = document.getElementById('playerNumber');
             const textColor = document.getElementById('textColor');
             const logoUpload = document.getElementById('logoUpload');
             const saveDesignBtn = document.getElementById('saveDesignBtn');
+            const apparelTypeText = document.getElementById('apparelTypeText');
             
-            // Text overlays
-            const nameOverlay = document.getElementById('nameOverlay');
-            const frontNumberOverlay = document.getElementById('frontNumberOverlay');
-            const backNumberOverlay = document.getElementById('backNumberOverlay');
-            const frontLogoOverlay = document.getElementById('frontLogoOverlay');
-            const frontLogoImage = document.getElementById('frontLogoImage');
+            // Apparel type toggle
+            const jerseyToggle = document.getElementById('jerseyToggle');
+            const shortsToggle = document.getElementById('shortsToggle');
             
             // Jersey elements
+            const jerseyFront = document.getElementById('jerseyFront');
+            const jerseyBack = document.getElementById('jerseyBack');
+            const frontJerseyLogoImage = document.getElementById('frontJerseyLogoImage');
+            const backJerseyLogoImage = document.getElementById('backJerseyLogoImage');
+            
+            // Shorts elements
+            const shortsFront = document.getElementById('shortsFront');
+            const shortsBack = document.getElementById('shortsBack');
+            const frontShortsLogoImage = document.getElementById('frontShortsLogoImage');
+            const backShortsLogoImage = document.getElementById('backShortsLogoImage');
+            
+            // Color type toggle
+            const solidColorRadio = document.getElementById('solidColorRadio');
+            const gradientColorRadio = document.getElementById('gradientColorRadio');
+            const solidColorOptions = document.getElementById('solidColorOptions');
+            const gradientColorOptions = document.getElementById('gradientColorOptions');
+            
+            // Gradient elements
+            const gradientPreview = document.getElementById('gradientPreview');
+            const gradientStartColor = document.getElementById('gradientStartColor');
+            const gradientEndColor = document.getElementById('gradientEndColor');
+            const gradientDirection = document.getElementById('gradientDirection');
+            const gradientSwatches = document.querySelectorAll('.gradient-swatch');
+            
+            // Logo size controls
+            const logoControls = document.getElementById('logoControls');
+            const logoSizeSlider = document.getElementById('logoSizeSlider');
+            const logoSizeValue = document.getElementById('logoSizeValue');
+            
+            // SVG elements
+            const frontNumberText = document.getElementById('frontNumberText');
+            const backNameText = document.getElementById('backNameText');
+            const backNumberText = document.getElementById('backNumberText');
+            const frontShortsNumberText = document.getElementById('frontShortsNumberText');
+            const backShortsNumberText = document.getElementById('backShortsNumberText');
+            
+            // Jersey SVG elements
             const jerseyBodies = document.querySelectorAll('.jersey-body');
             const jerseySleeveElements = document.querySelectorAll('.jersey-sleeve');
+            const jerseyCollarElements = document.querySelectorAll('.jersey-collar');
+            
+            // Shorts SVG elements
+            const shortsBodyElements = document.querySelectorAll('.shorts-body');
+            const shortsWaistbandElements = document.querySelectorAll('.shorts-waistband');
             
             // Color swatches
             const colorSwatches = document.querySelectorAll('.color-swatch');
+            
+            // State
+            let currentApparelType = 'jersey';
+            let logoSize = 100; // percentage
+            let isGradient = false;
             
             // Event listeners
             showFrontBtn.addEventListener('click', () => {
@@ -271,14 +561,14 @@
             
             rotationSlider.addEventListener('input', updateRotation);
             
-            jerseyColor.addEventListener('input', () => {
-                updateJerseyColors('jersey', jerseyColor.value);
-                updateColorSwatchActive('jersey', jerseyColor.value);
+            mainColor.addEventListener('input', () => {
+                updateColors();
+                updateColorSwatchActive('main', mainColor.value);
             });
             
-            sleeveColor.addEventListener('input', () => {
-                updateJerseyColors('sleeve', sleeveColor.value);
-                updateColorSwatchActive('sleeve', sleeveColor.value);
+            secondaryColor.addEventListener('input', () => {
+                updateColors();
+                updateColorSwatchActive('secondary', secondaryColor.value);
             });
             
             textColor.addEventListener('input', () => {
@@ -291,7 +581,69 @@
             
             logoUpload.addEventListener('change', handleLogoUpload);
             
+            logoSizeSlider.addEventListener('input', function() {
+                logoSize = this.value;
+                logoSizeValue.textContent = `${logoSize}%`;
+                updateLogoSize();
+            });
+            
             saveDesignBtn.addEventListener('click', saveDesign);
+            
+            // Apparel type toggle
+            jerseyToggle.addEventListener('click', () => {
+                setApparelType('jersey');
+            });
+            
+            shortsToggle.addEventListener('click', () => {
+                setApparelType('shorts');
+            });
+            
+            // Color type toggle
+            solidColorRadio.addEventListener('change', () => {
+                isGradient = false;
+                solidColorOptions.style.display = 'block';
+                gradientColorOptions.style.display = 'none';
+                updateColors();
+            });
+            
+            gradientColorRadio.addEventListener('change', () => {
+                isGradient = true;
+                solidColorOptions.style.display = 'none';
+                gradientColorOptions.style.display = 'block';
+                updateGradientPreview();
+                updateColors();
+            });
+            
+            // Gradient controls
+            gradientStartColor.addEventListener('input', () => {
+                updateGradientPreview();
+                updateColors();
+            });
+            
+            gradientEndColor.addEventListener('input', () => {
+                updateGradientPreview();
+                updateColors();
+            });
+            
+            gradientDirection.addEventListener('change', () => {
+                updateGradientPreview();
+                updateColors();
+            });
+            
+            // Gradient swatches
+            gradientSwatches.forEach(swatch => {
+                swatch.addEventListener('click', function() {
+                    const colors = this.dataset.colors.split(',');
+                    gradientStartColor.value = colors[0];
+                    gradientEndColor.value = colors[1];
+                    updateGradientPreview();
+                    updateColors();
+                    
+                    // Update active state
+                    gradientSwatches.forEach(s => s.classList.remove('active'));
+                    this.classList.add('active');
+                });
+            });
             
             // Color swatch clicks
             colorSwatches.forEach(swatch => {
@@ -306,12 +658,12 @@
                     this.classList.add('active');
                     
                     // Update colors
-                    if (target === 'jersey') {
-                        jerseyColor.value = color;
-                        updateJerseyColors('jersey', color);
-                    } else if (target === 'sleeve') {
-                        sleeveColor.value = color;
-                        updateJerseyColors('sleeve', color);
+                    if (target === 'main') {
+                        mainColor.value = color;
+                        updateColors();
+                    } else if (target === 'secondary') {
+                        secondaryColor.value = color;
+                        updateColors();
                     } else if (target === 'text') {
                         textColor.value = color;
                         updateTextColor(color);
@@ -320,9 +672,43 @@
             });
             
             // Functions
+            function setApparelType(type) {
+                currentApparelType = type;
+                apparelTypeText.textContent = type.charAt(0).toUpperCase() + type.slice(1);
+                
+                if (type === 'jersey') {
+                    jerseyToggle.classList.add('btn-primary');
+                    jerseyToggle.classList.remove('btn-outline-primary');
+                    shortsToggle.classList.add('btn-outline-primary');
+                    shortsToggle.classList.remove('btn-primary');
+                    
+                    jerseyFront.style.display = '';
+                    jerseyBack.style.display = '';
+                    shortsFront.style.display = 'none';
+                    shortsBack.style.display = 'none';
+                } else {
+                    shortsToggle.classList.add('btn-primary');
+                    shortsToggle.classList.remove('btn-outline-primary');
+                    jerseyToggle.classList.add('btn-outline-primary');
+                    jerseyToggle.classList.remove('btn-primary');
+                    
+                    jerseyFront.style.display = 'none';
+                    jerseyBack.style.display = 'none';
+                    shortsFront.style.display = '';
+                    shortsBack.style.display = '';
+                }
+                
+                // Reset rotation
+                rotationSlider.value = 0;
+                updateRotation();
+                
+                // Update colors
+                updateColors();
+            }
+            
             function updateRotation() {
                 const rotation = rotationSlider.value;
-                jerseyContainer.style.transform = `rotateY(${rotation}deg)`;
+                apparelContainer.style.transform = `rotateY(${rotation}deg)`;
                 
                 // Update button active states
                 if (rotation < 90) {
@@ -338,16 +724,133 @@
                 }
             }
             
-            function updateJerseyColors(target, color) {
-                if (target === 'jersey') {
-                    jerseyBodies.forEach(body => {
-                        body.setAttribute('fill', color);
-                    });
-                } else if (target === 'sleeve') {
-                    jerseySleeveElements.forEach(sleeve => {
-                        sleeve.setAttribute('fill', color);
-                    });
+            function updateColors() {
+                if (isGradient) {
+                    const gradientString = getGradientString();
+                    
+                    if (currentApparelType === 'jersey') {
+                        jerseyBodies.forEach(body => {
+                            body.style.fill = 'url(#gradient)';
+                            createGradientDefs(body.closest('svg'), gradientString);
+                        });
+                        
+                        jerseySleeveElements.forEach(sleeve => {
+                            sleeve.setAttribute('fill', secondaryColor.value);
+                        });
+                        
+                        jerseyCollarElements.forEach(collar => {
+                            collar.setAttribute('fill', secondaryColor.value);
+                        });
+                    } else {
+                        shortsBodyElements.forEach(body => {
+                            body.style.fill = 'url(#gradient)';
+                            createGradientDefs(body.closest('svg'), gradientString);
+                        });
+                        
+                        shortsWaistbandElements.forEach(waistband => {
+                            waistband.setAttribute('fill', secondaryColor.value);
+                        });
+                    }
+                } else {
+                    if (currentApparelType === 'jersey') {
+                        jerseyBodies.forEach(body => {
+                            body.style.fill = '';
+                            body.setAttribute('fill', mainColor.value);
+                        });
+                        
+                        jerseySleeveElements.forEach(sleeve => {
+                            sleeve.setAttribute('fill', secondaryColor.value);
+                        });
+                        
+                        jerseyCollarElements.forEach(collar => {
+                            collar.setAttribute('fill', secondaryColor.value);
+                        });
+                    } else {
+                        shortsBodyElements.forEach(body => {
+                            body.style.fill = '';
+                            body.setAttribute('fill', mainColor.value);
+                        });
+                        
+                        shortsWaistbandElements.forEach(waistband => {
+                            waistband.setAttribute('fill', secondaryColor.value);
+                        });
+                    }
                 }
+            }
+            
+            function createGradientDefs(svg, gradientString) {
+                // Remove existing defs
+                const existingDefs = svg.querySelector('defs');
+                if (existingDefs) {
+                    existingDefs.remove();
+                }
+                
+                // Create new defs
+                const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+                
+                // Create gradient
+                let gradient;
+                if (gradientDirection.value.includes('circle')) {
+                    gradient = document.createElementNS('http://www.w3.org/2000/svg', 'radialGradient');
+                    gradient.setAttribute('cx', '0.5');
+                    gradient.setAttribute('cy', '0.5');
+                    gradient.setAttribute('r', '0.5');
+                    gradient.setAttribute('fx', '0.5');
+                    gradient.setAttribute('fy', '0.5');
+                } else {
+                    gradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
+                    
+                    // Set gradient direction
+                    if (gradientDirection.value === 'to right') {
+                        gradient.setAttribute('x1', '0');
+                        gradient.setAttribute('y1', '0.5');
+                        gradient.setAttribute('x2', '1');
+                        gradient.setAttribute('y2', '0.5');
+                    } else if (gradientDirection.value === 'to bottom') {
+                        gradient.setAttribute('x1', '0.5');
+                        gradient.setAttribute('y1', '0');
+                        gradient.setAttribute('x2', '0.5');
+                        gradient.setAttribute('y2', '1');
+                    } else if (gradientDirection.value === 'to bottom right') {
+                        gradient.setAttribute('x1', '0');
+                        gradient.setAttribute('y1', '0');
+                        gradient.setAttribute('x2', '1');
+                        gradient.setAttribute('y2', '1');
+                    }
+                }
+                
+                gradient.setAttribute('id', 'gradient');
+                
+                // Create stops
+                const stop1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+                stop1.setAttribute('offset', '0%');
+                stop1.setAttribute('stop-color', gradientStartColor.value);
+                
+                const stop2 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+                stop2.setAttribute('offset', '100%');
+                stop2.setAttribute('stop-color', gradientEndColor.value);
+                
+                // Add stops to gradient
+                gradient.appendChild(stop1);
+                gradient.appendChild(stop2);
+                
+                // Add gradient to defs
+                defs.appendChild(gradient);
+                
+                // Add defs to SVG
+                svg.insertBefore(defs, svg.firstChild);
+            }
+            
+            function getGradientString() {
+                if (gradientDirection.value.includes('circle')) {
+                    return `radial-gradient(${gradientDirection.value}, ${gradientStartColor.value}, ${gradientEndColor.value})`;
+                } else {
+                    return `linear-gradient(${gradientDirection.value}, ${gradientStartColor.value}, ${gradientEndColor.value})`;
+                }
+            }
+            
+            function updateGradientPreview() {
+                gradientPreview.style.backgroundImage = getGradientString();
             }
             
             function updateColorSwatchActive(target, color) {
@@ -371,19 +874,45 @@
             }
             
             function updatePlayerName() {
-                nameOverlay.textContent = playerName.value.toUpperCase();
+                const name = playerName.value.toUpperCase();
+                backNameText.textContent = name;
             }
             
             function updatePlayerNumber() {
                 const number = playerNumber.value;
-                frontNumberOverlay.textContent = number;
-                backNumberOverlay.textContent = number;
+                frontNumberText.textContent = number;
+                backNumberText.textContent = number;
+                frontShortsNumberText.textContent = number;
+                backShortsNumberText.textContent = number;
             }
             
             function updateTextColor(color) {
-                nameOverlay.style.color = color;
-                frontNumberOverlay.style.color = color;
-                backNumberOverlay.style.color = color;
+                frontNumberText.setAttribute('fill', color);
+                backNameText.setAttribute('fill', color);
+                backNumberText.setAttribute('fill', color);
+                frontShortsNumberText.setAttribute('fill', color);
+                backShortsNumberText.setAttribute('fill', color);
+            }
+            
+            function updateLogoSize() {
+                // Calculate actual size based on percentage
+                const baseSize = 100; // base size in pixels
+                const actualSize = (baseSize * logoSize) / 100;
+                
+                // Apply to logos
+                const activeLogos = getActiveLogos();
+                activeLogos.forEach(logo => {
+                    logo.style.width = `${actualSize}px`;
+                    logo.style.height = 'auto';
+                });
+            }
+            
+            function getActiveLogos() {
+                if (currentApparelType === 'jersey') {
+                    return [frontJerseyLogoImage, backJerseyLogoImage];
+                } else {
+                    return [frontShortsLogoImage, backShortsLogoImage];
+                }
             }
             
             function handleLogoUpload(event) {
@@ -391,11 +920,102 @@
                 if (file) {
                     const reader = new FileReader();
                     reader.onload = function(e) {
-                        frontLogoImage.src = e.target.result;
-                        frontLogoImage.style.display = 'block';
+                        // Set the logo for current apparel type
+                        const activeLogos = getActiveLogos();
+                        activeLogos.forEach(logo => {
+                            logo.src = e.target.result;
+                            logo.style.display = 'block';
+                            makeDraggable(logo);
+                        });
+                        
+                        // Reset logo size to 100%
+                        logoSize = 100;
+                        logoSizeSlider.value = 100;
+                        logoSizeValue.textContent = '100%';
+                        updateLogoSize();
+                        
+                        // Show logo controls
+                        logoControls.style.display = 'block';
                     };
                     reader.readAsDataURL(file);
                 }
+            }
+            
+            function makeDraggable(element) {
+                let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+                
+                element.onmousedown = dragMouseDown;
+                
+                function dragMouseDown(e) {
+                    e.preventDefault();
+                    // Get the mouse cursor position at startup
+                    pos3 = e.clientX;
+                    pos4 = e.clientY;
+                    document.onmouseup = closeDragElement;
+                    // Call a function whenever the cursor moves
+                    document.onmousemove = elementDrag;
+                }
+                
+                function elementDrag(e) {
+                    e.preventDefault();
+                    // Calculate the new cursor position
+                    pos1 = pos3 - e.clientX;
+                    pos2 = pos4 - e.clientY;
+                    pos3 = e.clientX;
+                    pos4 = e.clientY;
+                    
+                    // Set the element's new position
+                    const newTop = (element.offsetTop - pos2);
+                    const newLeft = (element.offsetLeft - pos1);
+                    
+                    // Keep the logo within the apparel boundaries
+                    const parent = element.parentElement.parentElement;
+                    const maxTop = parent.offsetHeight - element.offsetHeight;
+                    const maxLeft = parent.offsetWidth - element.offsetWidth;
+                    
+                    element.style.top = Math.max(0, Math.min(newTop, maxTop)) + "px";
+                    element.style.left = Math.max(0, Math.min(newLeft, maxLeft)) + "px";
+                    
+                    // Remove the transform that centers the logo
+                    element.style.transform = 'none';
+                }
+                
+                function closeDragElement() {
+                    // Stop moving when mouse button is released
+                    document.onmouseup = null;
+                    document.onmousemove = null;
+                }
+                
+                // Add touch support for mobile devices
+                element.ontouchstart = function(e) {
+                    const touch = e.touches[0];
+                    pos3 = touch.clientX;
+                    pos4 = touch.clientY;
+                    
+                    document.ontouchend = function() {
+                        document.ontouchend = null;
+                        document.ontouchmove = null;
+                    };
+                    
+                    document.ontouchmove = function(e) {
+                        const touch = e.touches[0];
+                        pos1 = pos3 - touch.clientX;
+                        pos2 = pos4 - touch.clientY;
+                        pos3 = touch.clientX;
+                        pos4 = touch.clientY;
+                        
+                        const newTop = (element.offsetTop - pos2);
+                        const newLeft = (element.offsetLeft - pos1);
+                        
+                        const parent = element.parentElement.parentElement;
+                        const maxTop = parent.offsetHeight - element.offsetHeight;
+                        const maxLeft = parent.offsetWidth - element.offsetWidth;
+                        
+                        element.style.top = Math.max(0, Math.min(newTop, maxTop)) + "px";
+                        element.style.left = Math.max(0, Math.min(newLeft, maxLeft)) + "px";
+                        element.style.transform = 'none';
+                    };
+                };
             }
             
             function saveDesign() {
@@ -405,58 +1025,73 @@
                 
                 // Set canvas dimensions
                 canvas.width = 800;
-                canvas.height = 600;
+                canvas.height = 800;
                 
                 // Draw background
                 ctx.fillStyle = '#f8f9fa';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
                 
-                // Create an image from the SVG
-                const svgData = new XMLSerializer().serializeToString(
-                    rotationSlider.value < 90 ? document.getElementById('frontJerseySvg') : document.getElementById('backJerseySvg')
-                );
-                const img = new Image();
-                img.src = 'data:image/svg+xml;base64,' + btoa(svgData);
+                // Get the current SVG
+                let currentSVG;
+                let currentLogo;
                 
+                if (currentApparelType === 'jersey') {
+                    currentSVG = rotationSlider.value < 90 ? 
+                        document.getElementById('frontJerseySvg') : 
+                        document.getElementById('backJerseySvg');
+                    
+                    currentLogo = rotationSlider.value < 90 ? 
+                        frontJerseyLogoImage : 
+                        backJerseyLogoImage;
+                } else {
+                    currentSVG = rotationSlider.value < 90 ? 
+                        document.getElementById('frontShortsSvg') : 
+                        document.getElementById('backShortsSvg');
+                    
+                    currentLogo = rotationSlider.value < 90 ? 
+                        frontShortsLogoImage : 
+                        backShortsLogoImage;
+                }
+                
+                // Convert SVG to string
+                const svgData = new XMLSerializer().serializeToString(currentSVG);
+                const svgBlob = new Blob([svgData], {type: 'image/svg+xml;charset=utf-8'});
+                const svgUrl = URL.createObjectURL(svgBlob);
+                
+                // Create an image from the SVG
+                const img = new Image();
                 img.onload = function() {
                     // Draw the SVG
-                    ctx.drawImage(img, 200, 100, 400, 400);
+                    ctx.drawImage(img, 150, 100, 500, 600);
                     
-                    // Draw text
-                    ctx.font = 'bold 48px Arial';
-                    ctx.fillStyle = textColor.value;
-                    ctx.textAlign = 'center';
-                    
-                    if (rotationSlider.value < 90) {
-                        // Front view
-                        if (playerNumber.value) {
-                            ctx.font = 'bold 72px Arial';
-                            ctx.fillText(playerNumber.value, 400, 300);
-                        }
+                    // Draw logo if present
+                    if (currentLogo.style.display !== 'none') {
+                        // Calculate logo position relative to the canvas
+                        const logoRect = currentLogo.getBoundingClientRect();
+                        const svgRect = currentSVG.getBoundingClientRect();
                         
-                        // Draw logo if present
-                        if (frontLogoImage.style.display !== 'none') {
-                            ctx.drawImage(frontLogoImage, 350, 150, 100, 100);
-                        }
-                    } else {
-                        // Back view
-                        if (playerName.value) {
-                            ctx.font = 'bold 36px Arial';
-                            ctx.fillText(playerName.value.toUpperCase(), 400, 200);
-                        }
+                        // Calculate relative position
+                        const relX = (logoRect.left - svgRect.left) / svgRect.width;
+                        const relY = (logoRect.top - svgRect.top) / svgRect.height;
                         
-                        if (playerNumber.value) {
-                            ctx.font = 'bold 120px Arial';
-                            ctx.fillText(playerNumber.value, 400, 350);
-                        }
+                        // Apply to canvas
+                        const canvasX = 150 + (relX * 500);
+                        const canvasY = 100 + (relY * 600);
+                        
+                        // Calculate size based on the current logo size
+                        const logoWidth = currentLogo.width * (logoSize / 100);
+                        const logoHeight = currentLogo.height * (logoSize / 100);
+                        
+                        ctx.drawImage(currentLogo, canvasX, canvasY, logoWidth, logoHeight);
                     }
                     
                     // Create download link
                     const link = document.createElement('a');
-                    link.download = 'custom-jersey.png';
+                    link.download = `custom-${currentApparelType}.png`;
                     link.href = canvas.toDataURL('image/png');
                     link.click();
                 };
+                img.src = svgUrl;
             }
             
             // Initialize
@@ -464,6 +1099,7 @@
             updatePlayerName();
             updatePlayerNumber();
             updateTextColor(textColor.value);
+            updateGradientPreview();
         });
     </script>
     

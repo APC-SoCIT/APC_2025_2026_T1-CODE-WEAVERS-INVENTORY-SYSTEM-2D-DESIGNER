@@ -1,0 +1,31 @@
+<svg width="300" height="300" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
+    <!-- Shorts Waistband -->
+    <path class="shorts-waistband" d="M75,20 L225,20 L225,40 L75,40 Z" 
+        fill="#dddddd" stroke="#000000" stroke-width="2"/>
+    
+    <!-- Shorts Body -->
+    <path class="shorts-body" d="M75,40 L225,40 L240,200 L180,200 L150,280 L120,200 L60,200 Z" 
+        fill="#ffffff" stroke="#000000" stroke-width="2"/>
+    
+    <!-- Center Seam -->
+    <path class="shorts-seam" d="M150,40 L150,280" stroke="#000000" stroke-width="0.5" stroke-dasharray="2,2"/>
+    
+    <!-- Side Seams -->
+    <path class="shorts-seam" d="M75,40 L60,200" stroke="#000000" stroke-width="0.5"/>
+    <path class="shorts-seam" d="M225,40 L240,200" stroke="#000000" stroke-width="0.5"/>
+    
+    <!-- Leg Openings -->
+    <path class="shorts-leg-left" d="M60,200 L120,200" stroke="#000000" stroke-width="3"/>
+    <path class="shorts-leg-right" d="M180,200 L240,200" stroke="#000000" stroke-width="3"/>
+    
+    <!-- Leg Extensions -->
+    <path class="shorts-leg-extension-left" d="M120,200 L150,280" stroke="#000000" stroke-width="2" fill="none"/>
+    <path class="shorts-leg-extension-right" d="M180,200 L150,280" stroke="#000000" stroke-width="2" fill="none"/>
+    
+    <!-- Pocket Outlines (Optional) -->
+    <path class="shorts-pocket-left" d="M90,80 C90,80 100,70 110,80 C120,90 120,110 110,120 C100,130 90,120 90,110 Z" 
+        stroke="#000000" stroke-width="0.5" fill="none" stroke-dasharray="3,2"/>
+    <path class="shorts-pocket-right" d="M210,80 C210,80 200,70 190,80 C180,90 180,110 190,120 C200,130 210,120 210,110 Z" 
+        stroke="#000000" stroke-width="0.5" fill="none" stroke-dasharray="3,2"/>
+</svg>
+
