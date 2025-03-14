@@ -14,6 +14,7 @@ from .models import InventoryItem
 from .models import Orders
 import json
 
+
 def home_view(request):
     products=models.Product.objects.all()
     if 'product_ids' in request.COOKIES:
@@ -243,6 +244,27 @@ def update_order_view(request,pk):
             orderForm.save()
             return redirect('admin-view-booking')
     return render(request,'ecom/update_order.html',{'orderForm':orderForm})
+
+
+@login_required(login_url='adminlogin')
+def delete_inventory(request, item_id):
+    item = get_object_or_404(InventoryItem, id=item_id)
+    item.delete()
+    return redirect('manage-inventory')
+
+@login_required(login_url='adminlogin')
+def edit_inventory(request, item_id):
+    item = get_object_or_404(InventoryItem, id=item_id)
+    
+    if request.method == "POST":
+        form = InventoryForm(request.POST, instance=item)
+        if form.is_valid():
+            form.save()
+            return redirect('manage-inventory')  # Redirect after saving
+    else:
+        form = InventoryForm(instance=item)
+
+    return render(request, 'ecom/edit_inventory.html', {'form': form, 'item': item})
 
 
 # admin view the feedback

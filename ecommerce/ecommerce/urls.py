@@ -4,6 +4,7 @@ from ecom import views
 from django.contrib.auth.views import LoginView,LogoutView
 from django.views.generic import RedirectView
 from ecom.views import manage_inventory, update_stock 
+from ecom.views import delete_inventory, edit_inventory
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -63,7 +64,6 @@ urlpatterns = [
     path('jersey-customizer/', views.jersey_customizer, name='jersey_customizer'),
     path('jersey-template/', views.jersey_template, name='jersey_template'),
     path('interactive-jersey/', views.interactive_jersey, name='interactive_jersey'),
-    
-
-
+    path('delete-inventory/<int:item_id>/', delete_inventory, name='delete_inventory'),
+    path('edit-inventory/<int:item_id>/', edit_inventory, name='edit_inventory'), 
 ]
