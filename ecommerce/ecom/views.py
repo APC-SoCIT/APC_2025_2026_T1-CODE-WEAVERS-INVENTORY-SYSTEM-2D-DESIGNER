@@ -11,6 +11,8 @@ from django.urls import reverse
 from .forms import InventoryForm
 from .models import Product
 from .models import InventoryItem
+from .models import Orders
+import json
 
 def home_view(request):
     products=models.Product.objects.all()
@@ -475,39 +477,44 @@ def customer_address_view(request):
 
 @login_required(login_url='customerlogin')
 def payment_success_view(request):
-    customer=models.Customer.objects.get(user_id=request.user.id)
-    products=None
-    email=None
-    mobile=None
-    address=None
+    customer = models.Customer.objects.get(user_id=request.user.id)
+    products = None
+    email = None
+    mobile = None
+    address = customer.address  # Default to profile address
+
     if 'product_ids' in request.COOKIES:
         product_ids = request.COOKIES['product_ids']
         if product_ids != "":
-            product_id_in_cart=product_ids.split('|')
-            products=models.Product.objects.all().filter(id__in = product_id_in_cart)
-            # Here we get products list that will be ordered by one customer at a time
+            product_id_in_cart = product_ids.split('|')
+            products = models.Product.objects.filter(id__in=product_id_in_cart)
 
-    # these things can be change so accessing at the time of order...
+    # Check if the PayPal response contains address and contact details
     if 'email' in request.COOKIES:
-        email=request.COOKIES['email']
+        email = request.COOKIES['email']
     if 'mobile' in request.COOKIES:
-        mobile=request.COOKIES['mobile']
+        mobile = request.COOKIES['mobile']
     if 'address' in request.COOKIES:
-        address=request.COOKIES['address']
+        address = request.COOKIES['address']  # Override with PayPal address if available
 
-    # here we are placing number of orders as much there is a products
-    # suppose if we have 5 items in cart and we place order....so 5 rows will be created in orders table
-    # there will be lot of redundant data in orders table...but its become more complicated if we normalize it
+    # Create orders for each product in the cart
     for product in products:
-        models.Orders.objects.get_or_create(customer=customer,product=product,status='Pending',email=email,mobile=mobile,address=address)
-        order.shipment_address = address  # Add this line to include the shipment address
-        order.save()
-    # after order placed cookies should be deleted
-    response = render(request,'ecom/payment_success.html')
+        order, created = models.Orders.objects.get_or_create(
+            customer=customer,
+            product=product,
+            status='Pending',
+            email=email,
+            mobile=mobile,
+            address=address,  # Use the correct shipment address
+        )
+
+    # Clear cookies after order placement
+    response = render(request, 'ecom/payment_success.html')
     response.delete_cookie('product_ids')
     response.delete_cookie('email')
     response.delete_cookie('mobile')
     response.delete_cookie('address')
+
     return response
 
 
@@ -551,26 +558,27 @@ def render_to_pdf(template_src, context_dict):
 
 
 
-def download_invoice_view(request,orderID,productID):
-    order=models.Orders.objects.get(id=orderID)
-    product=models.Product.objects.get(id=productID)
-    mydict={
-        'orderDate':order.order_date,
-        'customerName':request.user,
-        'customerEmail':order.email,
-        'customerMobile':order.mobile,
-        'shipmentAddress':order.address,
-        'orderStatus':order.status,
+def download_invoice_view(request, orderID, productID):
+    order = models.Orders.objects.get(id=orderID)
+    product = models.Product.objects.get(id=productID)
 
-        'productName':product.name,
-        'productImage':product.product_image,
-        'productPrice':product.price,
-        'productDescription':product.description,
+    # Use the stored shipment address from the order
+    shipment_address = order.address if order.address else order.customer.address
 
+    mydict = {
+        'orderDate': order.order_date,
+        'customerName': request.user,
+        'customerEmail': order.email,
+        'customerMobile': order.mobile,
+        'shipmentAddress': shipment_address,  # Ensure this is used
+        'orderStatus': order.status,
 
+        'productName': product.name,
+        'productImage': product.product_image,
+        'productPrice': product.price,
+        'productDescription': product.description,
     }
-    return render_to_pdf('ecom/download_invoice.html',mydict)
-
+    return render_to_pdf('ecom/download_invoice.html', mydict)
 
 def pre_order(request):
     return render(request, 'ecom/pre_order.html')
