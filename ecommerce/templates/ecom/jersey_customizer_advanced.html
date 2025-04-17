@@ -1121,8 +1121,8 @@
                         const canvasY = 100 + (relY * 600);
                         
                         // Calculate size based on the current logo size
-                        const logoWidth = currentLogo.width * (logoSize / 100);
-                        const logoHeight = currentLogo.height * (logoSize / 100);
+                        const logoWidth = currentLogo.offsetWidth;
+                        const logoHeight = currentLogo.offsetHeight;
                         
                         ctx.drawImage(currentLogo, canvasX, canvasY, logoWidth, logoHeight);
                     }
