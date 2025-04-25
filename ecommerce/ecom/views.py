@@ -28,7 +28,7 @@ def home_view(request):
     return render(request,'ecom/index.html',{'products':products,'product_count_in_cart':product_count_in_cart})
 
 @login_required(login_url='adminlogin')
-def manage_inventory(request):``
+def manage_inventory(request):
     inventory_items = InventoryItem.objects.all()
     if request.method == "POST":
         form = InventoryForm(request.POST)
