@@ -55,6 +55,28 @@
       opacity: 1;
       right: 0;
     }
+    
+    .size-badge {
+      display: inline-block;
+      background-color: #f8f9fa;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 2px 8px;
+      font-size: 12px;
+      margin-right: 5px;
+    }
+    
+    .quantity-badge {
+      display: inline-block;
+      background-color: #e9ecef;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      text-align: center;
+      line-height: 24px;
+      font-size: 12px;
+      font-weight: bold;
+    }
   </style>
 </head>
 
@@ -71,6 +93,8 @@
           <th>Name</th>
           <th>Image</th>
           <th>Price</th>
+          <th>Size</th>
+          <th>Quantity</th>
           <th>Description</th>
           <th>Action</th>
         </tr>
@@ -79,12 +103,14 @@
       {% if products %}
       {% for p in products %}
       <tr>
-        <td>{{ p.name }}</td>
-        <td><img src="{% static p.product_image.url %}" alt="Product Image" height="50px" width="50px"></td>
-        <td>₱ {{ p.price|floatformat:2 }}</td>
-        <td>{{ p.description }}</td>
+        <td>{{ p.product.name }}</td>
+        <td><img src="{% static p.product.product_image.url %}" alt="Product Image" height="50px" width="50px"></td>
+        <td>₱ {{ p.product.price|floatformat:2 }}</td>
+        <td><span class="size-badge">{{ p.size }}</span></td>
+        <td><span class="quantity-badge">{{ p.quantity }}</span></td>
+        <td>{{ p.product.description }}</td>
         <td>
-          <a class="btn btn-danger btn-xs" href="{% url 'remove-from-cart' p.id %}?next_page={{request.path}}">
+          <a class="btn btn-danger btn-xs" href="{% url 'remove-from-cart' p.product.id %}?next_page={{request.path}}">
             <span class="glyphicon glyphicon-trash"></span>
           </a>
         </td>
@@ -92,26 +118,24 @@
       {% endfor %}
       {% else %}
       <tr>
-        <td colspan="5" style="text-align:center;">
+        <td colspan="7" style="text-align:center;">
           <h3>No products in cart</h3>
         </td>
       </tr>
       {% endif %}
     </table>
 
-    <!-- ✅ Display Total -->
+    <!-- Display Total -->
     <h3 style="text-align:right; margin-right:20px;">
       <strong>Total: ₱ {{ total|floatformat:2 }}</strong>
     </h3>
 
     <div class="d-flex justify-content-center mt-4">
       <div id="paypal-button-container"></div>
+    </div>
   </div>
-</div>
 
-<br><br><br>
-
-
+  <br><br><br>
 
   <script>
     paypal.Buttons({
@@ -119,24 +143,23 @@
             return actions.order.create({
                 purchase_units: [{
                     amount: {
-                        currency_code: "PHP",  // ✅ Set currency to PHP
-                        value: '{{ total|floatformat:2 }}' // ✅ Use Django total
+                        currency_code: "PHP",
+                        value: '{{ total|floatformat:2 }}'
                     }
                 }]
             });
         },
         onApprove: function (data, actions) {
             return actions.order.capture().then(function (details) {
-                const paypalPaymentId = details.id; // Get PayPal transaction ID
-                const custId = "123";  // Replace with actual customer ID
+                const paypalPaymentId = details.id;
+                const custId = "123";
 
                 // Redirect to Django backend for order processing
                 window.location.href = `/payment-success`;
             });
         }
     }).render('#paypal-button-container');
-</script>
-
+  </script>
 </div>
 
 <br><br><br><br><br>
