@@ -94,35 +94,24 @@
           <th>Image</th>
           <th>Price</th>
           <th>Size</th>
-          <th>Quantity</th>
-          <th>Description</th>
-          <th>Action</th>
+          <th>Quantity</th>    
         </tr>
       </thead>
-
-      {% if products %}
-      {% for p in products %}
-      <tr>
-        <td>{{ p.product.name }}</td>
-        <td><img src="{% static p.product.product_image.url %}" alt="Product Image" height="50px" width="50px"></td>
-        <td>₱ {{ p.product.price|floatformat:2 }}</td>
-        <td><span class="size-badge">{{ p.size }}</span></td>
-        <td><span class="quantity-badge">{{ p.quantity }}</span></td>
-        <td>{{ p.product.description }}</td>
-        <td>
-          <a class="btn btn-danger btn-xs" href="{% url 'remove-from-cart' p.product.id %}?next_page={{request.path}}">
-            <span class="glyphicon glyphicon-trash"></span>
-          </a>
-        </td>
-      </tr>
+      {% for product in products %}
+        <tr>
+          <td>{{ product.product.name }}</td>
+          <td><img src="{% static product.product.product_image.url %}" alt="Product Image" height="50px" width="50px"></td>
+          <td>₱ {{ product.product.price|floatformat:2 }}</td>
+          <td><span class="size-badge">{{ product.size }}</span></td>
+          <td><span class="quantity-badge">{{ product.quantity }}</span></td>
+          <td>{{ product.product.description }}</td>
+          <td>
+            <a class="btn btn-danger btn-xs" href="{% url 'remove-from-cart' product.product.id %}?next_page={{request.path}}">
+              <span class="glyphicon glyphicon-trash"></span>
+            </a>
+          </td>
+        </tr>
       {% endfor %}
-      {% else %}
-      <tr>
-        <td colspan="7" style="text-align:center;">
-          <h3>No products in cart</h3>
-        </td>
-      </tr>
-      {% endif %}
     </table>
 
     <!-- Display Total -->

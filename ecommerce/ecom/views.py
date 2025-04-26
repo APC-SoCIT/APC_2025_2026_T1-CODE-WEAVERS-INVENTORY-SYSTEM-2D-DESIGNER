@@ -348,13 +348,41 @@ def add_to_cart_view(request, pk):
     
     # Get next_page from POST or GET with a fallback to home page
     next_page = request.POST.get('next_page') or request.GET.get('next_page', '/')
-    
-    response = render(request, 'ecom/index.html', {
-        'products': products,
-        'product_count_in_cart': product_count_in_cart,
-        'redirect_to': next_page
-    })
-    
+
+    # Get the product details from the cookie
+    cookie_key = f'product_{pk}_details'
+    if cookie_key in request.COOKIES:
+        details = request.COOKIES[cookie_key].split(':')
+        existing_size = details[0]
+        existing_quantity = int(details[1])
+
+        # Check if the customer wants to add a different size of the same product
+        if size != existing_size:
+            # Create a new cookie for the new size
+            new_cookie_key = f'product_{pk}_{size}_details'
+            response = render(request, 'ecom/index.html', {
+                'products': products,
+                'product_count_in_cart': product_count_in_cart,
+                'redirect_to': next_page
+            })
+            response.set_cookie(new_cookie_key, f"{size}:{quantity}")
+        else:
+            # Update the existing cookie with the new quantity
+            response = render(request, 'ecom/index.html', {
+                'products': products,
+                'product_count_in_cart': product_count_in_cart,
+                'redirect_to': next_page
+            })
+            response.set_cookie(cookie_key, f"{size}:{existing_quantity + int(quantity)}")
+    else:
+        # Create a new cookie for the product
+        response = render(request, 'ecom/index.html', {
+            'products': products,
+            'product_count_in_cart': product_count_in_cart,
+            'redirect_to': next_page
+        })
+        response.set_cookie(cookie_key, f"{size}:{quantity}")
+
     # Adding product id to cookies
     if 'product_ids' in request.COOKIES:
         product_ids = request.COOKIES['product_ids']
@@ -366,18 +394,12 @@ def add_to_cart_view(request, pk):
     else:
         product_ids = pk
         response.set_cookie('product_ids', pk)
-    
-    # Store size and quantity in cookies
-    cookie_key = f'product_{pk}_details'
-    product_details = f"{size}:{quantity}"
-    response.set_cookie(cookie_key, product_details)
-    
+
     product = models.Product.objects.get(id=pk)
     messages.info(request, product.name + ' added to cart successfully!')
-    
+
     return response
 
-# for checkout of cart
 def cart_view(request):
     # For cart counter
     if 'product_ids' in request.COOKIES:
@@ -400,34 +422,26 @@ def cart_view(request):
             # For total price shown in cart and collecting product details
             for p in db_products:
                 # Get size and quantity for this product
-                cookie_key = f'product_{p.id}_details'
-                if cookie_key in request.COOKIES:
-                    details = request.COOKIES[cookie_key].split(':')
-                    size = details[0]
-                    quantity = int(details[1])
-                    # Calculate price based on quantity
-                    total = total + (p.price * quantity)
-                    # Add details to list
-                    products.append({
-                        'product': p,
-                        'size': size,
-                        'quantity': quantity
-                    })
-                else:
-                    # Default values if details not found
-                    total = total + p.price
-                    products.append({
-                        'product': p,
-                        'size': 'M',
-                        'quantity': 1
-                    })
-    
+                for cookie_key in request.COOKIES:
+                    if cookie_key.startswith(f'product_{p.id}_'):
+                        details = request.COOKIES[cookie_key].split(':')
+                        size = details[0]
+                        quantity = int(details[1])
+                        # Calculate price based on quantity
+                        total = total + (p.price * quantity)
+                        # Add details to list
+                        products.append({
+                            'product': p,
+                            'size': size,
+                            'quantity': quantity
+                        })
+
     return render(request, 'ecom/cart.html', {
         'products': products,
         'total': total,
         'product_count_in_cart': product_count_in_cart
     })
-    
+
 def remove_from_cart_view(request, pk):
     # For counter in cart
     if 'product_ids' in request.COOKIES:

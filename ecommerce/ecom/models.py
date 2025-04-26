@@ -40,6 +40,12 @@ class Product(models.Model):
     def __str__(self):
         return self.name
 
+class CartItem(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    size = models.CharField(max_length=5, choices=Product.SIZE_CHOICES)
+    quantity = models.PositiveIntegerField(default=1)
+
+
 
 class Orders(models.Model):
     STATUS = (

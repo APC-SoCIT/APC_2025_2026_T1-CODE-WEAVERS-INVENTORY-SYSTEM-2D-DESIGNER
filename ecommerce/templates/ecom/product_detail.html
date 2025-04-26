@@ -1,0 +1,14 @@
+<form method="post" action="{% url 'add_to_cart' product.id %}">
+    {% csrf_token %}
+    <label for="size">Select Size:</label>
+    <select name="size" required>
+        <option value="S">Small</option>
+        <option value="M">Medium</option>
+        <option value="XL">Extra Large</option>
+    </select>
+
+    <label for="quantity">Quantity:</label>
+    <input type="number" name="quantity" value="1" min="1" required>
+
+    <button type="submit">Add to Cart</button>
+</form>
