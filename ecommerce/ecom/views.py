@@ -282,7 +282,6 @@ def view_feedback_view(request):
 def cart_page(request):
     return render(request, "cart.html", {"paypal_client_id": settings.PAYPAL_CLIENT_ID})
 
-
     user = request.user
     paypal_transaction_id = request.GET.get("paypal-payment-id")
     custid = request.GET.get("custid")
