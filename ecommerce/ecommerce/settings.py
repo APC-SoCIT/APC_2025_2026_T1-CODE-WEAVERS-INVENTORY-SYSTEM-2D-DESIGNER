@@ -27,7 +27,7 @@ SECRET_KEY = '#vw(03o=(9kbvg!&2d5i!2$_58x@_-3l4wujpow6(ym37jxnza'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["147.185.221.26", "127.0.0.1", "localhost"]
+ALLOWED_HOSTS = ["147.185.221.28", "127.0.0.1", "localhost"]
 
 
 # Application definition
@@ -150,5 +150,5 @@ EMAIL_RECEIVING_USER = ['to@gmail.com'] # email on which you will receive messag
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # PayPal API Credentials
-PAYPAL_CLIENT_ID = 'AclKm4-7owCTrFj2yEIVlVIQJNXEbGX743w3s0xH1O3utxC8s3vJh1Za8alADJLTDkBIsi-q2_rXJQ58'
-PAYPAL_SECRET_KEY = 'EHnmmLG0tRRJ9agOWQcJRd9H8JbUZSxudRLkNQPDl3Bzy_gJXQ4fGGejqXleK5kNgCZ-1sPJ5UQr0WtW'
+PAYPAL_CLIENT_ID = 'AbktyGNl4UcmLDfE0d0Wm_YMY_bdcDmRO5dc3TEl7zR2XXACyUanC5vQr6lC4M4umP12sagxFbh1MP6J'
+PAYPAL_SECRET_KEY = 'ELWqmuYmOjP4ssKV-II1KQuudeNpk4dngnQc_bpZD4L9Am9UFNrXTUgDl2GPq6OYa2YiSoFZSsLYygst'

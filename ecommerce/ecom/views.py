@@ -282,7 +282,6 @@ def view_feedback_view(request):
 def cart_page(request):
     return render(request, "cart.html", {"paypal_client_id": settings.PAYPAL_CLIENT_ID})
 
-
     user = request.user
     paypal_transaction_id = request.GET.get("paypal-payment-id")
     custid = request.GET.get("custid")
@@ -613,13 +612,18 @@ def payment_success_view(request):
 
     # Create orders for each product in the cart
     for product in products:
+        quantity = 1  # Default quantity to 1
+        if 'quantity_' + str(product.id) in request.COOKIES:
+            quantity = int(request.COOKIES['quantity_' + str(product.id)])
+
         order, created = models.Orders.objects.get_or_create(
             customer=customer,
             product=product,
             status='Pending',
             email=email,
             mobile=mobile,
-            address=address,  # Use the correct shipment address
+            address=address,
+            quantity=quantity,  # Set the quantity field
         )
 
     # Clear cookies after order placement
@@ -628,6 +632,9 @@ def payment_success_view(request):
     response.delete_cookie('email')
     response.delete_cookie('mobile')
     response.delete_cookie('address')
+
+    for product in products:
+        response.delete_cookie('quantity_' + str(product.id))
 
     return response
 

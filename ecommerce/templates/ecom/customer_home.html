@@ -225,6 +225,7 @@
     height: 100%;
     display: flex;
     flex-direction: column;
+    cursor: pointer;
   }
 
   .product-card:hover {
@@ -338,9 +339,17 @@
   /* Product options */
   .product-options {
     background-color: white;
-    padding: 15px;
-    border-top: 1px solid #eee;
+    padding: 0;
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
     transition: all 0.3s ease;
+  }
+
+  .product-options.active {
+    padding: 15px;
+    max-height: 300px;
+    opacity: 1;
   }
 
   .option-group {
@@ -636,6 +645,363 @@
   .product-card:hover .product-overlay {
     opacity: 1;
   }
+
+/* Add these styles to the CSS section */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.5);
+  z-index: 900;
+  display: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.modal-backdrop.active {
+  display: block;
+  opacity: 1;
+}
+
+/* New product detail modal styles */
+.product-detail-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.5);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+}
+
+.product-detail-modal.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.product-detail-content {
+  background-color: white;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 1000px;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  transform: translateY(30px);
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.product-detail-modal.active .product-detail-content {
+  transform: translateY(0);
+}
+
+.product-detail-close {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  width: 30px;
+  height: 30px;
+  background-color: #f5f5f5;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  transition: all 0.2s;
+}
+
+.product-detail-close:hover {
+  background-color: #e5e5e5;
+}
+
+.product-detail-body {
+  display: flex;
+  flex-direction: row;
+  padding: 0;
+}
+
+.product-detail-image {
+  width: 50%;
+  background-color: #f8f8f8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+.product-detail-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.product-detail-info {
+  width: 50%;
+  padding: 30px;
+}
+
+.product-detail-title {
+  font-size: 24px;
+  font-weight: 600;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.product-detail-price {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.product-detail-description {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 25px;
+  line-height: 1.6;
+}
+
+.product-detail-options {
+  margin-bottom: 25px;
+}
+
+.option-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.size-option-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 5px;
+}
+
+.size-option-btn {
+  min-width: 45px;
+  height: 45px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #ddd;
+  background-color: white;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.size-option-btn:hover {
+  border-color: #333;
+}
+
+.size-option-btn.selected {
+  background-color: #333;
+  color: white;
+  border-color: #333;
+}
+
+.option-message {
+  font-size: 12px;
+  color: #999;
+  margin-top: 5px;
+}
+
+.color-option-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 5px;
+}
+
+.color-option-btn {
+  min-width: 60px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #ddd;
+  background-color: white;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.color-option-btn:hover {
+  border-color: #333;
+}
+
+.color-option-btn.selected {
+  background-color: #333;
+  color: white;
+  border-color: #333;
+}
+
+.quantity-control {
+  display: flex;
+  align-items: center;
+  margin-bottom: 25px;
+}
+
+.quantity-label {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.quantity-input-group {
+  display: flex;
+  align-items: center;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.quantity-btn {
+  width: 40px;
+  height: 40px;
+  background-color: #f5f5f5;
+  border: none;
+  color: #333;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.quantity-btn:hover {
+  background-color: #e5e5e5;
+}
+
+.quantity-input {
+  width: 60px;
+  height: 40px;
+  text-align: center;
+  border: none;
+  border-left: 1px solid #ddd;
+  border-right: 1px solid #ddd;
+  font-size: 14px;
+}
+
+.add-to-cart-button {
+  width: 100%;
+  height: 50px;
+  background-color: #888;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.add-to-cart-button:hover {
+  background-color: #666;
+}
+
+.add-to-cart-button i {
+  margin-right: 8px;
+}
+
+.product-detail-tabs {
+  display: flex;
+  border-bottom: 1px solid #ddd;
+  margin-top: 20px;
+}
+
+.product-detail-tab {
+  padding: 10px 20px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  color: #666;
+  background-color: #f8f8f8;
+  border: 1px solid #ddd;
+  border-bottom: none;
+  border-radius: 4px 4px 0 0;
+  margin-right: 5px;
+}
+
+.product-detail-tab.active {
+  background-color: white;
+  color: #333;
+  border-bottom: 1px solid white;
+  margin-bottom: -1px;
+}
+
+.product-detail-tab-content {
+  padding: 20px;
+  font-size: 14px;
+  color: #666;
+  line-height: 1.6;
+}
+
+.product-specs {
+  display: flex;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.product-spec {
+  width: 50%;
+  margin-bottom: 10px;
+}
+
+.spec-label {
+  font-weight: 600;
+  color: #333;
+}
+
+.spec-value {
+  color: #666;
+}
+
+@media (max-width: 768px) {
+  .product-detail-body {
+    flex-direction: column;
+  }
+  
+  .product-detail-image,
+  .product-detail-info {
+    width: 100%;
+  }
+  
+  .product-detail-image {
+    padding: 10px;
+  }
+  
+  .product-detail-info {
+    padding: 20px;
+  }
+  
+  .product-spec {
+    width: 100%;
+  }
+}
 </style>
 
 <!-- Hero Slider Section -->
@@ -717,14 +1083,18 @@
   
   <div class="products-grid">
     {% for p in products %}
-    <div class="product-card" data-category="all">
-      <div class="product-badge">New</div>
-      <div class="product-wishlist"><i class="fa fa-heart-o"></i></div>
+    <div class="product-card" data-category="all" data-product-id="{{ p.id }}" data-upload-date="{{ p.created_at|date:'Y-m-d' }}" data-original-position="{{ forloop.counter }}">
+      <div class="product-badge" style="display: none;">New</div>
+      <div class="product-wishlist" onclick="toggleWishlist(this, event)"><i class="fa fa-heart-o"></i></div>
       
       <div class="product-image-container">
-        <img class="product-image" src="{% static p.product_image.url %}" alt="{{ p.name }}">
+        {% if p.product_image %}
+          <img class="product-image" src="{% static p.product_image.url %}" alt="{{ p.name }}">
+        {% else %}
+          <img class="product-image" src="{% static 'images/placeholder.jpg' %}" alt="{{ p.name }}">
+        {% endif %}
         <div class="product-overlay"></div>
-        <div class="quick-view-btn" onclick="openQuickView('{{ p.id }}')">Quick View</div>
+        <div class="quick-view-btn" onclick="openProductDetail('{{ p.id }}')">Quick View</div>
       </div>
       
       <div class="product-details">
@@ -743,38 +1113,6 @@
         </div>
         
         <div class="product-price">₱{{ p.price }}</div>
-      </div>
-      
-      <div class="product-options">
-        <form class="add-to-cart-form" method="post" action="{% url 'add-to-cart' p.id %}">
-          {% csrf_token %}
-          <input type="hidden" name="next_page" value="{{ request.path }}">
-          
-          <div class="option-group">
-            <label class="option-label">Size:</label>
-            <div class="size-options">
-              <div class="size-option" onclick="selectSize(this, 'XS', {{ p.id }})">XS</div>
-              <div class="size-option" onclick="selectSize(this, 'S', {{ p.id }})">S</div>
-              <div class="size-option selected" onclick="selectSize(this, 'M', {{ p.id }})">M</div>
-              <div class="size-option" onclick="selectSize(this, 'L', {{ p.id }})">L</div>
-              <div class="size-option" onclick="selectSize(this, 'XL', {{ p.id }})">XL</div>
-            </div>
-            <input type="hidden" name="size" id="size-input-{{ p.id }}" value="M">
-          </div>
-          
-          <div class="option-group">
-            <label class="option-label">Quantity:</label>
-            <div class="quantity-selector">
-              <button type="button" class="quantity-btn" onclick="decrementQuantity({{ p.id }})">-</button>
-              <input type="number" name="quantity" id="quantity-input-{{ p.id }}" class="quantity-input" value="1" min="1" max="10">
-              <button type="button" class="quantity-btn" onclick="incrementQuantity({{ p.id }})">+</button>
-            </div>
-          </div>
-          
-          <button type="submit" class="add-to-cart-btn">
-            <i class="fa fa-shopping-cart"></i> Add to Cart
-          </button>
-        </form>
       </div>
     </div>
     {% endfor %}
@@ -798,14 +1136,73 @@
   {% endif %}
 </div>
 
-<!-- Quick View Modal -->
-<div class="quick-view-overlay" id="quickViewModal">
-  <div class="quick-view-content">
-    <div class="quick-view-close" onclick="closeQuickView()">
+<!-- Product Detail Modal -->
+<div class="product-detail-modal" id="productDetailModal">
+  <div class="product-detail-content">
+    <div class="product-detail-close" onclick="closeProductDetail()">
       <i class="fa fa-times"></i>
     </div>
-    <div id="quickViewContent">
-      <!-- Content will be loaded dynamically -->
+    <div class="product-detail-body">
+      <div class="product-detail-image">
+        <img id="detail-product-image" src="/placeholder.svg" alt="Product Image">
+      </div>
+      <div class="product-detail-info">
+        <h1 class="product-detail-title" id="detail-product-name"></h1>
+        <div class="product-detail-price" id="detail-product-price"></div>
+        <p class="product-detail-description" id="detail-product-description"></p>
+        
+        <div class="product-detail-options">
+          <form id="detail-add-to-cart-form" method="post" action="">
+            {% csrf_token %}
+            <input type="hidden" name="next_page" value="{{ request.path }}">
+            
+            <div class="option-title">Size</div>
+            <div class="size-option-group">
+              <button type="button" class="size-option-btn" onclick="selectDetailSize(this, 'XS')">XS</button>
+              <button type="button" class="size-option-btn" onclick="selectDetailSize(this, 'S')">S</button>
+              <button type="button" class="size-option-btn" onclick="selectDetailSize(this, 'M')">M</button>
+              <button type="button" class="size-option-btn" onclick="selectDetailSize(this, 'L')">L</button>
+              <button type="button" class="size-option-btn" onclick="selectDetailSize(this, 'XL')">XL</button>
+            </div>
+            <div class="option-message">Please select a size</div>
+            <input type="hidden" name="size" id="detail-size-input" value="">
+            
+            <div class="option-title" style="margin-top: 20px;">Quantity</div>
+            <div class="quantity-input-group">
+              <button type="button" class="quantity-btn" onclick="decrementDetailQuantity()">-</button>
+              <input type="number" name="quantity" id="detail-quantity-input" class="quantity-input" value="1" min="1" max="10">
+              <button type="button" class="quantity-btn" onclick="incrementDetailQuantity()">+</button>
+            </div>
+            
+            <button type="submit" class="add-to-cart-button" style="margin-top: 5px;">
+              <i class="fa fa-shopping-cart"></i> Add to Cart
+            </button>
+          </form>
+        </div>
+        
+        <div class="product-detail-tabs">
+          <div class="product-detail-tab active" onclick="switchTab(this, 'details')">Details</div>
+          <div class="product-detail-tab" onclick="switchTab(this, 'shipping')">Shipping & Returns</div>
+        </div>
+        
+        <div class="product-detail-tab-content" id="tab-details">
+          <div class="product-specs">
+            <div class="product-spec">
+              <span class="spec-label">Material:</span>
+              <span class="spec-value" id="detail-material"></span>
+            </div>
+            <div class="product-spec">
+              <span class="spec-label">Fit:</span>
+              <span class="spec-value" id="detail-fit"></span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="product-detail-tab-content" id="tab-shipping" style="display: none;">
+          <p>Free shipping on all orders over ₱1000. Standard delivery 3-5 working days.</p>
+          <p>Returns accepted within 30 days of delivery if items are in original condition.</p>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -830,6 +1227,9 @@
     
     // Update the hidden input value
     document.getElementById('size-input-' + productId).value = size;
+    
+    // Reset any error styling
+    container.style.border = 'none';
   }
 
   function incrementQuantity(productId) {
@@ -846,6 +1246,84 @@
     if (currentValue > 1) {
       input.value = currentValue - 1;
     }
+  }
+  
+  // Product detail modal functions
+  function selectDetailSize(element, size) {
+    // Remove selected class from all size options
+    const options = document.querySelectorAll('.size-option-btn');
+    options.forEach(option => option.classList.remove('selected'));
+    
+    // Add selected class to clicked element
+    element.classList.add('selected');
+    
+    // Update the hidden input value
+    document.getElementById('detail-size-input').value = size;
+  }
+  
+  function incrementDetailQuantity() {
+    const input = document.getElementById('detail-quantity-input');
+    const currentValue = parseInt(input.value);
+    if (currentValue < 10) {
+      input.value = currentValue + 1;
+    }
+  }
+  
+  function decrementDetailQuantity() {
+    const input = document.getElementById('detail-quantity-input');
+    const currentValue = parseInt(input.value);
+    if (currentValue > 1) {
+      input.value = currentValue - 1;
+    }
+  }
+  
+  function switchTab(element, tabId) {
+    // Remove active class from all tabs
+    const tabs = document.querySelectorAll('.product-detail-tab');
+    tabs.forEach(tab => tab.classList.remove('active'));
+    
+    // Add active class to clicked tab
+    element.classList.add('active');
+    
+    // Hide all tab content
+    const tabContents = document.querySelectorAll('.product-detail-tab-content');
+    tabContents.forEach(content => content.style.display = 'none');
+    
+    // Show selected tab content
+    document.getElementById('tab-' + tabId).style.display = 'block';
+  }
+  
+  function openProductDetail(productId) {
+    const modal = document.getElementById('productDetailModal');
+    const card = document.querySelector(`.product-card[data-product-id="${productId}"]`);
+    
+    // Set product details in modal
+    document.getElementById('detail-product-name').textContent = card.querySelector('.product-name').textContent;
+    document.getElementById('detail-product-price').textContent = card.querySelector('.product-price').textContent;
+    document.getElementById('detail-product-description').textContent = card.querySelector('.product-description').textContent;
+    document.getElementById('detail-product-image').src = card.querySelector('.product-image').src;
+    
+    // Set form action
+    document.getElementById('detail-add-to-cart-form').action = "{% url 'add-to-cart' 0 %}".replace('0', productId);
+    
+    // Set material and fit (example values)
+    document.getElementById('detail-material').textContent = "98% Cotton, 2% Elastane";
+    document.getElementById('detail-fit').textContent = "Regular";
+    
+    // Reset selections
+    document.querySelectorAll('.size-option-btn').forEach(btn => btn.classList.remove('selected'));
+    document.getElementById('detail-size-input').value = '';
+    document.getElementById('detail-quantity-input').value = '1';
+    
+    // Show modal
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+  
+  function closeProductDetail() {
+    const modal = document.getElementById('productDetailModal');
+    modal.classList.remove('active');
+    document.body.style.overflow = '';
   }
   
   // Category tabs functionality
@@ -878,79 +1356,77 @@
         });
       });
     });
+    
+    // Make product cards clickable to open detail modal
+    productCards.forEach(card => {
+      // Add click event directly to the card
+      card.addEventListener('click', function(e) {
+        // Don't trigger if clicking on the wishlist icon
+        if (e.target.closest('.product-wishlist') || 
+            e.target.closest('.quick-view-btn') ||
+            e.target.tagName === 'A' || 
+            e.target.tagName === 'BUTTON' || 
+            e.target.tagName === 'INPUT' || 
+            e.target.closest('form')) {
+          return;
+        }
+        
+        // Get the product ID and open the modal
+        const productId = this.dataset.productId;
+        openProductDetail(productId);
+      });
+    });
+    
+    // Add form validation for detail modal
+    const detailForm = document.getElementById('detail-add-to-cart-form');
+    detailForm.addEventListener('submit', function(e) {
+      const sizeInput = this.querySelector('#detail-size-input');
+      
+      if (!sizeInput.value) {
+        e.preventDefault();
+        alert('Please select a size');
+      }
+    });
+    
+    // Close modal on ESC key
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        closeProductDetail();
+      }
+    });
+
+    // Close modal when clicking outside
+    document.addEventListener('click', function(e) {
+      const modal = document.getElementById('productDetailModal');
+      if (modal.classList.contains('active') && !e.target.closest('.product-detail-content') && !e.target.closest('.product-card')) {
+        closeProductDetail();
+      }
+    });
+
+    // Initialize New badges based on upload date
+    function initializeNewBadges() {
+      const productCards = document.querySelectorAll('.product-card');
+      
+      productCards.forEach(card => {
+        const uploadDate = new Date(card.dataset.uploadDate);
+        const currentDate = new Date();
+        const diffTime = Math.abs(currentDate - uploadDate);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        
+        const badge = card.querySelector('.product-badge');
+        if (badge) {
+          if (diffDays <= 3) {
+            badge.style.display = 'block';
+          } else {
+            badge.style.display = 'none';
+          }
+        }
+      });
+    }
+
+    // Call this function when the DOM is loaded
+    initializeNewBadges();
   });
-  
-  // Quick view functionality
-  function openQuickView(productId) {
-    const modal = document.getElementById('quickViewModal');
-    const content = document.getElementById('quickViewContent');
-    
-    // Here you would typically load the product details via AJAX
-    // For now, we'll just show a placeholder
-    content.innerHTML = `
-      <div class="row">
-        <div class="col-md-6">
-          <img src="${document.querySelector(`.product-card[data-product-id="${productId}"] .product-image`).src}" 
-               alt="Product Image" class="img-fluid">
-        </div>
-        <div class="col-md-6">
-          <h2>${document.querySelector(`.product-card[data-product-id="${productId}"] .product-name`).textContent}</h2>
-          <div class="product-rating mb-3">
-            <div class="rating-stars">
-              <i class="fa fa-star"></i>
-              <i class="fa fa-star"></i>
-              <i class="fa fa-star"></i>
-              <i class="fa fa-star"></i>
-              <i class="fa fa-star-half-o"></i>
-            </div>
-            <span class="rating-count">(24 reviews)</span>
-          </div>
-          <p class="product-price mb-3">₱${document.querySelector(`.product-card[data-product-id="${productId}"] .product-price`).textContent}</p>
-          <p class="mb-4">${document.querySelector(`.product-card[data-product-id="${productId}"] .product-description`).textContent}</p>
-          
-          <!-- Quick view form would go here -->
-          <form class="add-to-cart-form" method="post" action="/add-to-cart/${productId}/">
-            {% csrf_token %}
-            <input type="hidden" name="next_page" value="{{ request.path }}">
-            
-            <div class="option-group">
-              <label class="option-label">Size:</label>
-              <div class="size-options">
-                <div class="size-option">XS</div>
-                <div class="size-option">S</div>
-                <div class="size-option selected">M</div>
-                <div class="size-option">L</div>
-                <div class="size-option">XL</div>
-              </div>
-              <input type="hidden" name="size" id="quick-size-input" value="M">
-            </div>
-            
-            <div class="option-group">
-              <label class="option-label">Quantity:</label>
-              <div class="quantity-selector">
-                <button type="button" class="quantity-btn">-</button>
-                <input type="number" name="quantity" class="quantity-input" value="1" min="1" max="10">
-                <button type="button" class="quantity-btn">+</button>
-              </div>
-            </div>
-            
-            <button type="submit" class="add-to-cart-btn">
-              <i class="fa fa-shopping-cart"></i> Add to Cart
-            </button>
-          </form>
-        </div>
-      </div>
-    `;
-    
-    modal.classList.add('active');
-    document.body.style.overflow = 'hidden';
-  }
-  
-  function closeQuickView() {
-    const modal = document.getElementById('quickViewModal');
-    modal.classList.remove('active');
-    document.body.style.overflow = '';
-  }
   
   // Nice notification instead of alert
   function showNotification(message) {
@@ -1037,5 +1513,59 @@
       productsGrid.appendChild(card);
     });
   });
+
+  // Wishlist functionality
+  function toggleWishlist(element, event) {
+    event.stopPropagation(); // Prevent opening the product detail modal
+    
+    const card = element.closest('.product-card');
+    const icon = element.querySelector('i');
+    const grid = document.querySelector('.products-grid');
+    
+    if (icon.classList.contains('fa-heart-o')) {
+      // Add to wishlist
+      icon.classList.remove('fa-heart-o');
+      icon.classList.add('fa-heart');
+      element.style.color = '#ff6b6b';
+      
+      // Store current position if not already stored
+      if (!card.dataset.currentPosition) {
+        card.dataset.currentPosition = Array.from(grid.children).indexOf(card);
+      }
+      
+      // Move to the top of the grid
+      grid.prepend(card);
+    } else {
+      // Remove from wishlist
+      icon.classList.remove('fa-heart');
+      icon.classList.add('fa-heart-o');
+      element.style.color = '#555';
+      
+      // Get original position
+      const originalPosition = parseInt(card.dataset.originalPosition) - 1;
+      
+      // Find where to insert the card
+      const cards = Array.from(grid.children);
+      let insertBeforeElement = null;
+      
+      for (let i = 0; i < cards.length; i++) {
+        const pos = parseInt(cards[i].dataset.originalPosition) - 1;
+        if (pos > originalPosition) {
+          insertBeforeElement = cards[i];
+          break;
+        }
+      }
+      
+      // Insert at the correct position or append if it should go at the end
+      if (insertBeforeElement) {
+        grid.insertBefore(card, insertBeforeElement);
+      } else {
+        grid.appendChild(card);
+      }
+      
+      // Clear current position
+      delete card.dataset.currentPosition;
+    }
+  }
 </script>
 {% endblock content %}

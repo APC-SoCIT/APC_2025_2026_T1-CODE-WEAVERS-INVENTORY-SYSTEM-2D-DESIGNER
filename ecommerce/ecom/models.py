@@ -32,7 +32,9 @@ class Product(models.Model):
     description = models.CharField(max_length=40)
     SIZE_CHOICES = (
         ('S', 'Small'),
+        ('XS', 'Extra Small'),
         ('M', 'Medium'),
+        ('L', 'Large'),
         ('XL', 'Extra Large'),
     )
     size = models.CharField(max_length=2, choices=SIZE_CHOICES, default='M')
@@ -61,7 +63,8 @@ class Orders(models.Model):
     mobile = models.CharField(max_length=20,null=True)
     order_date = models.DateField(auto_now_add=True,null=True)
     status = models.CharField(max_length=50,null=True,choices=STATUS)
-    size = models.CharField(max_length=2, null=True)  # Add this line
+    size = models.CharField(max_length=20)
+    quantity = models.IntegerField(default=1)
 
 
 class Feedback(models.Model):
