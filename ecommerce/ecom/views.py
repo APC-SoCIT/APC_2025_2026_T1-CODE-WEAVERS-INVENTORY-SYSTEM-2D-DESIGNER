@@ -1,6 +1,6 @@
 from django.shortcuts import render,redirect,reverse,get_object_or_404
 from . import forms,models
-from django.http import HttpResponseRedirect,HttpResponse
+from django.http import HttpResponseRedirect,HttpResponse, JsonResponse
 from django.core.mail import send_mail
 from django.contrib.auth.models import Group
 from django.contrib.auth.decorators import login_required,user_passes_test
@@ -120,29 +120,33 @@ def admin_dashboard_view(request):
     # for cards on dashboard
     customercount = models.Customer.objects.all().count()
     productcount = models.Product.objects.all().count()
-    ordercount = models.Orders.objects.all().count()
+    pending_ordercount = models.Orders.objects.filter(status='Pending').count()
 
-    # Calculate total sales
-    orders = models.Orders.objects.all()
+    # Calculate total sales for successful orders only
+    delivered_orders = models.Orders.objects.filter(status='Delivered').order_by('-created_at')[:10]  # only delivered orders for recent orders
     total_sales = 0
-    for order in orders:
-        total_sales += order.product.price
+    recent_orders_products = []
+    recent_orders_customers = []
+    recent_orders_orders = []
 
-    # for recent order tables
-    ordered_products = []
-    ordered_bys = []
-    for order in orders:
-        ordered_product = models.Product.objects.all().filter(id=order.product.id)
-        ordered_by = models.Customer.objects.all().filter(id=order.customer.id)
-        ordered_products.append(ordered_product)
-        ordered_bys.append(ordered_by)
+    all_delivered_orders = models.Orders.objects.filter(status='Delivered')
+    for order in all_delivered_orders:
+        total_sales += order.product.price * order.quantity
+
+    for order in delivered_orders:
+        order.total_price = order.product.price * order.quantity  # Add total_price attribute
+        recent_orders_products.append(order.product)
+        recent_orders_customers.append(order.customer)
+        recent_orders_orders.append(order)
+        # Debug print product image info
+        print(f"Product: {order.product.name}, Image: {order.product.product_image}, Size: {order.size}")
 
     mydict = {
         'customercount': customercount,
         'productcount': productcount,
-        'ordercount': ordercount,
+        'ordercount': pending_ordercount,
         'total_sales': total_sales,
-        'data': zip(ordered_products, ordered_bys, orders),
+        'data': zip(recent_orders_products, recent_orders_customers, recent_orders_orders),
     }
     return render(request, 'ecom/admin_dashboard.html', context=mydict)
 
@@ -353,67 +357,50 @@ def add_to_cart_view(request, pk):
     
     # Get size and quantity from form if available
     size = request.POST.get('size', 'M')  # Default to M if not provided
-    quantity = request.POST.get('quantity', 1)  # Default to 1 if not provided
+    quantity = int(request.POST.get('quantity', 1))  # Default to 1 if not provided
     
     # For cart counter, fetching products ids added by customer from cookies
     if 'product_ids' in request.COOKIES:
         product_ids = request.COOKIES['product_ids']
-        counter = product_ids.split('|')
-        product_count_in_cart = len(set(counter))
+        product_keys = product_ids.split('|')
+        product_count_in_cart = len(set(product_keys))
     else:
-        product_count_in_cart = 1
+        product_count_in_cart = 0
     
     # Get next_page from POST or GET with a fallback to home page
     next_page = request.POST.get('next_page') or request.GET.get('next_page', '/')
 
-    # Get the product details from the cookie
-    cookie_key = f'product_{pk}_details'
+    # Use consistent cookie key with size
+    cookie_key = f'product_{pk}_{size}_details'
+    existing_quantity = 0
     if cookie_key in request.COOKIES:
         details = request.COOKIES[cookie_key].split(':')
-        existing_size = details[0]
-        existing_quantity = int(details[1])
+        if len(details) == 2:
+            existing_quantity = int(details[1])
 
-        # Check if the customer wants to add a different size of the same product
-        if size != existing_size:
-            # Create a new cookie for the new size
-            new_cookie_key = f'product_{pk}_{size}_details'
-            response = render(request, 'ecom/index.html', {
-                'products': products,
-                'product_count_in_cart': product_count_in_cart,
-                'redirect_to': next_page
-            })
-            response.set_cookie(new_cookie_key, f"{size}:{quantity}")
-        else:
-            # Update the existing cookie with the new quantity
-            response = render(request, 'ecom/index.html', {
-                'products': products,
-                'product_count_in_cart': product_count_in_cart,
-                'redirect_to': next_page
-            })
-            response.set_cookie(cookie_key, f"{size}:{existing_quantity + int(quantity)}")
-    else:
-        # Create a new cookie for the product
-        response = render(request, 'ecom/index.html', {
-            'products': products,
-            'product_count_in_cart': product_count_in_cart,
-            'redirect_to': next_page
-        })
-        response.set_cookie(cookie_key, f"{size}:{quantity}")
+    new_quantity = existing_quantity + quantity
 
-    # Adding product id to cookies
+    response = render(request, 'ecom/index.html', {
+        'products': products,
+        'product_count_in_cart': product_count_in_cart,
+        'redirect_to': next_page
+    })
+    response.set_cookie(cookie_key, f"{size}:{new_quantity}")
+
+    # Update product_ids cookie to include product_{pk}_{size}
+    product_key = f'product_{pk}_{size}'
     if 'product_ids' in request.COOKIES:
         product_ids = request.COOKIES['product_ids']
-        if product_ids == "":
-            product_ids = str(pk)
-        else:
-            product_ids = str(product_ids) + "|" + str(pk)
-        response.set_cookie('product_ids', product_ids)
+        product_keys = product_ids.split('|')
+        if product_key not in product_keys:
+            product_keys.append(product_key)
+        updated_product_ids = '|'.join(product_keys)
     else:
-        product_ids = pk
-        response.set_cookie('product_ids', pk)
+        updated_product_ids = product_key
+    response.set_cookie('product_ids', updated_product_ids)
 
     product = models.Product.objects.get(id=pk)
-    messages.info(request, product.name + ' added to cart successfully!')
+    messages.info(request, product.name + f' (Size: {size}) added to cart successfully!')
 
     return response
 
@@ -421,37 +408,49 @@ def cart_view(request):
     # For cart counter
     if 'product_ids' in request.COOKIES:
         product_ids = request.COOKIES['product_ids']
-        counter = product_ids.split('|')
-        product_count_in_cart = len(set(counter))
+        product_keys = product_ids.split('|')
+        product_count_in_cart = len(set(product_keys))
     else:
         product_count_in_cart = 0
 
-    # Fetching product details from db whose id is present in cookie
     products = []
     total = 0
-    
+
     if 'product_ids' in request.COOKIES:
         product_ids = request.COOKIES['product_ids']
-        if product_ids != "":
-            product_id_in_cart = product_ids.split('|')
-            db_products = models.Product.objects.all().filter(id__in=product_id_in_cart)
+        product_keys = product_ids.split('|')
+        product_ids_only = set()
+        for key in product_keys:
+            # key format: product_{pk}_{size}
+            parts = key.split('_')
+            if len(parts) >= 3:
+                product_id = parts[1]
+                size = '_'.join(parts[2:])
+                product_ids_only.add(product_id)
+            else:
+                product_id = parts[1]
+                size = 'M'
+                product_ids_only.add(product_id)
 
-            # For total price shown in cart and collecting product details
-            for p in db_products:
-                # Get size and quantity for this product
-                for cookie_key in request.COOKIES:
-                    if cookie_key.startswith(f'product_{p.id}_'):
+        db_products = models.Product.objects.filter(id__in=product_ids_only)
+
+        for p in db_products:
+            # For each product, find all sizes in product_keys
+            for key in product_keys:
+                if key.startswith(f'product_{p.id}_'):
+                    size = key[len(f'product_{p.id}_'):]
+                    cookie_key = f'{key}_details'
+                    if cookie_key in request.COOKIES:
                         details = request.COOKIES[cookie_key].split(':')
-                        size = details[0]
-                        quantity = int(details[1])
-                        # Calculate price based on quantity
-                        total = total + (p.price * quantity)
-                        # Add details to list
-                        products.append({
-                            'product': p,
-                            'size': size,
-                            'quantity': quantity
-                        })
+                        if len(details) == 2:
+                            size = details[0]
+                            quantity = int(details[1])
+                            total += p.price * quantity
+                            products.append({
+                                'product': p,
+                                'size': size,
+                                'quantity': quantity
+                            })
 
     return render(request, 'ecom/cart.html', {
         'products': products,
@@ -463,74 +462,70 @@ def remove_from_cart_view(request, pk):
     # For counter in cart
     if 'product_ids' in request.COOKIES:
         product_ids = request.COOKIES['product_ids']
-        counter = product_ids.split('|')
-        product_count_in_cart = len(set(counter))
+        product_keys = product_ids.split('|')
+        product_count_in_cart = len(set(product_keys))
     else:
         product_count_in_cart = 0
 
-    # Removing product id from cookie
-    total = 0
-    products = []
-    
-    if 'product_ids' in request.COOKIES:
-        product_ids = request.COOKIES['product_ids']
-        product_id_in_cart = product_ids.split('|')
-        product_id_in_cart = list(set(product_id_in_cart))
-        product_id_in_cart.remove(str(pk))
-        db_products = models.Product.objects.all().filter(id__in=product_id_in_cart)
-        
-        # For total price shown in cart after removing product
-        for p in db_products:
-            # Get size and quantity for this product
-            cookie_key = f'product_{p.id}_details'
-            if cookie_key in request.COOKIES:
-                details = request.COOKIES[cookie_key].split(':')
-                size = details[0]
-                quantity = int(details[1])
-                # Calculate price based on quantity
-                total = total + (p.price * quantity)
-                # Add details to list
-                products.append({
-                    'product': p,
-                    'size': size,
-                    'quantity': quantity
-                })
-            else:
-                # Default values if details not found
-                total = total + p.price
-                products.append({
-                    'product': p,
-                    'size': 'M',
-                    'quantity': 1
-                })
+    # We need to remove all sizes of product with id=pk
+    product_keys_to_remove = [key for key in product_keys if key.startswith(f'product_{pk}_')]
+    product_keys_remaining = [key for key in product_keys if not key.startswith(f'product_{pk}_')]
 
-        # For update cookie value after removing product id in cart
-        value = ""
-        for i in range(len(product_id_in_cart)):
-            if i == 0:
-                value = value + product_id_in_cart[0]
-            else:
-                value = value + "|" + product_id_in_cart[i]
-                
-        # Get next_page from GET with a fallback
-        next_page = request.GET.get('next_page', '/')
-        
-        response = render(request, 'ecom/cart.html', {
-            'products': products,
-            'total': total,
-            'product_count_in_cart': product_count_in_cart,
-            'redirect_to': next_page
-        })
-        
-        # Remove the product details cookie
-        cookie_key = f'product_{pk}_details'
+    products = []
+    total = 0
+
+    # Fetch remaining products
+    product_ids_only = set()
+    for key in product_keys_remaining:
+        parts = key.split('_')
+        if len(parts) >= 3:
+            product_id = parts[1]
+            product_ids_only.add(product_id)
+        elif len(parts) == 2:
+            product_id = parts[1]
+            product_ids_only.add(product_id)
+
+    db_products = models.Product.objects.filter(id__in=product_ids_only)
+
+    for p in db_products:
+        for key in product_keys_remaining:
+            if key.startswith(f'product_{p.id}_'):
+                size = key[len(f'product_{p.id}_'):]
+                cookie_key = f'{key}_details'
+                if cookie_key in request.COOKIES:
+                    details = request.COOKIES[cookie_key].split(':')
+                    if len(details) == 2:
+                        size = details[0]
+                        quantity = int(details[1])
+                        total += p.price * quantity
+                        products.append({
+                            'product': p,
+                            'size': size,
+                            'quantity': quantity
+                        })
+
+    # Get next_page from GET with a fallback
+    next_page = request.GET.get('next_page', '/')
+
+    response = render(request, 'ecom/cart.html', {
+        'products': products,
+        'total': total,
+        'product_count_in_cart': product_count_in_cart,
+        'redirect_to': next_page
+    })
+
+    # Remove cookies for the removed product sizes
+    for key in product_keys_to_remove:
+        cookie_key = f'{key}_details'
         response.delete_cookie(cookie_key)
-        
-        if value == "":
-            response.delete_cookie('product_ids')
-        else:
-            response.set_cookie('product_ids', value)
-        return response
+
+    # Update product_ids cookie
+    if product_keys_remaining:
+        response.set_cookie('product_ids', '|'.join(product_keys_remaining))
+    else:
+        response.delete_cookie('product_ids')
+
+    return response
 
 
 
@@ -617,8 +612,14 @@ def payment_success_view(request):
     if 'product_ids' in request.COOKIES:
         product_ids = request.COOKIES['product_ids']
         if product_ids != "":
-            product_id_in_cart = product_ids.split('|')
-            products = models.Product.objects.filter(id__in=product_id_in_cart)
+            product_keys = product_ids.split('|')
+            product_ids_only = set()
+            for key in product_keys:
+                parts = key.split('_')
+                if len(parts) >= 3:
+                    product_id = parts[1]
+                    product_ids_only.add(product_id)
+            products = models.Product.objects.filter(id__in=product_ids_only)
 
     # Check if the PayPal response contains address and contact details
     if 'email' in request.COOKIES:
@@ -631,21 +632,30 @@ def payment_success_view(request):
     # Create orders for each product in the cart
     for product in products:
         quantity = 1  # Default quantity to 1
-        if 'quantity_' + str(product.id) in request.COOKIES:
-            quantity = int(request.COOKIES['quantity_' + str(product.id)])
+        size = 'M'  # Default size
+        # Find all sizes for this product in product_keys
+        for key in product_keys:
+            if key.startswith(f'product_{product.id}_'):
+                cookie_key = f'{key}_details'
+                if cookie_key in request.COOKIES:
+                    details = request.COOKIES[cookie_key].split(':')
+                    if len(details) == 2:
+                        size = details[0]
+                        quantity = int(details[1])
 
-        order, created = models.Orders.objects.get_or_create(
-            customer=customer,
-            product=product,
-            status='Pending',
-            email=email,
-            mobile=mobile,
-            address=address,
-            quantity=quantity,  # Set the quantity field
-        )
+                order, created = models.Orders.objects.get_or_create(
+                    customer=customer,
+                    product=product,
+                    status='Pending',
+                    email=email,
+                    mobile=mobile,
+                    address=address,
+                    quantity=quantity,  # Set the quantity field
+                    size=size,  # Set the size field
+                )
 
-        # Log the order creation
-        print(f"Order created: {order.id}")
+                # Log the order creation
+                print(f"Order created: {order.id}")
 
     # Clear cookies after order placement
     response = render(request, 'ecom/payment_success.html')
@@ -655,7 +665,11 @@ def payment_success_view(request):
     response.delete_cookie('address')
 
     for product in products:
-        response.delete_cookie('quantity_' + str(product.id))
+        # Delete all size cookies for this product
+        for key in product_keys:
+            if key.startswith(f'product_{product.id}_'):
+                cookie_key = f'{key}_details'
+                response.delete_cookie(cookie_key)
 
     return response
 
@@ -692,14 +706,13 @@ def cancel_order_view(request, order_id):
 @user_passes_test(is_customer)
 def my_order_view(request):
     
-    customer=models.Customer.objects.get(user_id=request.user.id)
-    orders=models.Orders.objects.all().filter(customer_id = customer)
-    ordered_products=[]
+    customer = models.Customer.objects.get(user_id=request.user.id)
+    orders = models.Orders.objects.filter(customer=customer)
+    data = []
     for order in orders:
-        ordered_product=models.Product.objects.all().filter(id=order.product.id)
-        ordered_products.append(ordered_product)
-
-    return render(request,'ecom/my_order.html',{'data':zip(ordered_products,orders)})
+        product = order.product
+        data.append((product, order))
+    return render(request, 'ecom/my_order.html', {'data': data})
 
 def my_view(request):
     facebook_url = reverse('facebook')
@@ -733,6 +746,8 @@ def download_invoice_view(request, orderID, productID):
     # Use the stored shipment address from the order
     shipment_address = order.address if order.address else order.customer.address
 
+    total_price = product.price * order.quantity
+
     mydict = {
         'orderDate': order.order_date,
         'customerName': request.user,
@@ -745,6 +760,8 @@ def download_invoice_view(request, orderID, productID):
         'productImage': product.product_image,
         'productPrice': product.price,
         'productDescription': product.description,
+        'quantity': order.quantity,
+        'totalPrice': total_price,
     }
     return render_to_pdf('ecom/download_invoice.html', mydict)
 

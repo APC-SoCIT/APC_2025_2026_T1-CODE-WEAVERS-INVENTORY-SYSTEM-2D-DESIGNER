@@ -163,8 +163,10 @@
             <tr>
               <td>
                 Product Image :<br>
-                 <img src="{% static product_image.url %}" alt="Profile Pic" height="40px" width="40px" /><br><br>
-                <td>Product Price: {{productPrice}}</td>
+                 <img src="{% static productImage.url %}" alt="Profile Pic" height="40px" width="40px" /><br><br>
+                <td>Product Price: ₱{{productPrice}}</td>
+                <td>Quantity: {{quantity}}</td>
+                <td>Total Price: ₱{{totalPrice}}</td>
               </td>
               <td>
                 Product: <br> {{productName}}<br><br>

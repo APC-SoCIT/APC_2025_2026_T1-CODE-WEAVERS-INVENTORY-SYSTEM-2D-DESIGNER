@@ -5,6 +5,8 @@ from django.contrib.auth.views import LoginView,LogoutView
 from django.views.generic import RedirectView
 from ecom.views import manage_inventory, update_stock 
 from ecom.views import delete_inventory, edit_inventory
+from django.conf import settings
+from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -66,3 +68,6 @@ urlpatterns = [
     path('edit-inventory/<int:item_id>/', edit_inventory, name='edit_inventory'), 
     path('place-order/', views.place_order, name='place_order'),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

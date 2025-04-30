@@ -19,30 +19,36 @@
                         <th>Shipment Address</th>
                         <th>Product</th>
                         <th>Image</th>
+                        <th>Size</th>
+                        <th>Quantity</th>
+                        <th>Description</th>
+                        <th>Total Price</th>
                         <th>Status</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for product, customer, order in data %}
                     <tr>
-                        {% for c in customer %}
-                        <td>{{ c.get_name }}</td>
-                        <td>{{ c.mobile }}</td>
+                        <td>{{ customer.get_name }}</td>
+                        <td>{{ customer.mobile }}</td>
                         <td>{{ order.address }}</td>
-                        {% endfor %}
-                        
-                        {% for p in product %}
-                        <td>{{ p.name }}</td>
+                        <td>{{ product.name }}</td>
                         <td>
-                            <img src="{% static p.product_image.url %}" alt="Product Image" class="img-thumbnail" style="height: 40px; width: 40px;">
+                            {% if product.product_image %}
+                                <img src="{{ product.product_image.url }}" alt="Product Image" class="img-thumbnail" style="height: 40px; width: 40px;">
+                            {% else %}
+                                <span>No Image</span>
+                            {% endif %}
                         </td>
-                        
+                        <td>{{ order.size }}</td>
+                        <td>{{ order.quantity }}</td>
+                        <td>{{ product.description }}</td>
+                        <td>₱{{ order.total_price|floatformat:2 }}</td>
                         <td>
                             <span class="badge {% if order.status == 'Pending' %}bg-info{% elif order.status == 'Delivered' %}bg-success{% elif order.status == 'Out for Delivery' %}bg-warning{% else %}bg-primary{% endif %}">
                                 {{ order.status }}
                             </span>
                         </td>
-                        {% endfor %}
                     </tr>
                     {% endfor %}
                 </tbody>
