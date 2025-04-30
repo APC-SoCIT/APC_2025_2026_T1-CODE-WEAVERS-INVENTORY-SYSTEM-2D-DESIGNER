@@ -2,6 +2,7 @@ from django import forms
 from django.contrib.auth.models import User
 from . import models
 from .models import Product
+from django.contrib.auth.forms import AuthenticationForm
 from .models import InventoryItem
 
 
@@ -50,3 +51,7 @@ class InventoryForm(forms.ModelForm):
     class Meta:
         model = InventoryItem
         fields = ['name', 'quantity', 'description']
+
+class CustomerLoginForm(AuthenticationForm):
+    username = forms.CharField(label='Username', max_length=100)
+    password = forms.CharField(label='Password', widget=forms.PasswordInput)

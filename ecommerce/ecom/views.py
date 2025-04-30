@@ -5,10 +5,12 @@ from django.core.mail import send_mail
 from django.contrib.auth.models import Group
 from django.contrib.auth.decorators import login_required,user_passes_test
 from django.contrib import messages
+from django.contrib.auth import authenticate, login
 from django.conf import settings
 from .models import Customer
 from django.urls import reverse
 from .forms import InventoryForm
+from .forms import CustomerLoginForm
 from .models import Product
 from .models import InventoryItem
 from .models import Orders
@@ -80,6 +82,22 @@ def customer_signup_view(request):
             my_customer_group[0].user_set.add(user)
         return HttpResponseRedirect('customerlogin')
     return render(request,'ecom/customersignup.html',context=mydict)
+
+def customer_login(request):
+  if request.method == 'POST':
+    form = CustomerLoginForm(request.POST)
+    if form.is_valid():
+      username = form.cleaned_data['username']
+      password = form.cleaned_data['password']
+      user = authenticate(request, username=username, password=password)
+      if user is not None:
+        login(request, user)
+        return redirect('home')
+      else:
+        form.add_error(None, 'Account not found, please register')
+  else:
+    form = CustomerLoginForm()
+  return render(request, 'ecom/customerlogin.html', {'form': form})
 
 #-----------for checking user iscustomer
 def is_customer(user):
@@ -626,6 +644,9 @@ def payment_success_view(request):
             quantity=quantity,  # Set the quantity field
         )
 
+        # Log the order creation
+        print(f"Order created: {order.id}")
+
     # Clear cookies after order placement
     response = render(request, 'ecom/payment_success.html')
     response.delete_cookie('product_ids')
@@ -637,6 +658,32 @@ def payment_success_view(request):
         response.delete_cookie('quantity_' + str(product.id))
 
     return response
+
+def place_order(request):
+  print('Place Order view function executed')
+  if request.method == 'POST':
+    print('POST request received')
+    design_data = request.POST.get('design_data')
+    print('Design data:', design_data)
+    # Process the design data and create a new order
+    order = Orders.objects.create(
+      # Add the order details here
+    )
+    print('Order created:', order)
+    return JsonResponse({'message': 'Order placed successfully'})
+  else:
+    print('Invalid request method')
+    return JsonResponse({'message': 'Invalid request method'})
+
+def cancel_order_view(request, order_id):
+    order = Orders.objects.get(id=order_id)
+    if order.status == 'Pending':
+        order.status = 'Cancelled'
+        order.save()
+        messages.success(request, 'Order cancelled successfully!')
+    else:
+        messages.error(request, 'Order cannot be cancelled at this time.')
+    return redirect('home')
 
 
 

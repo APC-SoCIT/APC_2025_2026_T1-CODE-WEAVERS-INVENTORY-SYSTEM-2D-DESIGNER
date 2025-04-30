@@ -55,7 +55,9 @@ class Orders(models.Model):
         ('Order Confirmed','Order Confirmed'),
         ('Out for Delivery','Out for Delivery'),
         ('Delivered','Delivered'),
+        ('Cancelled', 'Cancelled'),
     )
+    created_at = models.DateTimeField(auto_now_add=True)
     customer = models.ForeignKey('Customer', on_delete=models.CASCADE,null=True)
     product = models.ForeignKey('Product',on_delete=models.CASCADE,null=True)
     email = models.CharField(max_length=50,null=True)
@@ -65,6 +67,12 @@ class Orders(models.Model):
     status = models.CharField(max_length=50,null=True,choices=STATUS)
     size = models.CharField(max_length=20)
     quantity = models.IntegerField(default=1)
+
+class OrderItem(models.Model):
+    order = models.ForeignKey(Orders, on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    quantity = models.IntegerField()
+    price = models.DecimalField(max_digits=10, decimal_places=2)
 
 
 class Feedback(models.Model):

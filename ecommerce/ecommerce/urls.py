@@ -44,8 +44,6 @@ urlpatterns = [
     path('my-profile', views.my_profile_view,name='my-profile'),
     path('edit-profile', views.edit_profile_view,name='edit-profile'),
     path('download-invoice/<int:orderID>/<int:productID>', views.download_invoice_view,name='download-invoice'),
-
-
     path('add-to-cart/<int:pk>', views.add_to_cart_view,name='add-to-cart'),
     path('cart', views.cart_view,name='cart'),
     path('remove-from-cart/<int:pk>', views.remove_from_cart_view,name='remove-from-cart'),
@@ -66,4 +64,5 @@ urlpatterns = [
     path('interactive-jersey/', views.interactive_jersey, name='interactive_jersey'),
     path('delete-inventory/<int:item_id>/', delete_inventory, name='delete_inventory'),
     path('edit-inventory/<int:item_id>/', edit_inventory, name='edit_inventory'), 
+    path('place-order/', views.place_order, name='place_order'),
 ]
