@@ -38,18 +38,23 @@ body {
 }
 
 .navbar-button {
-  background-color: #0c8fc1;
-  border: 1px solid #0c8fc1;
+  background-color: #0066cc;
+  border: 1px solid #0066cc;
   border-radius: 0 2px 2px 0;
   color: #ffffff;
   padding: 10px 0;
   height: 43px;
   cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.navbar-button:hover {
+  background-color: #00cc66;
+  border-color: #00cc66;
 }
 
 .cart-button {
-  /* background-color: #bfbfbf; */
-  background-color: #0c8fc1;
+  background-color: #0066cc;
   box-shadow: 0 4px 4px 0 rgb(0 0 0 / 23%), inset 1px 1px 0 0 hsl(0deg 0% 100% / 20%);
   padding: 10px 0;
   text-align: center;
@@ -60,15 +65,17 @@ body {
   display: inline-block;
   color: #FFFFFF;
   text-decoration: none;
-  color: inherit;
   border: none;
   outline: none;
+  transition: background-color 0.3s ease;
 }
 
 .cart-button:hover {
-    text-decoration: none;
-    color: #fff;
-    cursor: pointer
+  background-color: #00cc66;
+  border-color: #00cc66;
+  text-decoration: none;
+  color: #fff;
+  cursor: pointer;
 }
 
 .cart-svg {

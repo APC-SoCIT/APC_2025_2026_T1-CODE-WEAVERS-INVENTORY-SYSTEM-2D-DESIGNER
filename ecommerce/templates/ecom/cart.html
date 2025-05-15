@@ -1,5 +1,6 @@
 {% extends 'ecom/homebase.html' %}
 {% load static %}
+{% load humanize %}
 {% block content %}
 
 {% if redirect_to %}
@@ -327,10 +328,10 @@
       <label class="title">Checkout</label>
       <div class="details">
         <span>Your cart subtotal:</span>
-        <strong>Total: ₱ {{ total|floatformat:2 }}</strong>
+        <strong>Total: ₱ {{ total|floatformat:2|intcomma }}</strong>
       </div>
       <div class="checkout--footer">
-        <strong>Total: ₱ {{ total|floatformat:2 }}</strong>
+        <strong>Total: ₱ {{ total|floatformat:2|intcomma }}</strong>
         <button class="pay-btn" id="openModalBtn"> 
           Checkout
           <svg class="pay-svgIcon" viewBox="0 0 576 512">
@@ -394,4 +395,4 @@
 
 <br><br><br><br><br>
 
-{% endblock content %}  
+{% endblock content %}

@@ -161,6 +161,31 @@
         transition: all 0.8s;
       }
     </style>
+    <script>
+      const cities = {
+        'PH': ['Manila', 'Quezon City', 'Davao', 'Cebu', 'Makati', 'Taguig', 'Pasig', 'Pasay', 'Mandaluyong', 'San Juan'],
+        'US': ['New York', 'Los Angeles', 'Chicago', 'Houston', 'Phoenix', 'Philadelphia', 'San Antonio', 'San Diego', 'Dallas', 'San Jose']
+      };
+
+      document.addEventListener('DOMContentLoaded', function() {
+        const countrySelect = document.getElementById('country');
+        const citySelect = document.getElementById('city');
+
+        countrySelect.addEventListener('change', function() {
+          const selectedCountry = this.value;
+          citySelect.innerHTML = '<option value="" disabled selected>Select City</option>';
+
+          if (selectedCountry && cities[selectedCountry]) {
+            cities[selectedCountry].forEach(city => {
+              const option = document.createElement('option');
+              option.value = city;
+              option.textContent = city;
+              citySelect.appendChild(option);
+            });
+          }
+        });
+      });
+    </script>
   </head>
   <body>
     {% include "ecom/navbar.html" %}
@@ -175,7 +200,17 @@
               {% render_field userForm.last_name class="form-control" placeholder="Last Name" %}
               {% render_field userForm.username class="form-control" placeholder="Username" %}
               {% render_field userForm.password class="form-control" placeholder="Password" %}
-              {% render_field customerForm.address class="form-control" placeholder="Address" %}
+              {% render_field customerForm.street_address class="form-control" placeholder="Street Address" %}
+              <select name="country" id="country" class="form-control" style="background: none; border: 2px solid #ffffff; color: white; border-radius: 24px; margin: 20px auto; width: 250px; text-align: center;">
+                <option value="" disabled selected>Select Country</option>
+                <option value="PH">Philippines</option>
+                <option value="US">United States</option>
+              </select>
+              <select name="city" id="city" class="form-control" style="background: none; border: 2px solid #ffffff; color: white; border-radius: 24px; margin: 20px auto; width: 250px; text-align: center;">
+                <option value="" disabled selected>Select City</option>
+              </select>
+              {% render_field customerForm.barangay class="form-control" placeholder="Barangay" %}
+              {% render_field customerForm.postal_code class="form-control" placeholder="Postal Code" %}
               {% render_field customerForm.mobile class="form-control" placeholder="Contact" %}
               <input type="submit" name="" value="Create">
               <a href="/customerlogin" class="btn btn-primary">Have an account? Login Here!</a>
