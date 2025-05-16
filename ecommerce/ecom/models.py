@@ -8,12 +8,12 @@ class Customer(models.Model):
     ]
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     profile_pic = models.ImageField(upload_to='profile_pic/CustomerProfilePic/', null=True, blank=True)
-    street_address = models.CharField(max_length=100)
     country = models.CharField(max_length=2, choices=COUNTRY_CHOICES, default='PH')
     city = models.CharField(max_length=50)
     barangay = models.CharField(max_length=50)
-    postal_code = models.CharField(max_length=10)
-    mobile = models.CharField(max_length=20, null=False)
+    street_address = models.CharField(max_length=100)
+    postal_code = models.PositiveIntegerField()
+    mobile = models.PositiveIntegerField()
 
     @property
     def get_name(self):

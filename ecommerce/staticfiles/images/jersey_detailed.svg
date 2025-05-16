@@ -1,0 +1,21 @@
+<svg width="300" height="400" viewBox="0 0 300 400" xmlns="http://www.w3.org/2000/svg">
+    <!-- Jersey Body -->
+    <path class="jersey-body" d="M75,50 C75,50 100,30 150,30 C200,30 225,50 225,50 L225,350 L150,380 L75,350 Z" fill="#ffffff" stroke="#000000" stroke-width="2"/>
+    
+    <!-- Collar -->
+    <path class="jersey-collar" d="M125,50 L175,50 C175,50 170,40 150,40 C130,40 125,50 125,50 Z" fill="#dddddd" stroke="#000000" stroke-width="2"/>
+    
+    <!-- Left Sleeve -->
+    <path class="jersey-sleeve" d="M75,50 C75,50 60,60 50,80 L20,100 L30,130 L75,120 Z" fill="#dddddd" stroke="#000000" stroke-width="2"/>
+    
+    <!-- Right Sleeve -->
+    <path class="jersey-sleeve" d="M225,50 C225,50 240,60 250,80 L280,100 L270,130 L225,120 Z" fill="#dddddd" stroke="#000000" stroke-width="2"/>
+    
+    <!-- Decorative Lines -->
+    <path class="jersey-stripe" d="M100,50 L100,350" stroke="#000000" stroke-width="1" stroke-dasharray="5,5"/>
+    <path class="jersey-stripe" d="M200,50 L200,350" stroke="#000000" stroke-width="1" stroke-dasharray="5,5"/>
+    
+    <!-- Number Placeholder -->
+    <text x="150" y="200" font-family="Arial" font-size="80" text-anchor="middle" fill="#000000">10</text>
+</svg>
+

@@ -200,7 +200,6 @@
               {% render_field userForm.last_name class="form-control" placeholder="Last Name" %}
               {% render_field userForm.username class="form-control" placeholder="Username" %}
               {% render_field userForm.password class="form-control" placeholder="Password" %}
-              {% render_field customerForm.street_address class="form-control" placeholder="Street Address" %}
               <select name="country" id="country" class="form-control" style="background: none; border: 2px solid #ffffff; color: white; border-radius: 24px; margin: 20px auto; width: 250px; text-align: center;">
                 <option value="" disabled selected>Select Country</option>
                 <option value="PH">Philippines</option>
@@ -210,6 +209,7 @@
                 <option value="" disabled selected>Select City</option>
               </select>
               {% render_field customerForm.barangay class="form-control" placeholder="Barangay" %}
+              {% render_field customerForm.street_address class="form-control" placeholder="Street Address" %}
               {% render_field customerForm.postal_code class="form-control" placeholder="Postal Code" %}
               {% render_field customerForm.mobile class="form-control" placeholder="Contact" %}
               <input type="submit" name="" value="Create">

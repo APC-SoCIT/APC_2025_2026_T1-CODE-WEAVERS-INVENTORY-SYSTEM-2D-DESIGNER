@@ -1,13 +1,18 @@
 from django.contrib import admin
 from .models import Customer,Product,Orders,Feedback, OrderItem
-# Register your models here.
-class CustomerAdmin(admin.ModelAdmin):
-    pass
-admin.site.register(Customer, CustomerAdmin)
 
+@admin.register(Customer)
+class CustomerAdmin(admin.ModelAdmin):
+    list_display = ['get_name', 'country', 'city', 'mobile']
+    list_filter = ['country', 'city']
+    search_fields = ['user__first_name', 'user__last_name', 'city', 'street_address']
+    readonly_fields = ['get_full_address']
+
+@admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    pass
-admin.site.register(Product, ProductAdmin)
+    list_display = ['name', 'price', 'size']
+    list_filter = ['size']
+    search_fields = ['name', 'description']
 
 class OrderItemInline(admin.TabularInline):
     model = OrderItem
@@ -21,6 +26,7 @@ class OrderAdmin(admin.ModelAdmin):
 
 admin.site.register(Orders, OrderAdmin)
 
+@admin.register(Feedback)
 class FeedbackAdmin(admin.ModelAdmin):
-    pass
-admin.site.register(Feedback, FeedbackAdmin)
+    list_display = ['name', 'date']
+    search_fields = ['name', 'feedback']
