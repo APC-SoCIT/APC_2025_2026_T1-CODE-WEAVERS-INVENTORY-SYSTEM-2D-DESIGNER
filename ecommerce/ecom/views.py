@@ -302,10 +302,16 @@ def view_feedback_view(request):
 #---------------------------------------------------------------------------------
 
 def cart_page(request):
-    return render(request, "cart.html", {"paypal_client_id": settings.PAYPAL_CLIENT_ID})
-
     user = request.user
+    cart_items = Cart.objects.filter(user=user)
+    
+    # Check if cart is empty
+    if not cart_items.exists():
+        messages.warning(request, 'Your cart is empty!')
+        return redirect('customer-home')
+        
     paypal_transaction_id = request.GET.get("paypal-payment-id")
+    payment_method = request.POST.get("payment_method")
     custid = request.GET.get("custid")
 
     try:

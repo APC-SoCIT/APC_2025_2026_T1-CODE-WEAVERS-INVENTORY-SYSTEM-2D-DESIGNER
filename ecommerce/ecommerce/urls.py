@@ -67,6 +67,7 @@ urlpatterns = [
     path('delete-inventory/<int:item_id>/', delete_inventory, name='delete_inventory'),
     path('edit-inventory/<int:item_id>/', edit_inventory, name='edit_inventory'), 
     path('place-order/', views.place_order, name='place_order'),
+    path('cancel-order/<int:order_id>', views.cancel_order_view, name='cancel-order'),
 ]
 
 if settings.DEBUG:

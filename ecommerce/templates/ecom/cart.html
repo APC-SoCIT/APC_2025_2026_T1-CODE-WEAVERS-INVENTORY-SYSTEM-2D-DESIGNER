@@ -346,26 +346,101 @@
       <div style="background:white; padding:20px; border-radius:8px; min-width:750px; position:relative;">
         <button id="closeModalBtn" style="position:absolute; top:10px; right:10px; background:none; border:none; font-size:18px;">&times;</button>
         <h3 style="margin-bottom:20px;">Complete your Payment</h3>
-        <div id="paypal-button-container"></div>
+        
+        <!-- Payment Method Selection -->
+        <div class="payment-methods" style="margin-bottom: 20px;">
+          <h4>Select Payment Method</h4>
+          <div class="payment-method-options" style="display: flex; gap: 15px; margin-top: 10px;">
+            <button class="payment-method-btn" data-method="paypal" style="flex: 1; padding: 15px; border: 1px solid #ddd; border-radius: 8px; background: white; cursor: pointer;">
+              <img src="https://www.paypalobjects.com/webstatic/mktg/logo/pp_cc_mark_37x23.jpg" alt="PayPal" style="height: 23px; margin-bottom: 8px;">
+              <div>PayPal</div>
+            </button>
+            <button class="payment-method-btn" data-method="cod" style="flex: 1; padding: 15px; border: 1px solid #ddd; border-radius: 8px; background: white; cursor: pointer;">
+              <img src="https://cdn-icons-png.flaticon.com/512/1554/1554401.png" alt="COD" style="height: 23px; margin-bottom: 8px;">
+              <div>Cash on Delivery</div>
+            </button>
+          </div>
+        </div>
+
+        <!-- PayPal Button Container -->
+        <div id="paypal-button-container" style="display: none;"></div>
+
+        <!-- COD Form -->
+        <div id="cod-form" style="display: none;">
+          <form id="cod-checkout-form" style="margin-top: 20px;">
+            <div class="form-group">
+              <label for="delivery-address">Delivery Address</label>
+              <textarea id="delivery-address" class="form-control" rows="3" required></textarea>
+            </div>
+            <div class="form-group" style="margin-top: 15px;">
+              <label for="contact-number">Contact Number</label>
+              <input type="tel" id="contact-number" class="form-control" required>
+            </div>
+            <button type="submit" class="btn btn-primary" style="margin-top: 15px;">Place Order</button>
+          </form>
+        </div>
       </div>
     </div>
-    
-    <script src="https://www.paypal.com/sdk/js?client-id=YOUR_CLIENT_ID&currency=PHP"></script>
     
     <script>
       // Modal open/close
       const openModalBtn = document.getElementById('openModalBtn');
       const closeModalBtn = document.getElementById('closeModalBtn');
       const modal = document.getElementById('checkoutModal');
-    
-      openModalBtn.addEventListener('click', () => {
+      const paypalContainer = document.getElementById('paypal-button-container');
+      const codForm = document.getElementById('cod-form');
+      const paymentButtons = document.querySelectorAll('.payment-method-btn');
+
+      // Check if cart is empty
+      const cartIsEmpty = {% if not products %}true{% else %}false{% endif %};
+
+      openModalBtn.addEventListener('click', (e) => {
+        if (cartIsEmpty) {
+          e.preventDefault();
+          alert('Your cart is empty. Please add items before proceeding to checkout.');
+          return;
+        }
         modal.style.display = 'flex';
       });
-    
+
       closeModalBtn.addEventListener('click', () => {
         modal.style.display = 'none';
+        paypalContainer.style.display = 'none';
+        codForm.style.display = 'none';
       });
-    
+
+      // Payment method selection
+      paymentButtons.forEach(button => {
+        button.addEventListener('click', () => {
+          const method = button.dataset.method;
+          paymentButtons.forEach(btn => btn.style.background = 'white');
+          button.style.background = '#f0f0f0';
+
+          if (method === 'paypal') {
+            paypalContainer.style.display = 'block';
+            codForm.style.display = 'none';
+          } else if (method === 'cod') {
+            paypalContainer.style.display = 'none';
+            codForm.style.display = 'block';
+          }
+        });
+      });
+
+      // COD Form Submission
+      document.getElementById('cod-checkout-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const address = document.getElementById('delivery-address').value;
+        const contact = document.getElementById('contact-number').value;
+
+        if (!address || !contact) {
+          alert('Please fill in all required fields');
+          return;
+        }
+
+        // Here you can add the logic to submit the COD order to your backend
+        window.location.href = `/payment-success?method=cod&address=${encodeURIComponent(address)}&contact=${encodeURIComponent(contact)}`;
+      });
+
       // PayPal Button
       paypal.Buttons({
         createOrder: function (data, actions) {
@@ -380,13 +455,11 @@
         },
         onApprove: function (data, actions) {
           return actions.order.capture().then(function (details) {
-            const paypalPaymentId = details.id;
-            const custId = "123";  // You can dynamically set this
-    
-            window.location.href = `/payment-success`;
+            window.location.href = `/payment-success?method=paypal&paymentId=${details.id}`;
           });
         }
       }).render('#paypal-button-container');
+    </script>
   
 
     </script>
