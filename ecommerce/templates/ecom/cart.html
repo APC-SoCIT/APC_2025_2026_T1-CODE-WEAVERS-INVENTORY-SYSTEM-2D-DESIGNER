@@ -316,7 +316,7 @@
           <td><span class="quantity-badge">{{ product.quantity }}</span></td>
           <td>{{ product.product.description }}</td>
           <td>
-            <a class="btn btn-danger btn-xs" href="{% url 'remove-from-cart' product.product.id %}?next_page={{request.path}}">
+            <a class="btn btn-danger btn-xs" href="{% url 'remove-from-cart' product.product.id %}?size={{ product.size }}&next_page={{request.path}}">
               <span class="glyphicon glyphicon-trash"></span>
             </a>
           </td>

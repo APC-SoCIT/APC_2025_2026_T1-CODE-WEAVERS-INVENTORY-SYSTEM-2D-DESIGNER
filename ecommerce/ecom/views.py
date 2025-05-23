@@ -465,6 +465,8 @@ def cart_view(request):
     })
 
 def remove_from_cart_view(request, pk):
+    size = request.GET.get('size', 'M')  # Get size from request, default to M
+    
     # For counter in cart
     if 'product_ids' in request.COOKIES:
         product_ids = request.COOKIES['product_ids']
@@ -473,9 +475,9 @@ def remove_from_cart_view(request, pk):
     else:
         product_count_in_cart = 0
 
-    # We need to remove all sizes of product with id=pk
-    product_keys_to_remove = [key for key in product_keys if key.startswith(f'product_{pk}_')]
-    product_keys_remaining = [key for key in product_keys if not key.startswith(f'product_{pk}_')]
+    # Remove only the specific product with the matching size
+    specific_key = f'product_{pk}_{size}'
+    product_keys_remaining = [key for key in product_keys if key != specific_key]
 
     products = []
     total = 0
@@ -520,10 +522,9 @@ def remove_from_cart_view(request, pk):
         'redirect_to': next_page
     })
 
-    # Remove cookies for the removed product sizes
-    for key in product_keys_to_remove:
-        cookie_key = f'{key}_details'
-        response.delete_cookie(cookie_key)
+    # Remove cookie for the specific product-size combination
+    cookie_key = f'{specific_key}_details'
+    response.delete_cookie(cookie_key)
 
     # Update product_ids cookie
     if product_keys_remaining:
