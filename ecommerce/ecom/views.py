@@ -15,7 +15,15 @@ from .models import Product
 from .models import InventoryItem
 from .models import Orders
 import json
+import requests
 
+
+
+from django.http import HttpResponse
+
+def payment_cancel(request):
+    return HttpResponse("❌ Payment canceled.")
+    
 
 def home_view(request):
     products=models.Product.objects.all()
@@ -614,7 +622,7 @@ def payment_success_view(request):
     products = None
     email = None
     mobile = None
-    address = customer.address  # Default to profile address
+    address = None  # Removed direct access to customer.address
 
     if 'product_ids' in request.COOKIES:
         product_ids = request.COOKIES['product_ids']
@@ -847,3 +855,59 @@ def jersey_template(request):
 
 def interactive_jersey(request):
     return render(request, 'ecom/interactive_jersey.html')
+
+
+#-----------------------------------------------------------
+#------------------------ PAYMONGO -------------------------
+#-----------------------------------------------------------
+
+# Replace with your own PayMongo test key
+PAYMONGO_SECRET_KEY = 'sk_test_FFfnvsMb2YQSctcZ3NY8wThb'
+
+def create_gcash_payment(request):
+    url = "https://api.paymongo.com/v1/checkout_sessions"
+    headers = {
+        "Authorization": f"Basic {PAYMONGO_SECRET_KEY}",
+        "Content-Type": "application/json"
+    }
+
+    payload = {
+        "data": {
+            "attributes": {
+                "billing": {
+                    "name": "Juan Dela Cruz",
+                    "email": "juan@example.com",
+                    "phone": "+639171234567"
+                },
+                "send_email_receipt": False,
+                "show_line_items": True,
+                "line_items": [{
+                    "currency": "PHP",
+                    "amount": 10000,  # = PHP 100.00
+                    "name": "GearCraft Jersey",
+                    "quantity": 1
+                }],
+                "payment_method_types": ["gcash"],
+                "description": "GCash Payment for Jersey",
+                "success_url": "http://127.0.0.1:8000/payment-success/",
+                "cancel_url": "http://127.0.0.1:8000/payment-cancel/"
+            }
+        }
+    }
+
+    response = requests.post(url, headers=headers, json=payload, auth=(PAYMONGO_SECRET_KEY, ''))
+    data = response.json()
+
+    try:
+        checkout_url = data['data']['attributes']['checkout_url']
+        return redirect(checkout_url)
+    except KeyError:
+        return JsonResponse({"error": "Payment creation failed", "details": data}, status=400)
+
+    from django.http import HttpResponse
+
+    def payment_success(request):
+        return HttpResponse("✅ Payment successful! Thank you.")
+
+    def payment_cancel(request):
+        return HttpResponse("❌ Payment canceled.")
