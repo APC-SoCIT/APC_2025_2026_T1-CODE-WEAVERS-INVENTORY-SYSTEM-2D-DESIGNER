@@ -7,6 +7,7 @@ from django.contrib.auth.decorators import login_required,user_passes_test
 from django.contrib import messages
 from django.contrib.auth import authenticate, login
 from django.conf import settings
+from django.utils import timezone
 from .models import Customer
 from django.urls import reverse
 from .forms import InventoryForm
@@ -15,6 +16,19 @@ from .models import Product
 from .models import InventoryItem
 from .models import Orders
 import json
+
+def order_counts(request):
+    if request.user.is_authenticated and is_customer(request.user):
+        customer = models.Customer.objects.get(user_id=request.user.id)
+        context = {
+            'pending_count': models.Orders.objects.filter(customer=customer, status='Pending').count(),
+            'to_ship_count': models.Orders.objects.filter(customer=customer, status='Processing').count(),
+            'to_receive_count': models.Orders.objects.filter(customer=customer, status='Shipping').count(),
+            'delivered_count': models.Orders.objects.filter(customer=customer, status='Delivered').count(),
+            'cancelled_count': models.Orders.objects.filter(customer=customer, status='Cancelled').count(),
+        }
+        return context
+    return {}
 
 
 def home_view(request):
@@ -258,14 +272,52 @@ def delete_order_view(request,pk):
 # for changing status of order (pending,delivered...)
 @login_required(login_url='adminlogin')
 def update_order_view(request,pk):
-    order=models.Orders.objects.get(id=pk)
-    orderForm=forms.OrderForm(instance=order)
-    if request.method=='POST':
-        orderForm=forms.OrderForm(request.POST,instance=order)
+    order = models.Orders.objects.get(id=pk)
+    orderForm = forms.OrderForm(instance=order)
+    
+    if request.method == 'POST':
+        orderForm = forms.OrderForm(request.POST, instance=order)
         if orderForm.is_valid():
-            orderForm.save()
+            # Save the form but don't commit yet
+            updated_order = orderForm.save(commit=False)
+            
+            # If status has changed, update the status_updated_at timestamp
+            if updated_order.status != order.status:
+                updated_order.status_updated_at = timezone.now()
+                
+                # Set estimated delivery date based on status if not manually set
+                if not updated_order.estimated_delivery_date:
+                    if updated_order.status == 'Processing':
+                        updated_order.estimated_delivery_date = timezone.now().date() + timezone.timedelta(days=7)
+                    elif updated_order.status == 'Order Confirmed':
+                        updated_order.estimated_delivery_date = timezone.now().date() + timezone.timedelta(days=5)
+                    elif updated_order.status == 'Out for Delivery':
+                        updated_order.estimated_delivery_date = timezone.now().date() + timezone.timedelta(days=1)
+                
+                # Reduce inventory when order is marked as delivered
+                if updated_order.status == 'Delivered':
+                    try:
+                        inventory_item = models.InventoryItem.objects.get(name=updated_order.product.name)
+                        if inventory_item.quantity >= updated_order.quantity:
+                            inventory_item.quantity -= updated_order.quantity
+                            inventory_item.save()
+                            messages.success(request, f'Inventory updated: {inventory_item.name} quantity reduced by {updated_order.quantity}')
+                        else:
+                            messages.error(request, f'Insufficient inventory for {inventory_item.name}')
+                            return render(request, 'ecom/update_order.html', {'orderForm': orderForm, 'order': order})
+                    except models.InventoryItem.DoesNotExist:
+                        messages.warning(request, f'No inventory item found for {updated_order.product.name}')
+            
+            updated_order.save()
+            messages.success(request, f'Order status updated to {updated_order.get_status_display()}')
             return redirect('admin-view-booking')
-    return render(request,'ecom/update_order.html',{'orderForm':orderForm})
+    
+    context = {
+        'orderForm': orderForm,
+        'order': order,
+        'status_history': f"Last status update: {order.status_updated_at.strftime('%Y-%m-%d %H:%M:%S') if order.status_updated_at else 'Not available'}"
+    }
+    return render(request, 'ecom/update_order.html', context)
 
 
 @login_required(login_url='adminlogin')
@@ -273,6 +325,68 @@ def delete_inventory(request, item_id):
     item = get_object_or_404(InventoryItem, id=item_id)
     item.delete()
     return redirect('manage-inventory')
+
+@login_required(login_url='adminlogin')
+def bulk_update_orders(request):
+    if request.method == 'POST':
+        order_ids = request.POST.getlist('order_ids')
+        new_status = request.POST.get('bulk_status')
+        
+        if order_ids and new_status:
+            orders = models.Orders.objects.filter(id__in=order_ids)
+            current_time = timezone.now()
+            
+            # Calculate estimated delivery date based on new status
+            delivery_date = None
+            if new_status == 'Processing':
+                delivery_date = current_time.date() + timezone.timedelta(days=7)
+            elif new_status == 'Order Confirmed':
+                delivery_date = current_time.date() + timezone.timedelta(days=5)
+            elif new_status == 'Out for Delivery':
+                delivery_date = current_time.date() + timezone.timedelta(days=1)
+            
+            # If marking as delivered, check and update inventory first
+            if new_status == 'Delivered':
+                inventory_updates = {}
+                
+                # First pass: Calculate total quantities needed for each product
+                for order in orders:
+                    product_name = order.product.name
+                    if product_name in inventory_updates:
+                        inventory_updates[product_name]['quantity_needed'] += order.quantity
+                    else:
+                        inventory_updates[product_name] = {
+                            'quantity_needed': order.quantity,
+                            'orders': []
+                        }
+                    inventory_updates[product_name]['orders'].append(order)
+                
+                # Second pass: Check inventory availability
+                for product_name, update_info in inventory_updates.items():
+                    try:
+                        inventory_item = models.InventoryItem.objects.get(name=product_name)
+                        if inventory_item.quantity >= update_info['quantity_needed']:
+                            inventory_item.quantity -= update_info['quantity_needed']
+                            inventory_item.save()
+                            messages.success(request, f'Inventory updated: {product_name} quantity reduced by {update_info["quantity_needed"]}')
+                        else:
+                            messages.error(request, f'Insufficient inventory for {product_name}')
+                            return redirect('admin-view-booking')
+                    except models.InventoryItem.DoesNotExist:
+                        messages.warning(request, f'No inventory item found for {product_name}')
+            
+            # Update all selected orders
+            orders.update(
+                status=new_status,
+                status_updated_at=current_time,
+                estimated_delivery_date=delivery_date
+            )
+            
+            messages.success(request, f'Successfully updated {len(order_ids)} orders to {new_status}')
+        else:
+            messages.error(request, 'Please select orders and status to update')
+            
+    return redirect('admin-view-booking')
 
 @login_required(login_url='adminlogin')
 def edit_inventory(request, item_id):
@@ -300,6 +414,39 @@ def view_feedback_view(request):
 #---------------------------------------------------------------------------------
 #------------------------ PUBLIC CUSTOMER RELATED VIEWS START ---------------------
 #---------------------------------------------------------------------------------
+
+@login_required(login_url='customerlogin')
+def pending_orders_view(request):
+    customer = models.Customer.objects.get(user_id=request.user.id)
+    orders = models.Orders.objects.filter(customer=customer, status='Pending').order_by('-created_at')
+    return render(request, 'ecom/order_status_page.html', {'orders': orders, 'status': 'Pending', 'title': 'Pending Orders'})
+
+@login_required(login_url='customerlogin')
+def to_ship_orders_view(request):
+    customer = models.Customer.objects.get(user_id=request.user.id)
+    orders = models.Orders.objects.filter(
+        customer=customer,
+        status__in=['Processing', 'Order Confirmed']
+    ).order_by('-created_at')
+    return render(request, 'ecom/order_status_page.html', {'orders': orders, 'status': 'To Ship', 'title': 'Orders To Ship'})
+
+@login_required(login_url='customerlogin')
+def to_receive_orders_view(request):
+    customer = models.Customer.objects.get(user_id=request.user.id)
+    orders = models.Orders.objects.filter(customer=customer, status='Out for Delivery').order_by('-created_at')
+    return render(request, 'ecom/order_status_page.html', {'orders': orders, 'status': 'To Receive', 'title': 'Orders To Receive'})
+
+@login_required(login_url='customerlogin')
+def delivered_orders_view(request):
+    customer = models.Customer.objects.get(user_id=request.user.id)
+    orders = models.Orders.objects.filter(customer=customer, status='Delivered').order_by('-created_at')
+    return render(request, 'ecom/order_status_page.html', {'orders': orders, 'status': 'Delivered', 'title': 'Delivered Orders'})
+
+@login_required(login_url='customerlogin')
+def cancelled_orders_view(request):
+    customer = models.Customer.objects.get(user_id=request.user.id)
+    orders = models.Orders.objects.filter(customer=customer, status='Cancelled').order_by('-created_at')
+    return render(request, 'ecom/order_status_page.html', {'orders': orders, 'status': 'Cancelled', 'title': 'Cancelled Orders'})
 
 def cart_page(request):
     user = request.user
@@ -566,55 +713,65 @@ def customer_home_view(request):
 # shipment address before placing order
 @login_required(login_url='customerlogin')
 def customer_address_view(request):
-    # this is for checking whether product is present in cart or not
-    # if there is no product in cart we will not show address form
-    product_in_cart=False
+    # Check if product is present in cart
+    product_in_cart = False
+    product_count_in_cart = 0
+    total = 0
+
     if 'product_ids' in request.COOKIES:
         product_ids = request.COOKIES['product_ids']
         if product_ids != "":
-            product_in_cart=True
-    #for counter in cart
-    if 'product_ids' in request.COOKIES:
-        product_ids = request.COOKIES['product_ids']
-        counter=product_ids.split('|')
-        product_count_in_cart=len(set(counter))
-    else:
-        product_count_in_cart=0
+            product_in_cart = True
+            counter = product_ids.split('|')
+            product_count_in_cart = len(set(counter))
+            
+            # Calculate total price
+            product_id_in_cart = product_ids.split('|')
+            products = models.Product.objects.all().filter(id__in=product_id_in_cart)
+            for p in products:
+                total = total + p.price
 
+    # Get payment method from query parameter
+    payment_method = request.GET.get('method', 'cod')
+
+    # For COD, skip address form and use profile address
+    if payment_method == 'cod':
+        if not product_in_cart:
+            return render(request, 'ecom/customer_address.html', {
+                'product_in_cart': product_in_cart,
+                'product_count_in_cart': product_count_in_cart
+            })
+        
+        # Redirect directly to payment success for COD
+        return redirect(f'/payment-success?method=cod')
+
+    # For other payment methods, show address form
     addressForm = forms.AddressForm()
     if request.method == 'POST':
         addressForm = forms.AddressForm(request.POST)
         if addressForm.is_valid():
-            # here we are taking address, email, mobile at time of order placement
-            # we are not taking it from customer account table because
-            # these thing can be changes
             email = addressForm.cleaned_data['Email']
-            mobile=addressForm.cleaned_data['Mobile']
+            mobile = addressForm.cleaned_data['Mobile']
             address = addressForm.cleaned_data['Address']
-            #for showing total price on payment page.....accessing id from cookies then fetching  price of product from db
-            total=0
-            if 'product_ids' in request.COOKIES:
-                product_ids = request.COOKIES['product_ids']
-                if product_ids != "":
-                    product_id_in_cart=product_ids.split('|')
-                    products=models.Product.objects.all().filter(id__in = product_id_in_cart)
-                    for p in products:
-                        total=total+p.price
 
-            response = render(request, 'ecom/payment.html',{'total':total})
-            response.set_cookie('email',email)
-            response.set_cookie('mobile',mobile)
-            response.set_cookie('address',address)
+            response = render(request, 'ecom/payment.html', {'total': total})
+            response.set_cookie('email', email)
+            response.set_cookie('mobile', mobile)
+            response.set_cookie('address', address)
             return response
-    return render(request,'ecom/customer_address.html',{'addressForm':addressForm,'product_in_cart':product_in_cart,'product_count_in_cart':product_count_in_cart})
+
+    return render(request, 'ecom/customer_address.html', {
+        'addressForm': addressForm,
+        'product_in_cart': product_in_cart,
+        'product_count_in_cart': product_count_in_cart,
+        'payment_method': payment_method
+    })
 
 @login_required(login_url='customerlogin')
 def payment_success_view(request):
     customer = models.Customer.objects.get(user_id=request.user.id)
     products = None
-    email = None
-    mobile = None
-    address = customer.address  # Default to profile address
+    payment_method = request.GET.get('method', 'cod')  # Default to COD if not specified
 
     if 'product_ids' in request.COOKIES:
         product_ids = request.COOKIES['product_ids']
@@ -628,13 +785,16 @@ def payment_success_view(request):
                     product_ids_only.add(product_id)
             products = models.Product.objects.filter(id__in=product_ids_only)
 
-    # Check if the PayPal response contains address and contact details
-    if 'email' in request.COOKIES:
-        email = request.COOKIES['email']
-    if 'mobile' in request.COOKIES:
-        mobile = request.COOKIES['mobile']
-    if 'address' in request.COOKIES:
-        address = request.COOKIES['address']  # Override with PayPal address if available
+    # For COD, use customer's profile information
+    if payment_method == 'cod':
+        email = customer.user.email
+        mobile = str(customer.mobile)
+        address = customer.get_full_address
+    else:
+        # For other payment methods (e.g., PayPal), use provided address
+        email = request.COOKIES.get('email', customer.user.email)
+        mobile = request.COOKIES.get('mobile', str(customer.mobile))
+        address = request.COOKIES.get('address', customer.get_full_address)
 
     # Create orders for each product in the cart
     for product in products:
@@ -657,8 +817,8 @@ def payment_success_view(request):
                     email=email,
                     mobile=mobile,
                     address=address,
-                    quantity=quantity,  # Set the quantity field
-                    size=size,  # Set the size field
+                    quantity=quantity,
+                    size=size,
                 )
 
                 # Log the order creation
@@ -667,12 +827,15 @@ def payment_success_view(request):
     # Clear cookies after order placement
     response = render(request, 'ecom/payment_success.html')
     response.delete_cookie('product_ids')
-    response.delete_cookie('email')
-    response.delete_cookie('mobile')
-    response.delete_cookie('address')
+    
+    # Only clear address cookies for non-COD payments
+    if payment_method != 'cod':
+        response.delete_cookie('email')
+        response.delete_cookie('mobile')
+        response.delete_cookie('address')
 
+    # Clear product-specific cookies
     for product in products:
-        # Delete all size cookies for this product
         for key in product_keys:
             if key.startswith(f'product_{product.id}_'):
                 cookie_key = f'{key}_details'
@@ -704,7 +867,7 @@ def cancel_order_view(request, order_id):
         messages.success(request, 'Order cancelled successfully!')
     else:
         messages.error(request, 'Order cannot be cancelled at this time.')
-    return redirect('home')
+    return redirect('my-order')
 
 
 
@@ -712,7 +875,6 @@ def cancel_order_view(request, order_id):
 @login_required(login_url='customerlogin')
 @user_passes_test(is_customer)
 def my_order_view(request):
-    
     customer = models.Customer.objects.get(user_id=request.user.id)
     orders = models.Orders.objects.filter(customer=customer)
     data = []
@@ -720,6 +882,13 @@ def my_order_view(request):
         product = order.product
         data.append((product, order))
     return render(request, 'ecom/my_order.html', {'data': data})
+
+@login_required(login_url='customerlogin')
+@user_passes_test(is_customer)
+def my_order_view_pk(request, pk):
+    customer = models.Customer.objects.get(user_id=request.user.id)
+    order = get_object_or_404(models.Orders, id=pk, customer=customer)
+    return render(request, 'ecom/order_detail.html', {'order': order, 'product': order.product})
 
 def my_view(request):
     facebook_url = reverse('facebook')

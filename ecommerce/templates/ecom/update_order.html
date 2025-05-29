@@ -55,10 +55,51 @@
                 <p>Update Status Of Order</p>
             </div>
             <div class="form-content">
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="alert alert-info">
+                            <strong>Current Status:</strong> {{ order.get_status_display }}<br>
+                            <strong>{{ status_history }}</strong>
+                        </div>
+                    </div>
+                </div>
 
-                <label for="">Select Any:</label> {% render_field orderForm.status class="form-control" placeholder="Address" %}
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label>Update Status:</label>
+                            {% render_field orderForm.status class="form-control" %}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label>Estimated Delivery Date:</label>
+                            {% render_field orderForm.estimated_delivery_date class="form-control" %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            <label>Notes:</label>
+                            {% render_field orderForm.notes class="form-control" placeholder="Add any additional notes about the order status" %}
+                        </div>
+                    </div>
+                </div>
+
+                {% if messages %}
+                <div class="row">
+                    <div class="col-md-12">
+                        {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }}">
+                            {{ message }}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
             </div>
-
         </div>
     </div>
     <div>

@@ -2,7 +2,6 @@
 {% load static %}
 {% block content %}
 
-
 <head>
   <link href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
   <script src="//netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js"></script>
@@ -20,6 +19,10 @@
     .row {
       margin: 100px;
     }
+
+    .bulk-actions {
+      margin-bottom: 20px;
+    }
   </style>
 </head>
 <div class="container">
@@ -27,9 +30,31 @@
     <div class="panel-heading">
       <h6 class="panel-title">Total Orders</h6>
     </div>
+
+    <div class="bulk-actions">
+      <form id="bulk-update-form" method="post" action="{% url 'bulk-update-orders' %}">
+        {% csrf_token %}
+        <div class="row" style="margin: 10px;">
+          <div class="col-md-4">
+            <select name="bulk_status" class="form-control" required>
+              <option value="">Select Status</option>
+              <option value="Processing">Processing</option>
+              <option value="Order Confirmed">Order Confirmed</option>
+              <option value="Out for Delivery">Out for Delivery</option>
+              <option value="Delivered">Delivered</option>
+            </select>
+          </div>
+          <div class="col-md-2">
+            <button type="submit" class="btn btn-primary">Update Selected Orders</button>
+          </div>
+        </div>
+      </form>
+    </div>
+
     <table class="table table-hover table-bordered" id="dev-table">
       <thead>
         <tr>
+          <th><input type="checkbox" id="select-all" /></th>
           <th>Customer</th>
           <th>Contact</th>
           <th>Shipping Address</th>
@@ -42,26 +67,46 @@
       <!-- p for product, c for customer-->
       {% for product,customer,order in data %}
       <tr>
+        <td>
+          <input type="checkbox" name="order_ids" value="{{ order.id }}" form="bulk-update-form" class="order-checkbox" />
+        </td>
         {% for c in customer %}
         <td> {{c.get_name}}</td>
         <td>{{c.mobile}}</td>
         <td>{{order.address}}</td>
-
         {% endfor %}
+
         {% for p in product %}
         <td> {{p.name}}</td>
         <td> <img src="{% static p.product_image.url %}" alt="Profile Pic" height="40px" width="40px" /></td>
         <td>{{order.status}}</td>
-        <td><a class="btn btn-primary btn-xs" href="{% url 'update-order' order.id  %}"><span class="glyphicon glyphicon-edit"></span></a>
-        <a class="btn btn-danger btn-xs" href="{% url 'delete-order' order.id  %}"><span class="glyphicon glyphicon-trash"></span></a></td>
-
+        <td>
+          <a class="btn btn-primary btn-xs" href="{% url 'update-order' order.id  %}"><span class="glyphicon glyphicon-edit"></span></a>
+          <a class="btn btn-danger btn-xs" href="{% url 'delete-order' order.id  %}"><span class="glyphicon glyphicon-trash"></span></a>
+        </td>
         {% endfor %}
-
-
-
       </tr>
       {% endfor %}
     </table>
   </div>
 </div>
+
+<script>
+  $(document).ready(function() {
+    // Handle select all checkbox
+    $('#select-all').change(function() {
+      $('.order-checkbox').prop('checked', $(this).prop('checked'));
+    });
+
+    // Update select all checkbox when individual checkboxes change
+    $('.order-checkbox').change(function() {
+      if ($('.order-checkbox:checked').length == $('.order-checkbox').length) {
+        $('#select-all').prop('checked', true);
+      } else {
+        $('#select-all').prop('checked', false);
+      }
+    });
+  });
+</script>
+
 {% endblock content %}

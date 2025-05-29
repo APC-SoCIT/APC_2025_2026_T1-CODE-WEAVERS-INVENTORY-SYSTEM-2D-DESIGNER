@@ -1,0 +1,132 @@
+{% extends 'ecom/customer_base.html' %}
+{% load static %}
+{% block content %}
+
+<style media="screen">
+    @import url('https://fonts.googleapis.com/css?family=Open+Sans&display=swap');
+    body {
+        background-color: #f7f7f7;
+    }
+    
+    .container {
+        margin-top: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .card {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        word-wrap: break-word;
+        background-color: #fff;
+        background-clip: border-box;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        border-radius: 0.25rem;
+        margin-bottom: 20px;
+    }
+    
+    .card-header {
+        padding: 1rem 1.25rem;
+        margin-bottom: 0;
+        background-color: #f8f9fa;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    }
+    
+    .card-body {
+        padding: 1.25rem;
+    }
+    
+    .order-status {
+        font-size: 0.9rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+        font-weight: 500;
+    }
+    
+    .status-pending { background-color: #ffeeba; color: #856404; }
+    .status-processing { background-color: #b8daff; color: #004085; }
+    .status-confirmed { background-color: #c3e6cb; color: #155724; }
+    .status-shipping { background-color: #bee5eb; color: #0c5460; }
+    .status-delivered { background-color: #d4edda; color: #155724; }
+    .status-cancelled { background-color: #f8d7da; color: #721c24; }
+    
+    .product-image {
+        max-width: 100px;
+        height: auto;
+    }
+    
+    .order-details {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .order-meta {
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+</style>
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <h2 class="mb-4">{{ title }}</h2>
+            
+            {% if not orders %}
+            <div class="alert alert-info">
+                No {{ status }} orders found.
+            </div>
+            {% endif %}
+            
+            {% for order in orders %}
+            <div class="card">
+                <div class="card-header">
+                    <div class="order-details">
+                        <div>
+                            <strong>Order #{{ order.id }}</strong>
+                            <span class="order-meta ml-3">Placed on {{ order.created_at|date:"M d, Y" }}</span>
+                        </div>
+                        <span class="order-status status-{{ order.status|lower }}">{{ order.status }}</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-2">
+                            <img src="{% static order.product.product_image.url %}" class="product-image" alt="{{ order.product.name }}">
+                        </div>
+                        <div class="col-md-6">
+                            <h5>{{ order.product.name }}</h5>
+                            <p class="mb-1">Size: {{ order.size }}</p>
+                            <p class="mb-1">Quantity: {{ order.quantity }}</p>
+                            <p class="mb-0">Price: ${{ order.product.price }}</p>
+                        </div>
+                        <div class="col-md-4">
+                            <h6>{% if order.status == 'Cancelled' %}Cancellation Details{% else %}Delivery Details{% endif %}</h6>
+                            {% if order.status == 'Cancelled' %}
+                            <p class="mb-1">Order cancelled on {{ order.status_updated_at|date:"M d, Y" }}</p>
+                            {% if order.notes %}
+                            <p class="mb-1">Reason: {{ order.notes }}</p>
+                            {% endif %}
+                            {% else %}
+                                {% if order.payment_method == 'cod' %}
+                                <p class="mb-1">{{ order.customer.get_full_address }}</p>
+                                <p class="mb-1">Contact: {{ order.customer.mobile }}</p>
+                                {% else %}
+                                <p class="mb-1">{{ order.address }}</p>
+                                <p class="mb-1">Contact: {{ order.mobile }}</p>
+                                {% endif %}
+                                {% if order.estimated_delivery_date %}
+                                <p class="mb-0">Estimated Delivery: {{ order.estimated_delivery_date|date:"M d, Y" }}</p>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+{% endblock content %}

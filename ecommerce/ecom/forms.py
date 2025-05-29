@@ -1,5 +1,6 @@
 from django import forms
 from django.contrib.auth.models import User
+from django.utils import timezone
 from . import models
 from .models import Product
 from django.contrib.auth.forms import AuthenticationForm
@@ -39,7 +40,23 @@ class FeedbackForm(forms.ModelForm):
 class OrderForm(forms.ModelForm):
     class Meta:
         model=models.Orders
-        fields=['status']
+        fields=['status', 'estimated_delivery_date', 'notes']
+        widgets = {
+            'estimated_delivery_date': forms.DateInput(attrs={'type': 'date'}),
+            'notes': forms.Textarea(attrs={'rows': 3})
+        }
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        if self.instance.pk:  # If this is an existing instance
+            original = models.Orders.objects.get(pk=self.instance.pk)
+            if instance.status != original.status:
+                instance.status_updated_at = timezone.now()
+        else:  # If this is a new instance
+            instance.status_updated_at = timezone.now()
+        if commit:
+            instance.save()
+        return instance
 
 #for contact us page
 class ContactusForm(forms.Form):

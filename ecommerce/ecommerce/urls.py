@@ -4,7 +4,7 @@ from ecom import views
 from django.contrib.auth.views import LoginView,LogoutView
 from django.views.generic import RedirectView
 from ecom.views import manage_inventory, update_stock 
-from ecom.views import delete_inventory, edit_inventory
+from ecom.views import delete_inventory, edit_inventory, bulk_update_orders
 from django.conf import settings
 from django.conf.urls.static import static
 
@@ -31,6 +31,7 @@ urlpatterns = [
 
     path('admin-products', views.admin_products_view,name='admin-products'),
     path('admin-add-product', views.admin_add_product_view,name='admin-add-product'),
+    path('bulk-update-orders/', bulk_update_orders, name='bulk-update-orders'),
     path('delete-product/<int:pk>', views.delete_product_view,name='delete-product'),
     path('update-product/<int:pk>', views.update_product_view,name='update-product'),
 
@@ -42,7 +43,13 @@ urlpatterns = [
     path('customersignup', views.customer_signup_view),
     path('customerlogin', LoginView.as_view(template_name='ecom/customerlogin.html'),name='customerlogin'),
     path('customer-home', views.customer_home_view,name='customer-home'),
-    path('my-order', views.my_order_view,name='my-order'),
+    path('orders/pending/', views.pending_orders_view, name='pending-orders'),
+    path('orders/to-ship/', views.to_ship_orders_view, name='to-ship-orders'),
+    path('orders/to-receive/', views.to_receive_orders_view, name='to-receive-orders'),
+    path('orders/delivered/', views.delivered_orders_view, name='delivered-orders'),
+    path('orders/cancelled/', views.cancelled_orders_view, name='cancelled-orders'),
+    path('my-order', views.my_order_view, name='my-order'),
+    path('my-order/<int:pk>', views.my_order_view_pk, name='my-order-pk'),
     path('my-profile', views.my_profile_view,name='my-profile'),
     path('edit-profile', views.edit_profile_view,name='edit-profile'),
     path('download-invoice/<int:orderID>/<int:productID>', views.download_invoice_view,name='download-invoice'),
@@ -70,5 +77,3 @@ urlpatterns = [
     path('cancel-order/<int:order_id>', views.cancel_order_view, name='cancel-order'),
 ]
 
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

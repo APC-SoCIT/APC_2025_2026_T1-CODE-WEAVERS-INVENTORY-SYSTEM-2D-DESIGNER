@@ -66,22 +66,32 @@ class CartItem(models.Model):
 
 class Orders(models.Model):
     STATUS = (
-        ('Pending','Pending'),
-        ('Order Confirmed','Order Confirmed'),
-        ('Out for Delivery','Out for Delivery'),
-        ('Delivered','Delivered'),
-        ('Cancelled', 'Cancelled'),
+        ('Pending', 'Pending - Awaiting Payment'),
+        ('Processing', 'Processing - Payment Confirmed'),
+        ('Order Confirmed', 'Order Confirmed - In Production'),
+        ('Out for Delivery', 'Out for Delivery'),
+        ('Delivered', 'Delivered'),
+        ('Cancelled', 'Cancelled')
     )
-    created_at = models.DateTimeField(auto_now_add=True)
-    customer = models.ForeignKey('Customer', on_delete=models.CASCADE,null=True)
-    product = models.ForeignKey('Product',on_delete=models.CASCADE,null=True)
-    email = models.CharField(max_length=50,null=True)
-    address = models.CharField(max_length=500,null=True)
-    mobile = models.CharField(max_length=20,null=True)
-    order_date = models.DateField(auto_now_add=True,null=True)
-    status = models.CharField(max_length=50,null=True,choices=STATUS)
+    PAYMENT_METHODS = (
+        ('cod', 'Cash on Delivery'),
+        ('paypal', 'PayPal')
+    )
+    created_at = models.DateTimeField(auto_now_add=True, help_text='When the order was created')
+    updated_at = models.DateTimeField(auto_now=True, help_text='When the order was last updated')
+    customer = models.ForeignKey('Customer', on_delete=models.CASCADE, null=True)
+    product = models.ForeignKey('Product', on_delete=models.CASCADE, null=True)
+    email = models.CharField(max_length=50, null=True)
+    address = models.CharField(max_length=500, null=True)
+    mobile = models.CharField(max_length=20, null=True)
+    order_date = models.DateField(auto_now_add=True, null=True, help_text='Date when order was placed')
+    status = models.CharField(max_length=50, null=True, choices=STATUS, default='Pending', help_text='Current status of the order')
+    status_updated_at = models.DateTimeField(null=True, blank=True, help_text='When the status was last changed')
     size = models.CharField(max_length=20)
     quantity = models.IntegerField(default=1)
+    estimated_delivery_date = models.DateField(null=True, blank=True, help_text='Estimated delivery date')
+    notes = models.TextField(blank=True, null=True, help_text='Additional notes about the order')
+    payment_method = models.CharField(max_length=10, choices=PAYMENT_METHODS, default='cod', help_text='Payment method for the order')
 
 class OrderItem(models.Model):
     order = models.ForeignKey(Orders, on_delete=models.CASCADE)

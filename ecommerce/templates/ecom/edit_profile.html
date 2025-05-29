@@ -75,6 +75,12 @@
                         <div class="form-group">
                             {% render_field customerForm.mobile class="form-control" placeholder="Mobile" %}
                         </div>
+                        <div class="form-group">
+                            {% render_field customerForm.street_address class="form-control" placeholder="Street Address" %}
+                        </div>
+                        <div class="form-group">
+                            {% render_field customerForm.barangay class="form-control" placeholder="Barangay" %}
+                        </div>
                     </div>
                     <div class="col-md-6">
                         <div class="form-group">
@@ -84,7 +90,10 @@
                             {% render_field userForm.password class="form-control" placeholder="Password" %}
                         </div>
                         <div class="form-group">
-                            {% render_field customerForm.address class="form-control" placeholder="Address" %}
+                            {% render_field customerForm.city class="form-control" placeholder="City" %}
+                        </div>
+                        <div class="form-group">
+                            {% render_field customerForm.postal_code class="form-control" placeholder="Postal Code" %}
                         </div>
 
                     </div>

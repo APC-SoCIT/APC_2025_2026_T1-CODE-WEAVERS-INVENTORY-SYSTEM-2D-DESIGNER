@@ -121,15 +121,29 @@ body {
 }
 
 .dropdown:hover {
-    background-color: #fff
+    background-color: transparent
 }
 
 .dropdown:hover .links {
-    color: #000
+    color: #fff;
+    opacity: 0.8
 }
 
 .dropdown:hover .dropdown-menu {
-    display: block
+    display: block;
+    opacity: 1;
+    transform: translateY(0)
+}
+
+.dropdown .dropdown-menu {
+    transform: translateY(-10px);
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.3s ease
+}
+
+.dropdown:hover .dropdown-menu {
+    pointer-events: auto
 }
 
 .dropdown .dropdown-menu {
@@ -140,10 +154,78 @@ body {
     color: #333;
     left: 0px;
     border: 0;
-    border-radius: 0;
-    box-shadow: 0 4px 8px -3px #555454;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
     margin: 0;
-    padding: 0px
+    padding: 8px 0;
+    min-width: 200px;
+    transition: all 0.3s ease;
+    z-index: 1000
+}
+
+.dropdown-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    color: #333;
+    text-decoration: none;
+    font-size: 16px;
+    line-height: 1.5;
+    transition: all 0.2s ease;
+    position: relative
+}
+
+.dropdown-item:hover {
+    background-color: #f8f9fa
+}
+
+.dropdown-item i {
+    font-size: 18px;
+    margin-right: 12px;
+    color: #666
+}
+
+.dropdown-item .item-left {
+    display: flex;
+    align-items: center
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 8px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    min-width: 24px;
+    height: 24px
+}
+
+.status-badge.pending {
+    background-color: #FFE4B5;
+    color: #B8860B
+}
+
+.status-badge.shipping {
+    background-color: #E0FFFF;
+    color: #4682B4
+}
+
+.status-badge.receiving {
+    background-color: #E6E6FA;
+    color: #6A5ACD
+}
+
+.status-badge.delivered {
+    background-color: #98FB98;
+    color: #228B22
+}
+
+.status-badge.cancelled {
+    background-color: #FFB6C1;
+    color: #CD5C5C
 }
 
 .links {
@@ -295,7 +377,48 @@ body {
             <ul class="largenav pull-right">
 
                 <li class="upper-links"><a class="links" href="/customer-home">Home</a></li>
-                <li class="upper-links"><a class="links" href="/my-order">Track Orders</a></li>
+                <li class="upper-links dropdown">
+          <a class="links dropdown-toggle" href="#" id="orderDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            Track Orders
+          </a>
+          <div class="dropdown-menu" aria-labelledby="orderDropdown">
+            <a class="dropdown-item" href="{% url 'pending-orders' %}">
+              <div class="item-left">
+                <i class="fa fa-clock-o"></i>
+                <span>Pending Orders</span>
+              </div>
+              {% if pending_count %}<span class="status-badge pending">{{ pending_count }}</span>{% endif %}
+            </a>
+            <a class="dropdown-item" href="{% url 'to-ship-orders' %}">
+              <div class="item-left">
+                <i class="fa fa-box"></i>
+                <span>To Ship</span>
+              </div>
+              {% if to_ship_count %}<span class="status-badge shipping">{{ to_ship_count }}</span>{% endif %}
+            </a>
+            <a class="dropdown-item" href="{% url 'to-receive-orders' %}">
+              <div class="item-left">
+                <i class="fa fa-truck"></i>
+                <span>To Receive</span>
+              </div>
+              {% if to_receive_count %}<span class="status-badge receiving">{{ to_receive_count }}</span>{% endif %}
+            </a>
+            <a class="dropdown-item" href="{% url 'delivered-orders' %}">
+              <div class="item-left">
+                <i class="fa fa-check-circle"></i>
+                <span>Delivered</span>
+              </div>
+              {% if delivered_count %}<span class="status-badge delivered">{{ delivered_count }}</span>{% endif %}
+            </a>
+            <a class="dropdown-item" href="{% url 'cancelled-orders' %}">
+              <div class="item-left">
+                <i class="fa fa-times-circle"></i>
+                <span>Cancelled</span>
+              </div>
+              {% if cancelled_count %}<span class="status-badge cancelled">{{ cancelled_count }}</span>{% endif %}
+            </a>
+          </div>
+        </li>
                 <li class="upper-links"><a class="links" href="/jersey-customizer/advanced">2D Designer</a></li>
                 <li class="upper-links"><a class="links" href="/about">About Us</a></li>
                 <li class="upper-links"><a class="links" href="/my-profile">Profile</a></li>
