@@ -16,6 +16,11 @@ from .models import InventoryItem
 from .models import Orders
 import json
 import requests
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
 
 
 
@@ -865,8 +870,8 @@ def interactive_jersey(request):
 #------------------------ PAYMONGO -------------------------
 #-----------------------------------------------------------
 
-# Replace with your own PayMongo test key
-PAYMONGO_SECRET_KEY = 'sk_test_FFfnvsMb2YQSctcZ3NY8wThb'
+# Replace with your own PayMongo test key   
+PAYMONGO_SECRET_KEY = os.getenv("PAYMONGO_SECRET_KEY")
 
 def create_gcash_payment(request):
     url = "https://api.paymongo.com/v1/checkout_sessions"
@@ -902,8 +907,8 @@ def create_gcash_payment(request):
                             details = request.COOKIES[cookie_key].split(':')
                             if len(details) == 2:
                                 quantity = int(details[1])
-                amount = int(product.price * 100) * quantity  # amount in cents
-                total_amount += amount
+                amount = int(product.price * 100)  # amount per unit in cents
+                total_amount += amount * quantity
                 line_items.append({
                     "currency": "PHP",
                     "amount": amount,
