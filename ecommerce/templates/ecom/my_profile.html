@@ -54,7 +54,7 @@
   <div class="col-sm-4 col-md-4">
     <blockquote>
       <p>Username: {{ request.user }}</p>
-      <small><cite title="Source Title">Address: {{ customer.address }} <i class="glyphicon glyphicon-map-marker"></i></cite></small>
+      <small><cite title="Source Title">Address: {{ customer.get_full_address }} <i class="glyphicon glyphicon-map-marker"></i></cite></small>
     </blockquote>
     <p><i class="glyphicon glyphicon-phone"></i>Contact: {{ customer.mobile }}</p>
   </div>

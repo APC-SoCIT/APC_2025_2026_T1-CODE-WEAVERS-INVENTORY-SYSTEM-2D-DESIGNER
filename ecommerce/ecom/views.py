@@ -297,13 +297,13 @@ def update_order_view(request,pk):
                 # Reduce inventory when order is marked as delivered
                 if updated_order.status == 'Delivered':
                     try:
-                        inventory_item = models.InventoryItem.objects.get(name=updated_order.product.name)
+                        inventory_item = models.InventoryItem.objects.get(product=updated_order.product)
                         if inventory_item.quantity >= updated_order.quantity:
                             inventory_item.quantity -= updated_order.quantity
                             inventory_item.save()
-                            messages.success(request, f'Inventory updated: {inventory_item.name} quantity reduced by {updated_order.quantity}')
+                            messages.success(request, f'Inventory updated: {inventory_item.product.name} quantity reduced by {updated_order.quantity}')
                         else:
-                            messages.error(request, f'Insufficient inventory for {inventory_item.name}')
+                            messages.error(request, f'Insufficient inventory for {inventory_item.product.name}')
                             return render(request, 'ecom/update_order.html', {'orderForm': orderForm, 'order': order})
                     except models.InventoryItem.DoesNotExist:
                         messages.warning(request, f'No inventory item found for {updated_order.product.name}')
@@ -351,29 +351,30 @@ def bulk_update_orders(request):
                 
                 # First pass: Calculate total quantities needed for each product
                 for order in orders:
-                    product_name = order.product.name
-                    if product_name in inventory_updates:
-                        inventory_updates[product_name]['quantity_needed'] += order.quantity
+                    product = order.product
+                    if product.id in inventory_updates:
+                        inventory_updates[product.id]['quantity_needed'] += order.quantity
                     else:
-                        inventory_updates[product_name] = {
+                        inventory_updates[product.id] = {
                             'quantity_needed': order.quantity,
-                            'orders': []
+                            'orders': [],
+                            'product': product
                         }
-                    inventory_updates[product_name]['orders'].append(order)
+                    inventory_updates[product.id]['orders'].append(order)
                 
                 # Second pass: Check inventory availability
-                for product_name, update_info in inventory_updates.items():
+                for product_id, update_info in inventory_updates.items():
                     try:
-                        inventory_item = models.InventoryItem.objects.get(name=product_name)
+                        inventory_item = models.InventoryItem.objects.get(product=update_info['product'])
                         if inventory_item.quantity >= update_info['quantity_needed']:
                             inventory_item.quantity -= update_info['quantity_needed']
                             inventory_item.save()
-                            messages.success(request, f'Inventory updated: {product_name} quantity reduced by {update_info["quantity_needed"]}')
+                            messages.success(request, f'Inventory updated: {update_info["product"].name} quantity reduced by {update_info["quantity_needed"]}')
                         else:
-                            messages.error(request, f'Insufficient inventory for {product_name}')
+                            messages.error(request, f'Insufficient inventory for {update_info["product"].name}')
                             return redirect('admin-view-booking')
                     except models.InventoryItem.DoesNotExist:
-                        messages.warning(request, f'No inventory item found for {product_name}')
+                        messages.warning(request, f'No inventory item found for {update_info["product"].name}')
             
             # Update all selected orders
             orders.update(

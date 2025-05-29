@@ -421,16 +421,8 @@
       // COD Form Submission
       document.getElementById('cod-checkout-form').addEventListener('submit', (e) => {
         e.preventDefault();
-        const address = document.getElementById('delivery-address').value;
-        const contact = document.getElementById('contact-number').value;
-
-        if (!address || !contact) {
-          alert('Please fill in all required fields');
-          return;
-        }
-
-        // Here you can add the logic to submit the COD order to your backend
-        window.location.href = `/payment-success?method=cod&address=${encodeURIComponent(address)}&contact=${encodeURIComponent(contact)}`;
+        // Redirect to payment success page for COD
+        window.location.href = '/payment-success?method=cod';
       });
 
       // PayPal Button
