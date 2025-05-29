@@ -8,6 +8,8 @@ from ecom.views import delete_inventory, edit_inventory, bulk_update_orders
 from django.conf import settings
 from django.conf.urls.static import static
 
+
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('manage-inventory/', manage_inventory, name='manage-inventory'),
@@ -75,5 +77,8 @@ urlpatterns = [
     path('edit-inventory/<int:item_id>/', edit_inventory, name='edit_inventory'), 
     path('place-order/', views.place_order, name='place_order'),
     path('cancel-order/<int:order_id>', views.cancel_order_view, name='cancel-order'),
+    path('pay-with-gcash/', views.create_gcash_payment, name='pay_with_gcash'),
+    path('payment-success/', views.payment_success_view, name='payment_success'),
+    path('payment-cancel/', views.payment_cancel, name='payment_cancel'),
 ]
 
