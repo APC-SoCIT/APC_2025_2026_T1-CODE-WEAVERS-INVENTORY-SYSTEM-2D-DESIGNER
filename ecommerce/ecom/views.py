@@ -635,6 +635,10 @@ def payment_success_view(request):
                     product_id = parts[1]
                     product_ids_only.add(product_id)
             products = models.Product.objects.filter(id__in=product_ids_only)
+        else:
+            products = []  # Set to empty list if product_ids is empty
+    else:
+        products = []  # Set to empty list if product_ids cookie is missing
 
     # Check if the PayPal response contains address and contact details
     if 'email' in request.COOKIES:
@@ -871,6 +875,42 @@ def create_gcash_payment(request):
         "Content-Type": "application/json"
     }
 
+    # Initialize line_items list and total amount
+    line_items = []
+    total_amount = 0
+
+    if 'product_ids' in request.COOKIES:
+        product_ids = request.COOKIES['product_ids']
+        if product_ids:
+            product_keys = product_ids.split('|')
+            product_ids_only = set()
+            for key in product_keys:
+                parts = key.split('_')
+                if len(parts) >= 3:
+                    product_id = parts[1]
+                    product_ids_only.add(product_id)
+
+            products = models.Product.objects.filter(id__in=product_ids_only)
+
+            for product in products:
+                quantity = 1
+                # Find quantity for this product in cookies
+                for key in product_keys:
+                    if key.startswith(f'product_{product.id}_'):
+                        cookie_key = f'{key}_details'
+                        if cookie_key in request.COOKIES:
+                            details = request.COOKIES[cookie_key].split(':')
+                            if len(details) == 2:
+                                quantity = int(details[1])
+                amount = int(product.price * 100) * quantity  # amount in cents
+                total_amount += amount
+                line_items.append({
+                    "currency": "PHP",
+                    "amount": amount,
+                    "name": product.name,
+                    "quantity": quantity
+                })
+
     payload = {
         "data": {
             "attributes": {
@@ -881,14 +921,9 @@ def create_gcash_payment(request):
                 },
                 "send_email_receipt": False,
                 "show_line_items": True,
-                "line_items": [{
-                    "currency": "PHP",
-                    "amount": 10000,  # = PHP 100.00
-                    "name": "GearCraft Jersey",
-                    "quantity": 1
-                }],
+                "line_items": line_items,
                 "payment_method_types": ["gcash"],
-                "description": "GCash Payment for Jersey",
+                "description": "GCash Payment for Cart",
                 "success_url": "http://127.0.0.1:8000/payment-success/",
                 "cancel_url": "http://127.0.0.1:8000/payment-cancel/"
             }
