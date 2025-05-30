@@ -55,6 +55,7 @@
           <th>Name</th>
           <th>Image</th>
           <th>Price</th>
+          <th>Quantity</th>
           <th>Description</th>
           <th>Actions</th>
         </tr>
@@ -66,6 +67,7 @@
         <td> {{p.name}}</td>
         <td> <img src="{% static p.product_image.url %}" alt="Profile Pic" height="40px" width="40px" /></td>
         <td>{{p.price}}</td>
+        <td>{{p.quantity}}</td>
         <td>{{p.description}}</td>
         <td><a class="btn btn-primary btn-xs" href="{% url 'update-product' p.id  %}"><span class="glyphicon glyphicon-edit"></span></a>
           <a class="btn btn-danger btn-xs" href="{% url 'delete-product' p.id  %}"><span class="glyphicon glyphicon-trash"></span></a></td>

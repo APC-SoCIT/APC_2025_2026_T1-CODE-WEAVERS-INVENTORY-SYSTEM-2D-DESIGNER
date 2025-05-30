@@ -15,6 +15,7 @@ from .forms import CustomerLoginForm
 from .models import Product
 from .models import InventoryItem
 from .models import Orders
+import requests
 import json
 
 def order_counts(request):
@@ -860,15 +861,26 @@ def place_order(request):
     print('Invalid request method')
     return JsonResponse({'message': 'Invalid request method'})
 
+@login_required(login_url='customerlogin')
+@user_passes_test(is_customer)
 def cancel_order_view(request, order_id):
-    order = Orders.objects.get(id=order_id)
-    if order.status == 'Pending':
-        order.status = 'Cancelled'
-        order.save()
-        messages.success(request, 'Order cancelled successfully!')
-    else:
-        messages.error(request, 'Order cannot be cancelled at this time.')
-    return redirect('my-order')
+    try:
+        customer = models.Customer.objects.get(user_id=request.user.id)
+        order = models.Orders.objects.get(id=order_id, customer=customer)
+        
+        if order.status == 'Pending':
+            order.status = 'Cancelled'
+            order.status_updated_at = timezone.now()
+            order.save()
+            messages.success(request, 'Order cancelled successfully!')
+        else:
+            messages.error(request, 'Order cannot be cancelled at this time.')
+    except models.Orders.DoesNotExist:
+        messages.error(request, 'Order not found.')
+    except models.Customer.DoesNotExist:
+        messages.error(request, 'Customer not found.')
+    
+    return redirect('cancelled-orders')
 
 
 
@@ -1017,3 +1029,4 @@ def jersey_template(request):
 
 def interactive_jersey(request):
     return render(request, 'ecom/interactive_jersey.html')
+

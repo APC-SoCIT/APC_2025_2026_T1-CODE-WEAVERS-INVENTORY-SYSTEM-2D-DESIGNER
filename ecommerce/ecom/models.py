@@ -45,6 +45,7 @@ class Product(models.Model):
     product_image = models.ImageField(upload_to='product_image/', null=True, blank=True)
     price = models.PositiveIntegerField()
     description = models.CharField(max_length=40)
+    quantity = models.PositiveIntegerField(default=0)
     SIZE_CHOICES = (
         ('S', 'Small'),
         ('XS', 'Extra Small'),

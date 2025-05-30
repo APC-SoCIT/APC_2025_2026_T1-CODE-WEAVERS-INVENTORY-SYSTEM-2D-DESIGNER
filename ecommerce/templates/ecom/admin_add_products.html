@@ -72,8 +72,12 @@
                         <div class="form-group">
                             <label for="">Product Image</label> {% render_field productForm.product_image class="form-control" placeholder="product_image" %}
                         </div>
-
-
+                        <div class="form-group">
+                            <label for="">Quantity</label> {% render_field productForm.quantity class="form-control" placeholder="0" type="number" min="0" %}
+                        </div>
+                        <div class="form-group">
+                            <label for="">Size</label> {% render_field productForm.size class="form-control" %}
+                        </div>
                     </div>
                 </div>
                 <div>

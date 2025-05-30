@@ -59,7 +59,7 @@ urlpatterns = [
     path('cart', views.cart_view,name='cart'),
     path('remove-from-cart/<int:pk>', views.remove_from_cart_view,name='remove-from-cart'),
     path('customer-address', views.customer_address_view,name='customer-address'),
-    path('payment-success', views.payment_success_view,name='payment-success'),
+    path('payment-success/', views.payment_success_view,name='payment-success'),
     path('customizer/', views.jersey_customizer, name='customizer'),
     path('pre-order', views.pre_order, name='pre_order'),
     path('home', views.home,name='home'),
@@ -77,8 +77,5 @@ urlpatterns = [
     path('edit-inventory/<int:item_id>/', edit_inventory, name='edit_inventory'), 
     path('place-order/', views.place_order, name='place_order'),
     path('cancel-order/<int:order_id>', views.cancel_order_view, name='cancel-order'),
-    path('pay-with-gcash/', views.create_gcash_payment, name='pay_with_gcash'),
-    path('payment-success/', views.payment_success_view, name='payment_success'),
-    path('payment-cancel/', views.payment_cancel, name='payment_cancel'),
 ]
 
