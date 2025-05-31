@@ -197,7 +197,14 @@
                         </div>
                         
                         <div class="mb-3">
-                            <button class="btn btn-primary w-100" id="saveDesignBtn">Save Design</button>
+                            <button class="btn btn-primary w-100 mb-2" id="saveDesignBtn">Save Design</button>
+                            <button class="btn btn-success w-100" id="addToCartBtn">Add to Cart</button>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Upload Your Design</label>
+                            <input type="file" class="form-control" id="designUpload" accept="image/*">
+                            <small class="text-muted">Upload your custom jersey design image</small>
                         </div>
                     </div>
                 </div>
@@ -216,7 +223,9 @@
             const playerNumber = document.getElementById('playerNumber');
             const textColor = document.getElementById('textColor');
             const logoUpload = document.getElementById('logoUpload');
+            const designUpload = document.getElementById('designUpload');
             const saveDesignBtn = document.getElementById('saveDesignBtn');
+            const addToCartBtn = document.getElementById('addToCartBtn');
             
             // Text overlays
             const nameOverlay = document.getElementById('nameOverlay');
@@ -256,6 +265,8 @@
             logoUpload.addEventListener('change', handleLogoUpload);
             
             saveDesignBtn.addEventListener('click', saveDesign);
+            addToCartBtn.addEventListener('click', addToCart);
+            designUpload.addEventListener('change', handleDesignUpload);
             
             // Color swatch clicks
             colorSwatches.forEach(swatch => {
@@ -361,6 +372,68 @@
                 }
             }
             
+            function handleDesignUpload(event) {
+                const file = event.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        // Update both front and back images with the uploaded design
+                        frontTshirtImage.src = e.target.result;
+                        backTshirtImage.src = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            }
+
+            function addToCart() {
+                // Capture the current design state
+                const designData = {
+                    playerName: playerName.value,
+                    playerNumber: playerNumber.value,
+                    textColor: textColor.value,
+                    designImage: frontTshirtImage.src
+                };
+
+                // Send design data to server
+                fetch('/add-custom-jersey-to-cart/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify(designData)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Custom jersey added to cart!');
+                        // Optionally redirect to cart
+                        window.location.href = '/cart';
+                    } else {
+                        alert('Error adding to cart: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error adding to cart. Please try again.');
+                });
+            }
+
+            function getCookie(name) {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
+
             function saveDesign() {
                 // Create a canvas element
                 const canvas = document.createElement('canvas');

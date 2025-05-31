@@ -28,7 +28,7 @@
 <div class="container">
   <div class="panel panel-primary">
     <div class="panel-heading">
-      <h6 class="panel-title">Total Orders</h6>
+      <h6 class="panel-title">Total Orders by Status</h6>
     </div>
 
     <div class="bulk-actions">
@@ -51,24 +51,35 @@
       </form>
     </div>
 
-    <table class="table table-hover table-bordered" id="dev-table">
-      <thead>
+    {% regroup data by 2.status as orders_by_status %}
+    {% for status_group in orders_by_status %}
+    <div class="panel panel-info" style="margin: 20px 0;">
+      <div class="panel-heading">
+        <h6 class="panel-title">{{ status_group.grouper }} Orders</h6>
+      </div>
+      <table class="table table-hover table-bordered" id="dev-table-{{ status_group.grouper|slugify }}">
+        <thead>
+          <tr>
+            <th><input type="checkbox" class="select-all-status" data-status="{{ status_group.grouper }}" /></th>
+            <th>Customer</th>
+            <th>Contact</th>
+            <th>Shipping Address</th>
+            <th>Product</th>
+            <th>Quantity</th>
+            <th>Image</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        {% for item in status_group.list %}
+        {% with product=item.0 customer=item.1 order=item.2 %}
         <tr>
-          <th><input type="checkbox" id="select-all" /></th>
-          <th>Customer</th>
-          <th>Contact</th>
-          <th>Shipping Address</th>
-          <th>Product</th>
-          <th>Image</th>
-          <th>Status</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <!-- p for product, c for customer-->
-      {% for product,customer,order in data %}
-      <tr>
         <td>
-          <input type="checkbox" name="order_ids" value="{{ order.id }}" form="bulk-update-form" class="order-checkbox" />
+          {% if order.status != 'Delivered' and order.status != 'Cancelled' %}
+            <input type="checkbox" name="order_ids" value="{{ order.id }}" form="bulk-update-form" class="order-checkbox" />
+          {% else %}
+            <input type="checkbox" disabled title="Cannot modify {{order.status}} orders" />
+          {% endif %}
         </td>
         {% for c in customer %}
         <td> {{c.get_name}}</td>
@@ -78,33 +89,44 @@
 
         {% for p in product %}
         <td> {{p.name}}</td>
+        <td> {{order.quantity}}</td>
         <td> <img src="{% static p.product_image.url %}" alt="Profile Pic" height="40px" width="40px" /></td>
         <td>{{order.status}}</td>
         <td>
-          <a class="btn btn-primary btn-xs" href="{% url 'update-order' order.id  %}"><span class="glyphicon glyphicon-edit"></span></a>
-          <a class="btn btn-danger btn-xs" href="{% url 'delete-order' order.id  %}"><span class="glyphicon glyphicon-trash"></span></a>
+          {% if order.status != 'Delivered' and order.status != 'Cancelled' %}
+            <a class="btn btn-primary btn-xs" href="{% url 'update-order' order.id  %}"><span class="glyphicon glyphicon-edit"></span></a>
+            <a class="btn btn-danger btn-xs" href="{% url 'delete-order' order.id  %}"><span class="glyphicon glyphicon-trash"></span></a>
+          {% else %}
+            <span class="text-muted">No actions available</span>
+          {% endif %}
         </td>
         {% endfor %}
       </tr>
+      {% endwith %}
       {% endfor %}
     </table>
+    </div>
+    {% endfor %}
   </div>
 </div>
 
 <script>
   $(document).ready(function() {
-    // Handle select all checkbox
-    $('#select-all').change(function() {
-      $('.order-checkbox').prop('checked', $(this).prop('checked'));
+    // Handle select all checkbox for each status section
+    $('.select-all-status').change(function() {
+      var status = $(this).data('status');
+      var tableId = '#dev-table-' + status.toLowerCase().replace(/ /g, '-');
+      $(tableId + ' .order-checkbox').prop('checked', $(this).prop('checked'));
     });
 
     // Update select all checkbox when individual checkboxes change
     $('.order-checkbox').change(function() {
-      if ($('.order-checkbox:checked').length == $('.order-checkbox').length) {
-        $('#select-all').prop('checked', true);
-      } else {
-        $('#select-all').prop('checked', false);
-      }
+      var status = $(this).closest('table').find('.select-all-status').data('status');
+      var tableId = '#dev-table-' + status.toLowerCase().replace(/ /g, '-');
+      var totalCheckboxes = $(tableId + ' .order-checkbox').length;
+      var checkedCheckboxes = $(tableId + ' .order-checkbox:checked').length;
+      
+      $(tableId + ' .select-all-status').prop('checked', totalCheckboxes === checkedCheckboxes);
     });
   });
 </script>

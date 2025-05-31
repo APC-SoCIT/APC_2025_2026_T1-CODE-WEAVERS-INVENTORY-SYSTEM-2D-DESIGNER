@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'widget_tweaks',
 ]
 
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -129,8 +130,6 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS=[STATIC_DIR,]
 
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-
-MEDIA_ROOT=os.path.join(BASE_DIR,'static')
 
 
 

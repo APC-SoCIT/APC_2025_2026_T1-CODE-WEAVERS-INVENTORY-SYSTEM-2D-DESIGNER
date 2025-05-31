@@ -15,8 +15,11 @@ from .forms import CustomerLoginForm
 from .models import Product
 from .models import InventoryItem
 from .models import Orders
+from django.views.decorators.csrf import csrf_exempt
 import requests
 import json
+import base64
+from django.core.files.base import ContentFile
 
 def order_counts(request):
     if request.user.is_authenticated and is_customer(request.user):
@@ -118,6 +121,47 @@ def customer_login(request):
 def is_customer(user):
     return user.groups.filter(name='CUSTOMER').exists()
 
+@login_required
+@user_passes_test(is_customer)
+def add_custom_jersey_to_cart(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            
+            # Get the customer
+            customer = models.Customer.objects.get(user=request.user)
+            
+            # Create a new product for the custom jersey
+            custom_jersey = models.Product()
+            custom_jersey.name = f'Custom Jersey - {customer.user.username}'
+            custom_jersey.price = 99.99  # Set your custom jersey price
+            custom_jersey.description = f'Custom jersey with name: {data["playerName"]} and number: {data["playerNumber"]}'
+            
+            # Convert base64 image to file
+            if 'designImage' in data:
+                format, imgstr = data['designImage'].split(';base64,')
+                ext = format.split('/')[-1]
+                image_data = ContentFile(base64.b64decode(imgstr), name=f'custom_jersey_{customer.user.username}.{ext}')
+                custom_jersey.product_image = image_data
+            
+            custom_jersey.save()
+            
+            # Create order for the custom jersey
+            order = models.Orders(
+                customer=customer,
+                product=custom_jersey,
+                status='Pending',
+                quantity=1
+            )
+            order.save()
+            
+            return JsonResponse({'success': True})
+            
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+            
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
 
 
 #---------AFTER ENTERING CREDENTIALS WE CHECK WHETHER USERNAME AND PASSWORD IS OF ADMIN,CUSTOMER
@@ -137,16 +181,47 @@ def admin_dashboard_view(request):
     productcount = models.Product.objects.all().count()
     pending_ordercount = models.Orders.objects.filter(status='Pending').count()
 
-    # Calculate total sales for successful orders only
-    delivered_orders = models.Orders.objects.filter(status='Delivered').order_by('-created_at')[:10]  # only delivered orders for recent orders
-    total_sales = 0
+    # Calculate sales analytics
+    from django.utils import timezone
+    from datetime import timedelta
+    current_date = timezone.now()
+    last_quarter_start = current_date - timedelta(days=90)
+    last_month_start = current_date - timedelta(days=30)
+
+    delivered_orders = models.Orders.objects.filter(status='Delivered').order_by('-created_at')[:10]
     recent_orders_products = []
     recent_orders_customers = []
     recent_orders_orders = []
 
+    # Calculate total sales and period-specific sales
     all_delivered_orders = models.Orders.objects.filter(status='Delivered')
+    total_sales = 0
+    last_quarter_sales = 0
+    last_month_sales = 0
+
+    # Create a dictionary to track product sales
+    product_sales = {}
+
     for order in all_delivered_orders:
-        total_sales += order.product.price * order.quantity
+        order_total = order.product.price * order.quantity
+        total_sales += order_total
+
+        # Track product-wise sales
+        if order.product.id not in product_sales:
+            product_sales[order.product.id] = {
+                'name': order.product.name,
+                'quantity_sold': 0,
+                'total_revenue': 0
+            }
+        product_sales[order.product.id]['quantity_sold'] += order.quantity
+        product_sales[order.product.id]['total_revenue'] += order_total
+
+        # Calculate period-specific sales
+        order_date = order.created_at
+        if order_date >= last_quarter_start:
+            last_quarter_sales += order_total
+            if order_date >= last_month_start:
+                last_month_sales += order_total
 
     for order in delivered_orders:
         order.total_price = order.product.price * order.quantity  # Add total_price attribute
@@ -156,12 +231,27 @@ def admin_dashboard_view(request):
         # Debug print product image info
         print(f"Product: {order.product.name}, Image: {order.product.product_image}, Size: {order.size}")
 
+    # Sort products by sales performance
+    sorted_products = sorted(product_sales.values(), key=lambda x: x['quantity_sold'], reverse=True)
+    fast_moving_products = sorted_products[:5] if sorted_products else []
+    slow_moving_products = sorted_products[-5:] if len(sorted_products) >= 5 else []
+
+    # Format sales numbers with commas
+    formatted_total_sales = '{:,.2f}'.format(total_sales)
+    formatted_last_quarter_sales = '{:,.2f}'.format(last_quarter_sales)
+    formatted_last_month_sales = '{:,.2f}'.format(last_month_sales)
+
     mydict = {
         'customercount': customercount,
         'productcount': productcount,
         'ordercount': pending_ordercount,
-        'total_sales': total_sales,
+        'total_sales': formatted_total_sales,
+        'last_quarter_sales': formatted_last_quarter_sales,
+        'last_month_sales': formatted_last_month_sales,
+        'fast_moving_products': fast_moving_products,
+        'slow_moving_products': slow_moving_products,
         'data': zip(recent_orders_products, recent_orders_customers, recent_orders_orders),
+        'current_date': current_date.strftime('%Y-%m-%d')
     }
     return render(request, 'ecom/admin_dashboard.html', context=mydict)
 
@@ -216,8 +306,9 @@ def update_customer_view(request,pk):
 # admin view the product
 @login_required(login_url='adminlogin')
 def admin_products_view(request):
-    products=models.Product.objects.all()
-    return render(request,'ecom/admin_products.html',{'products':products})
+    # Get all products and order them by size
+    products = models.Product.objects.all().order_by('size')
+    return render(request, 'ecom/admin_products.html', {'products': products})
 
 
 # admin add product by clicking on floating button
@@ -812,6 +903,7 @@ def payment_success_view(request):
                         size = details[0]
                         quantity = int(details[1])
 
+                # Create the order
                 order, created = models.Orders.objects.get_or_create(
                     customer=customer,
                     product=product,
@@ -822,6 +914,12 @@ def payment_success_view(request):
                     quantity=quantity,
                     size=size,
                 )
+
+                # Decrease product quantity
+                if created:
+                    product.quantity = max(0, product.quantity - quantity)
+                    product.save()
+                    print(f"Product {product.id} quantity decreased by {quantity}. New quantity: {product.quantity}")
 
                 # Log the order creation
                 print(f"Order created: {order.id}")

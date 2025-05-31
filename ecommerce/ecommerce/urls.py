@@ -77,5 +77,6 @@ urlpatterns = [
     path('edit-inventory/<int:item_id>/', edit_inventory, name='edit_inventory'), 
     path('place-order/', views.place_order, name='place_order'),
     path('cancel-order/<int:order_id>', views.cancel_order_view, name='cancel-order'),
-]
+    path('add-custom-jersey-to-cart/', views.add_custom_jersey_to_cart, name='add-custom-jersey-to-cart'),
+] + static(settings.MEDIA_URL, document_root=settings.STATIC_ROOT) if settings.DEBUG else []
 
