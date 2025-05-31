@@ -344,15 +344,27 @@ def update_product_view(request,pk):
 
 @login_required(login_url='adminlogin')
 def admin_view_booking_view(request):
-    orders=models.Orders.objects.all()
-    ordered_products=[]
-    ordered_bys=[]
+    orders = models.Orders.objects.exclude(status='Cancelled')
+    ordered_products = []
+    ordered_bys = []
     for order in orders:
-        ordered_product=models.Product.objects.all().filter(id=order.product.id)
-        ordered_by=models.Customer.objects.all().filter(id = order.customer.id)
+        ordered_product = models.Product.objects.all().filter(id=order.product.id)
+        ordered_by = models.Customer.objects.all().filter(id=order.customer.id)
         ordered_products.append(ordered_product)
         ordered_bys.append(ordered_by)
-    return render(request,'ecom/admin_view_booking.html',{'data':zip(ordered_products,ordered_bys,orders)})
+    return render(request, 'ecom/admin_view_booking.html', {'data': zip(ordered_products, ordered_bys, orders)})
+
+@login_required(login_url='adminlogin')
+def admin_view_cancelled_orders(request):
+    orders = models.Orders.objects.filter(status='Cancelled')
+    ordered_products = []
+    ordered_bys = []
+    for order in orders:
+        ordered_product = models.Product.objects.all().filter(id=order.product.id)
+        ordered_by = models.Customer.objects.all().filter(id=order.customer.id)
+        ordered_products.append(ordered_product)
+        ordered_bys.append(ordered_by)
+    return render(request, 'ecom/admin_view_cancelled_orders.html', {'data': zip(ordered_products, ordered_bys, orders)})
 
 
 @login_required(login_url='adminlogin')

@@ -42,6 +42,7 @@
               <option value="Order Confirmed">Order Confirmed</option>
               <option value="Out for Delivery">Out for Delivery</option>
               <option value="Delivered">Delivered</option>
+              <option value="Cancelled">Cancelled</option>
             </select>
           </div>
           <div class="col-md-2">
@@ -52,6 +53,9 @@
     </div>
 
     {% regroup data by 2.status as orders_by_status %}
+    <div class="text-right" style="margin: 10px 0;">
+      <a href="{% url 'admin-view-cancelled-orders' %}" class="btn btn-danger">View Cancelled Orders</a>
+    </div>
     {% for status_group in orders_by_status %}
     <div class="panel panel-info" style="margin: 20px 0;">
       <div class="panel-heading">
@@ -95,7 +99,6 @@
         <td>
           {% if order.status != 'Delivered' and order.status != 'Cancelled' %}
             <a class="btn btn-primary btn-xs" href="{% url 'update-order' order.id  %}"><span class="glyphicon glyphicon-edit"></span></a>
-            <a class="btn btn-danger btn-xs" href="{% url 'delete-order' order.id  %}"><span class="glyphicon glyphicon-trash"></span></a>
           {% else %}
             <span class="text-muted">No actions available</span>
           {% endif %}
