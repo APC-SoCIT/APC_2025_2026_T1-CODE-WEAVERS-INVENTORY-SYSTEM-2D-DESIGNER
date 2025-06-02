@@ -48,15 +48,61 @@
           <div class="col-md-2">
             <button type="submit" class="btn btn-primary">Update Selected Orders</button>
           </div>
+          <div class="col-md-2">
+            <a href="{% url 'admin-view-cancelled-orders' %}" class="btn btn-danger">View Cancelled Orders</a>
+          </div>
         </div>
       </form>
     </div>
 
     {% regroup data by 2.status as orders_by_status %}
-    <div class="text-right" style="margin: 10px 0;">
-      <a href="{% url 'admin-view-cancelled-orders' %}" class="btn btn-danger">View Cancelled Orders</a>
-    </div>
     {% for status_group in orders_by_status %}
+    {% if status_group.grouper == 'Processing' %}
+    <div class="panel panel-info" style="margin: 20px 0;">
+      <div class="panel-heading">
+        <h6 class="panel-title">Pending Orders</h6>
+      </div>
+      <table class="table table-hover table-bordered" id="dev-table-pending">
+        <thead>
+          <tr>
+            <th><input type="checkbox" class="select-all-status" data-status="Pending" /></th>
+            <th>Customer</th>
+            <th>Contact</th>
+            <th>Shipping Address</th>
+            <th>Product</th>
+            <th>Quantity</th>
+            <th>Image</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        {% for item in status_group.list %}
+        {% with product=item.0 customer=item.1 order=item.2 %}
+        <tr>
+        <td>
+          <input type="checkbox" name="order_ids" value="{{ order.id }}" form="bulk-update-form" class="order-checkbox" />
+        </td>
+        {% for c in customer %}
+        <td> {{c.get_name}}</td>
+        <td>{{c.mobile}}</td>
+        <td>{{order.address}}</td>
+        {% endfor %}
+
+        {% for p in product %}
+        <td> {{p.name}}</td>
+        <td> {{order.quantity}}</td>
+        <td> <img src="{% static p.product_image.url %}" alt="Profile Pic" height="40px" width="40px" /></td>
+        <td>{{order.status}}</td>
+        <td>
+          <a class="btn btn-primary btn-xs" href="{% url 'update-order' order.id  %}"><span class="glyphicon glyphicon-edit"></span></a>
+        </td>
+        {% endfor %}
+      </tr>
+      {% endwith %}
+      {% endfor %}
+    </table>
+    </div>
+    {% elif status_group.grouper != 'Processing' %}
     <div class="panel panel-info" style="margin: 20px 0;">
       <div class="panel-heading">
         <h6 class="panel-title">{{ status_group.grouper }} Orders</h6>
@@ -109,6 +155,7 @@
       {% endfor %}
     </table>
     </div>
+    {% endif %}
     {% endfor %}
   </div>
 </div>
