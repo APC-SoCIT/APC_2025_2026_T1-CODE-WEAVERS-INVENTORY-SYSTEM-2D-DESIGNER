@@ -20,6 +20,9 @@ import requests
 import json
 import base64
 from django.core.files.base import ContentFile
+from django.http import HttpResponse
+from django.http import JsonResponse
+from django.shortcuts import redirect
 
 def order_counts(request):
     if request.user.is_authenticated and is_customer(request.user):
@@ -1140,3 +1143,87 @@ def jersey_template(request):
 def interactive_jersey(request):
     return render(request, 'ecom/interactive_jersey.html')
 
+
+#-----------------------------------------------------------
+#------------------------ PAYMONGO -------------------------
+#-----------------------------------------------------------
+
+# Replace with your own PayMongo test key
+PAYMONGO_SECRET_KEY = 'sk_test_FFfnvsMb2YQSctcZ3NY8wThb'
+
+def create_gcash_payment(request):
+    url = "https://api.paymongo.com/v1/checkout_sessions"
+    headers = {
+        "Authorization": f"Basic {PAYMONGO_SECRET_KEY}",
+        "Content-Type": "application/json"
+    }
+
+    # Extract product details from cookies or session (example using cookies)
+    product_ids = request.COOKIES.get('product_ids', '')
+    if not product_ids:
+        return JsonResponse({"error": "No products in cart"}, status=400)
+
+    product_keys = product_ids.split('|')
+    product_details = []
+    total_amount = 0
+
+    # Use a list to preserve order of products as in cart
+    for key in product_keys:
+        cookie_key = f"{key}_details"
+        if cookie_key in request.COOKIES:
+            details = request.COOKIES[cookie_key].split(':')
+            if len(details) == 2:
+                size = details[0]
+                quantity = int(details[1])
+                # Extract product id from key format: product_{id}_{size}
+                parts = key.split('_')
+                if len(parts) >= 2:
+                    product_id = parts[1]
+                    try:
+                        product = models.Product.objects.get(id=product_id)
+                        # Ensure product.price is decimal or float, convert to int cents properly
+                        unit_price_cents = int(round(float(product.price) * 100))
+                        total_amount += unit_price_cents * quantity
+                        print(f"DEBUG: Product: {product.name}, Unit Price: {product.price}, Quantity: {quantity}, Amount (cents): {unit_price_cents * quantity}")
+                        product_details.append({
+                            "currency": "PHP",
+                            "amount": unit_price_cents,
+                            "name": f"{product.name} (Size: {size})",
+                            "quantity": quantity
+                        })
+                    except models.Product.DoesNotExist:
+                        continue
+
+    if not product_details:
+        return JsonResponse({"error": "No valid products found"}, status=400)
+
+    payload = {
+        "data": {
+            "attributes": {
+                "billing": {
+                    "name": "Juan Dela Cruz",
+                    "email": "juan@example.com",
+                    "phone": "+639171234567"
+                },
+                "send_email_receipt": False,
+                "show_line_items": True,
+                "line_items": product_details,
+                "payment_method_types": ["gcash"],
+                "description": f"GCash Payment for {len(product_details)} item(s)",
+                "success_url": "http://127.0.0.1:8000/payment-success/",
+                "cancel_url": "http://127.0.0.1:8000/payment-cancel/"
+            }
+        }
+    }
+
+    response = requests.post(url, headers=headers, json=payload, auth=(PAYMONGO_SECRET_KEY, ''))
+    data = response.json()
+
+    try:
+        checkout_url = data['data']['attributes']['checkout_url']
+        return redirect(checkout_url)
+    except KeyError:
+        return JsonResponse({"error": "Payment creation failed", "details": data}, status=400)
+
+def payment_cancel(request):
+    return HttpResponse("❌ Payment canceled.")

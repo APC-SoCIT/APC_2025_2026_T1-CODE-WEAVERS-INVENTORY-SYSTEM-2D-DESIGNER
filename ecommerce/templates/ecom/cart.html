@@ -445,6 +445,11 @@
         window.location.href = '/payment-success?method=cod';
       });
 
+      // GCash Button Click Handler
+      document.getElementById('gcash-pay-button').addEventListener('click', () => {
+        window.location.href = '/pay-with-gcash/';
+      });
+
       // PayPal Button
       paypal.Buttons({
         createOrder: function (data, actions) {

@@ -10,6 +10,7 @@ from django.conf.urls.static import static
 
 
 
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('manage-inventory/', manage_inventory, name='manage-inventory'),
@@ -79,5 +80,11 @@ urlpatterns = [
     path('place-order/', views.place_order, name='place_order'),
     path('cancel-order/<int:order_id>', views.cancel_order_view, name='cancel-order'),
     path('add-custom-jersey-to-cart/', views.add_custom_jersey_to_cart, name='add-custom-jersey-to-cart'),
+    path('pay-with-gcash/', views.create_gcash_payment, name='pay_with_gcash'),
+    path('payment-success/', views.payment_success_view, name='payment_success'),
+    path('payment-cancel/', views.payment_cancel, name='payment_cancel'),
 ] + static(settings.MEDIA_URL, document_root=settings.STATIC_ROOT) if settings.DEBUG else []
 
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
