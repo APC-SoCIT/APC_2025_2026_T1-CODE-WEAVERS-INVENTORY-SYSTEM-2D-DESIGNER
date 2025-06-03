@@ -93,12 +93,14 @@ class Orders(models.Model):
     estimated_delivery_date = models.DateField(null=True, blank=True, help_text='Estimated delivery date')
     notes = models.TextField(blank=True, null=True, help_text='Additional notes about the order')
     payment_method = models.CharField(max_length=10, choices=PAYMENT_METHODS, default='cod', help_text='Payment method for the order')
+    order_ref = models.CharField(max_length=12, unique=True, null=True, blank=True, help_text='Unique short order reference ID')
 
 class OrderItem(models.Model):
     order = models.ForeignKey(Orders, on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     quantity = models.IntegerField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
+    size = models.CharField(max_length=5, choices=Product.SIZE_CHOICES, null=True, blank=True)
 
 
 class Feedback(models.Model):
