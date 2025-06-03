@@ -79,12 +79,12 @@
             </div>
             {% endif %}
             
-{% for order_dict in orders_with_items %}
+            {% for order_dict in orders_with_items %}
             <div class="card">
                 <div class="card-header">
                     <div class="order-details">
                         <div>
-                            <strong>Order ID: {{ order_dict.order.order_ref }}</strong>
+<strong>Order ID: {{ order_dict.order.order_ref|default:"N/A" }}</strong>
                             <span class="order-meta ml-3">Placed on {{ order_dict.order.created_at|date:"M d, Y" }}</span>
                         </div>
                         <span class="order-status status-{{ order_dict.order.status|lower }}">{{ order_dict.order.status }}</span>
@@ -110,24 +110,14 @@
                                         <td>{% if item.size %}{{ item.size }}{% else %}{{ item.product.size }}{% endif %}</td>
                                         <td>{{ item.quantity }}</td>
                                         <td>₱{{ item.price }}</td>
-                                        <td>₱{{ item.price|floatformat:2|floatformat:"2"|floatformat }}</td>
+                                        <td>₱{{ item.price|floatformat:2 }}</td>
                                     </tr>
                                     {% endfor %}
                                 </tbody>
                                 <tfoot>
                                     <tr>
                                         <th colspan="4" style="text-align: right;">Total</th>
-                                        <th>₱
-                                            {% with total=0 %}
-                                            {% for item in order_dict.items %}
-                                                {% with line_total=item.price|floatformat:2|floatformat:"2"|floatformat|floatformat|floatformat|floatformat|floatformat|floatformat %}
-                                                    {% with total=total|add:item.price|floatformat:2|floatformat:"2"|floatformat %}
-                                                    {% endwith %}
-                                                {% endwith %}
-                                            {% endfor %}
-                                            {{ total|floatformat:2 }}
-                                            {% endwith %}
-                                        </th>
+                                        <th>₱{{ order_dict.order.total|default:"0.00" }}</th>
                                     </tr>
                                 </tfoot>
                             </table>
@@ -151,9 +141,7 @@
                                 <p class="mb-0">Estimated Delivery: {{ order_dict.order.estimated_delivery_date|date:"M d, Y" }}</p>
                                 {% endif %}
                                 {% if order_dict.order.status == 'Pending' %}
-                                {% for item in order_dict.items %}
-                                <a class="btn btn-primary btn-sm rounded-0" style="text-decoration:none;" href="{% url 'download-invoice' order_dict.order.id item.product.id %}" target="_blank"><i class="fa fa-download " style="font-size: 12px;height:auto"></i> Download Invoice</a>
-                                {% endfor %}
+                                <a class="btn btn-primary btn-sm rounded-0" style="text-decoration:none;" href="{% url 'download-invoice' order_dict.order.id %}" target="_blank"><i class="fa fa-download " style="font-size: 12px;height:auto"></i> Download Invoice</a>
                                 <button type="button" class="btn btn-danger btn-sm rounded-0" data-toggle="modal" data-target="#cancelModal{{order_dict.order.id}}"><i class="fa fa-times" style="font-size: 12px;height:auto"></i> Cancel Order</button>
                                 
                                 <!-- Cancel Order Modal -->
@@ -168,18 +156,19 @@
                                       </div>
                                       <form action="{% url 'cancel-order' order_dict.order.id %}" method="POST">
                                         {% csrf_token %}
-                                        <div class="form-group">
-                                          <label for="cancelReason{{order_dict.order.id}}">Please provide a reason for cancellation:</label>
-                                          <select class="form-control" id="cancelReason{{order_dict.order.id}}" name="cancel_reason" required>
-                                            <option value="">Select a reason</option>
-                                            <option value="Changed my mind">Changed my mind</option>
-                                            <option value="Found better price elsewhere">Found better price elsewhere</option>
-                                            <option value="Ordered by mistake">Ordered by mistake</option>
-                                            <option value="Shipping time too long">Shipping time too long</option>
-                                            <option value="Other">Other</option>
-                                          </select>
-                                          <textarea class="form-control mt-3" id="otherReason{{order_dict.order.id}}" name="other_reason" placeholder="Please specify your reason" style="display: none;"></textarea>
-                                        </div>
+                                        <div class="modal-body">
+                                          <div class="form-group">
+                                            <label for="cancelReason{{order_dict.order.id}}">Please provide a reason for cancellation:</label>
+                                            <select class="form-control" id="cancelReason{{order_dict.order.id}}" name="cancel_reason" required>
+                                              <option value="">Select a reason</option>
+                                              <option value="Changed my mind">Changed my mind</option>
+                                              <option value="Found better price elsewhere">Found better price elsewhere</option>
+                                              <option value="Ordered by mistake">Ordered by mistake</option>
+                                              <option value="Shipping time too long">Shipping time too long</option>
+                                              <option value="Other">Other</option>
+                                            </select>
+                                            <textarea class="form-control mt-3" id="otherReason{{order_dict.order.id}}" name="other_reason" placeholder="Please specify your reason" style="display: none;"></textarea>
+                                          </div>
                                         </div>
                                         <div class="modal-footer">
                                           <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>

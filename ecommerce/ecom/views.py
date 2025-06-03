@@ -526,10 +526,14 @@ def view_feedback_view(request):
 @login_required(login_url='customerlogin')
 def pending_orders_view(request):
     customer = models.Customer.objects.get(user_id=request.user.id)
-    orders = models.Orders.objects.filter(customer=customer, status='Pending').order_by('-order_date')
+    orders = models.Orders.objects.filter(customer=customer, status='Pending').order_by('-order_date', '-created_at')
     orders_with_items = []
     for order in orders:
         order_items = models.OrderItem.objects.filter(order=order)
+        total_price = 0
+        for item in order_items:
+            total_price += item.price * item.quantity
+        order.total = total_price
         orders_with_items.append({
             'order': order,
             'items': order_items
@@ -581,7 +585,7 @@ def delivered_orders_view(request):
 @login_required(login_url='customerlogin')
 def cancelled_orders_view(request):
     customer = models.Customer.objects.get(user_id=request.user.id)
-    orders = models.Orders.objects.filter(customer=customer, status='Cancelled').order_by('-order_date')
+    orders = models.Orders.objects.filter(customer=customer, status='Cancelled').order_by('-status_updated_at')
     orders_with_items = []
     for order in orders:
         order_items = models.OrderItem.objects.filter(order=order)
@@ -872,7 +876,16 @@ def customer_address_view(request):
             product_id_in_cart = product_ids.split('|')
             products = models.Product.objects.all().filter(id__in=product_id_in_cart)
             for p in products:
-                total = total + p.price
+                # Calculate quantity from cookies for each product
+                quantity = 1
+                for key in product_ids.split('|'):
+                    if key.startswith(f'product_{p.id}_'):
+                        cookie_key = f'{key}_details'
+                        if cookie_key in request.COOKIES:
+                            details = request.COOKIES[cookie_key].split(':')
+                            if len(details) == 2:
+                                quantity = int(details[1])
+                total += p.price * quantity
 
     # Get payment method from query parameter
     payment_method = request.GET.get('method', 'cod')
@@ -1095,14 +1108,17 @@ def render_to_pdf(template_src, context_dict):
 
 
 
-def download_invoice_view(request, orderID, productID):
+def download_invoice_view(request, orderID):
     order = models.Orders.objects.get(id=orderID)
-    product = models.Product.objects.get(id=productID)
+    order_items = models.OrderItem.objects.filter(order=order)
 
     # Use the stored shipment address from the order
     shipment_address = order.address if order.address else order.customer.address
 
-    total_price = product.price * order.quantity
+    # Calculate total price for the whole order
+    total_price = 0
+    for item in order_items:
+        total_price += item.price * item.quantity
 
     mydict = {
         'orderDate': order.order_date,
@@ -1111,12 +1127,7 @@ def download_invoice_view(request, orderID, productID):
         'customerMobile': order.mobile,
         'shipmentAddress': shipment_address,  # Ensure this is used
         'orderStatus': order.status,
-
-        'productName': product.name,
-        'productImage': product.product_image,
-        'productPrice': product.price,
-        'productDescription': product.description,
-        'quantity': order.quantity,
+        'orderItems': order_items,
         'totalPrice': total_price,
     }
     return render_to_pdf('ecom/download_invoice.html', mydict)
