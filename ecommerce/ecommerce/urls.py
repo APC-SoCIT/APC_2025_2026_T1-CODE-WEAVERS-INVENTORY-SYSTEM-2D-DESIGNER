@@ -13,7 +13,7 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('manage-inventory/', manage_inventory, name='manage-inventory'),
+    path('manage-inventory', manage_inventory, name='manage-inventory'),
     path('update-stock/<int:item_id>/', update_stock, name='update-stock'),
     path('',views.home_view,name=''),
     path('afterlogin', views.afterlogin_view,name='afterlogin'),

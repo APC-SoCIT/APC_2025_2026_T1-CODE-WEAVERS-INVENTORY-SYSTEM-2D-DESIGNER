@@ -720,7 +720,13 @@ def add_to_cart_view(request, pk):
     size = request.POST.get('size', 'M')  # Default to M if not provided
     quantity = int(request.POST.get('quantity', 1))  # Default to 1 if not provided
     
-    product = models.Product.objects.get(id=pk)
+    # Check if product with given id and size exists
+    try:
+        product = models.Product.objects.get(id=pk, size=size)
+    except models.Product.DoesNotExist:
+        messages.error(request, f'Sorry, size {size} is not available for this product.')
+        return redirect('customer-home')
+    
     # Check if product quantity is sufficient
     if product.quantity < quantity:
         messages.error(request, f'Sorry, only {product.quantity} pcs available for {product.name} (Size: {size}).')
