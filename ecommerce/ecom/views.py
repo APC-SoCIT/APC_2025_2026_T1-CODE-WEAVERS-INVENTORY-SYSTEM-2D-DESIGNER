@@ -370,6 +370,9 @@ def admin_view_delivered_orders(request):
     return prepare_admin_order_view(request, orders, 'Delivered', 'ecom/admin_view_orders.html')
 
 def prepare_admin_order_view(request, orders, status, template):
+    # Order the orders by created_at descending to show new orders first
+    orders = orders.order_by('-created_at')
+    
     # Prepare a list of orders with their customer, shipping address, and order items
     orders_data = []
     for order in orders:
@@ -383,10 +386,12 @@ def prepare_admin_order_view(request, orders, status, template):
                 'price': item.price,
                 'product_image': item.product.product_image.url if item.product.product_image else None,
             })
+        # Use order.address if available, else fallback to customer's full address
+        shipping_address = order.address if order.address else (order.customer.get_full_address if order.customer else '')
         orders_data.append({
             'order': order,
             'customer': order.customer,
-            'shipping_address': order.address,
+            'shipping_address': shipping_address,
             'order_items': items,
             'status': order.status,
             'order_id': order.order_ref,
