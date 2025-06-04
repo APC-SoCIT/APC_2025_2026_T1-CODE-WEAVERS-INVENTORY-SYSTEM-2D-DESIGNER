@@ -1,4 +1,5 @@
 from django.shortcuts import render,redirect,reverse,get_object_or_404
+import decimal
 from . import forms,models
 from django.http import HttpResponseRedirect,HttpResponse, JsonResponse
 from django.core.mail import send_mail
@@ -1205,20 +1206,28 @@ def download_invoice_view(request, orderID):
     # Use the stored shipment address from the order
     shipment_address = order.address if order.address else order.customer.address
 
-    # Calculate total price for the whole order
-    total_price = 0
+    # Calculate item totals and order totals
     for item in order_items:
-        total_price += item.price * item.quantity
+        item.unit_price = item.price  # Add unit price for display
+        item.total = item.price * item.quantity  # Both price and quantity are Decimal
+
+    subtotal = sum(item.total for item in order_items)
+    vat_rate = decimal.Decimal('12')  # Convert VAT rate to Decimal
+    vat_amount = subtotal * (vat_rate / decimal.Decimal('100'))  # All calculations use Decimal
+    total_price = subtotal + vat_amount
 
     mydict = {
         'orderDate': order.order_date,
         'customerName': request.user,
         'customerEmail': order.email,
         'customerMobile': order.mobile,
-        'shipmentAddress': shipment_address,  # Ensure this is used
+        'shipmentAddress': shipment_address,
         'orderStatus': order.status,
         'orderItems': order_items,
-        'totalPrice': total_price,
+        'subtotal': subtotal,
+        'vat_rate': vat_rate,
+        'vat_amount': vat_amount,
+        'totalPrice': total_price
     }
     return render_to_pdf('ecom/download_invoice.html', mydict)
 
