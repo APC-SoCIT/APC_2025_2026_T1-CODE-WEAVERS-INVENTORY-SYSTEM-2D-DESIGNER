@@ -38,8 +38,12 @@ urlpatterns = [
     path('delete-product/<int:pk>', views.delete_product_view,name='delete-product'),
     path('update-product/<int:pk>', views.update_product_view,name='update-product'),
 
-    path('admin-view-booking', views.admin_view_booking_view,name='admin-view-booking'),
-    path('admin-view-cancelled-orders', views.admin_view_cancelled_orders,name='admin-view-cancelled-orders'),
+    path('admin-view-booking', views.admin_view_booking_view, name='admin-view-booking'),
+    path('admin-view-processing-orders', views.admin_view_processing_orders, name='admin-view-processing-orders'),
+    path('admin-view-confirmed-orders', views.admin_view_confirmed_orders, name='admin-view-confirmed-orders'),
+    path('admin-view-shipping-orders', views.admin_view_shipping_orders, name='admin-view-shipping-orders'),
+    path('admin-view-delivered-orders', views.admin_view_delivered_orders, name='admin-view-delivered-orders'),
+    path('admin-view-cancelled-orders', views.admin_view_cancelled_orders, name='admin-view-cancelled-orders'),
     path('delete-order/<int:pk>', views.delete_order_view,name='delete-order'),
     path('update-order/<int:pk>', views.update_order_view,name='update-order'),
 

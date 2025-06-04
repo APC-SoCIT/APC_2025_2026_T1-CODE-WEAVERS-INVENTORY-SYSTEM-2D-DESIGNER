@@ -347,15 +347,60 @@ def update_product_view(request,pk):
 
 @login_required(login_url='adminlogin')
 def admin_view_booking_view(request):
-    orders = models.Orders.objects.exclude(status='Cancelled')
+    return redirect('admin-view-processing-orders')
+
+@login_required(login_url='adminlogin')
+def admin_view_processing_orders(request):
+    orders = models.Orders.objects.filter(status='Processing')
+    return prepare_admin_order_view(request, orders, 'Processing', 'ecom/admin_view_orders.html')
+
+@login_required(login_url='adminlogin')
+def admin_view_confirmed_orders(request):
+    orders = models.Orders.objects.filter(status='Order Confirmed')
+    return prepare_admin_order_view(request, orders, 'Order Confirmed', 'ecom/admin_view_orders.html')
+
+@login_required(login_url='adminlogin')
+def admin_view_shipping_orders(request):
+    orders = models.Orders.objects.filter(status='Out for Delivery')
+    return prepare_admin_order_view(request, orders, 'Out for Delivery', 'ecom/admin_view_orders.html')
+
+@login_required(login_url='adminlogin')
+def admin_view_delivered_orders(request):
+    orders = models.Orders.objects.filter(status='Delivered')
+    return prepare_admin_order_view(request, orders, 'Delivered', 'ecom/admin_view_orders.html')
+
+def prepare_admin_order_view(request, orders, status, template):
     ordered_products = []
     ordered_bys = []
+    order_items_list = []
+    
     for order in orders:
-        ordered_product = models.Product.objects.all().filter(id=order.product.id)
-        ordered_by = models.Customer.objects.all().filter(id=order.customer.id)
-        ordered_products.append(ordered_product)
-        ordered_bys.append(ordered_by)
-    return render(request, 'ecom/admin_view_booking.html', {'data': zip(ordered_products, ordered_bys, orders)})
+        order_items = models.OrderItem.objects.filter(order=order)
+        products = []
+        items_info = {}
+        
+        # Group items by product and sum quantities
+        for item in order_items:
+            if item.product:
+                if item.product.id in items_info:
+                    items_info[item.product.id]['quantity'] += item.quantity
+                else:
+                    items_info[item.product.id] = {
+                        'product': item.product,
+                        'quantity': item.quantity
+                    }
+                    products.append(item.product)
+        
+        customer_queryset = models.Customer.objects.filter(id=order.customer.id) if order.customer else []
+        
+        ordered_products.append(products)
+        ordered_bys.append(customer_queryset)
+        order_items_list.append(list(items_info.values()))
+    
+    return render(request, template, {
+        'data': zip(ordered_products, ordered_bys, orders, order_items_list),
+        'status': status
+    })
 
 @login_required(login_url='adminlogin')
 def admin_view_cancelled_orders(request):
@@ -550,6 +595,10 @@ def to_ship_orders_view(request):
     orders_with_items = []
     for order in orders:
         order_items = models.OrderItem.objects.filter(order=order)
+        total_price = 0
+        for item in order_items:
+            total_price += item.price * item.quantity
+        order.total = total_price
         orders_with_items.append({
             'order': order,
             'items': order_items
@@ -563,6 +612,10 @@ def to_receive_orders_view(request):
     orders_with_items = []
     for order in orders:
         order_items = models.OrderItem.objects.filter(order=order)
+        total_price = 0
+        for item in order_items:
+            total_price += item.price * item.quantity
+        order.total = total_price
         orders_with_items.append({
             'order': order,
             'items': order_items
@@ -576,6 +629,10 @@ def delivered_orders_view(request):
     orders_with_items = []
     for order in orders:
         order_items = models.OrderItem.objects.filter(order=order)
+        total_price = 0
+        for item in order_items:
+            total_price += item.price * item.quantity
+        order.total = total_price
         orders_with_items.append({
             'order': order,
             'items': order_items
@@ -589,6 +646,10 @@ def cancelled_orders_view(request):
     orders_with_items = []
     for order in orders:
         order_items = models.OrderItem.objects.filter(order=order)
+        total_price = 0
+        for item in order_items:
+            total_price += item.price * item.quantity
+        order.total = total_price
         orders_with_items.append({
             'order': order,
             'items': order_items
@@ -962,9 +1023,10 @@ def payment_success_view(request):
     order_ref = generate_order_ref()
 
     # Create the parent order entry with order_ref
+    initial_status = 'Processing' if payment_method == 'paypal' else 'Pending'
     parent_order = models.Orders.objects.create(
         customer=customer,
-        status='Pending',
+        status=initial_status,
         email=email,
         mobile=mobile,
         address=address,
@@ -972,6 +1034,7 @@ def payment_success_view(request):
         quantity=0,
         payment_method=payment_method,
         order_date=timezone.now(),
+        status_updated_at=timezone.now(),
         notes=f"Order Group ID: {order_ref}",
         order_ref=order_ref
     )
@@ -1002,6 +1065,18 @@ def payment_success_view(request):
                 product.quantity = max(0, product.quantity - quantity)
                 product.save()
                 print(f"Product {product.id} quantity decreased by {quantity}. New quantity: {product.quantity}")
+
+                # Update inventory item quantity
+                try:
+                    inventory_item = models.InventoryItem.objects.get(name=product.name)
+                    if inventory_item.quantity >= quantity:
+                        inventory_item.quantity = max(0, inventory_item.quantity - quantity)
+                        inventory_item.save()
+                        print(f"Inventory item {inventory_item.name} quantity decreased by {quantity}. New quantity: {inventory_item.quantity}")
+                    else:
+                        print(f"Warning: Insufficient inventory for {inventory_item.name}")
+                except models.InventoryItem.DoesNotExist:
+                    print(f"Warning: No inventory item found for product {product.name}")
 
     # Clear cookies after order placement
     response = render(request, 'ecom/payment_success.html')
@@ -1070,6 +1145,10 @@ def my_order_view(request):
     orders_with_items = []
     for order in orders:
         order_items = models.OrderItem.objects.filter(order=order)
+        total_price = 0
+        for item in order_items:
+            total_price += item.price * item.quantity
+        order.total = total_price
         orders_with_items.append({
             'order': order,
             'items': order_items

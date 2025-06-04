@@ -88,15 +88,21 @@
         <td>{{order.address}}</td>
         {% endfor %}
 
+        {% with items=item.3 %}
         {% for p in product %}
+        {% for item_info in items %}
+        {% if item_info.product == p %}
         <td> {{p.name}}</td>
-        <td> {{order.quantity}}</td>
+        <td> {{item_info.quantity}}</td>
         <td> <img src="{% static p.product_image.url %}" alt="Profile Pic" height="40px" width="40px" /></td>
         <td>{{order.status}}</td>
+        {% endif %}
+        {% endfor %}
+        {% endfor %}
+        {% endwith %}
         <td>
           <a class="btn btn-primary btn-xs" href="{% url 'update-order' order.id  %}"><span class="glyphicon glyphicon-edit"></span></a>
         </td>
-        {% endfor %}
       </tr>
       {% endwith %}
       {% endfor %}
@@ -137,11 +143,18 @@
         <td>{{order.address}}</td>
         {% endfor %}
 
+        {% with items=item.3 %}
         {% for p in product %}
+        {% for item_info in items %}
+        {% if item_info.product == p %}
         <td> {{p.name}}</td>
-        <td> {{order.quantity}}</td>
+        <td> {{item_info.quantity}}</td>
         <td> <img src="{% static p.product_image.url %}" alt="Profile Pic" height="40px" width="40px" /></td>
         <td>{{order.status}}</td>
+        {% endif %}
+        {% endfor %}
+        {% endfor %}
+        {% endwith %}
         <td>
           {% if order.status != 'Delivered' and order.status != 'Cancelled' %}
             <a class="btn btn-primary btn-xs" href="{% url 'update-order' order.id  %}"><span class="glyphicon glyphicon-edit"></span></a>
@@ -149,7 +162,6 @@
             <span class="text-muted">No actions available</span>
           {% endif %}
         </td>
-        {% endfor %}
       </tr>
       {% endwith %}
       {% endfor %}
