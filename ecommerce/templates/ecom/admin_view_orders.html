@@ -1,0 +1,153 @@
+{% extends 'ecom/admin_base.html' %}
+{% load static %}
+{% block content %}
+
+<head>
+  <link href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
+  <script src="//netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js"></script>
+  <script src="//code.jquery.com/jquery-1.11.1.min.js"></script>
+
+  <style media="screen">
+    a:link {
+      text-decoration: none;
+    }
+
+    h6 {
+      text-align: center;
+    }
+
+    .row {
+      margin: 100px;
+    }
+
+    .bulk-actions {
+      margin-bottom: 20px;
+    }
+
+    .nav-pills {
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<div class="container">
+  <!-- Navigation Pills -->
+  <ul class="nav nav-pills">
+    <li {% if status == 'Processing' %}class="active"{% endif %}>
+      <a href="{% url 'admin-view-processing-orders' %}">Processing</a>
+    </li>
+    <li {% if status == 'Order Confirmed' %}class="active"{% endif %}>
+      <a href="{% url 'admin-view-confirmed-orders' %}">Confirmed</a>
+    </li>
+    <li {% if status == 'Out for Delivery' %}class="active"{% endif %}>
+      <a href="{% url 'admin-view-shipping-orders' %}">Shipping</a>
+    </li>
+    <li {% if status == 'Delivered' %}class="active"{% endif %}>
+      <a href="{% url 'admin-view-delivered-orders' %}">Delivered</a>
+    </li>
+    <li>
+      <a href="{% url 'admin-view-cancelled-orders' %}">Cancelled</a>
+    </li>
+  </ul>
+
+  <div class="panel panel-primary">
+    <div class="panel-heading">
+      <h6 class="panel-title">{{ status }} Orders</h6>
+    </div>
+
+    {% if status != 'Delivered' %}
+    <div class="bulk-actions">
+      <form id="bulk-update-form" method="post" action="{% url 'bulk-update-orders' %}">
+        {% csrf_token %}
+        <div class="row" style="margin: 10px;">
+          <div class="col-md-4">
+            <select name="bulk_status" class="form-control" required>
+              <option value="">Select Status</option>
+              <option value="Processing">Processing</option>
+              <option value="Order Confirmed">Order Confirmed</option>
+              <option value="Out for Delivery">Out for Delivery</option>
+              <option value="Delivered">Delivered</option>
+              <option value="Cancelled">Cancelled</option>
+            </select>
+          </div>
+          <div class="col-md-2">
+            <button type="submit" class="btn btn-primary">Update Selected Orders</button>
+          </div>
+        </div>
+      </form>
+    </div>
+    {% endif %}
+
+    <table class="table table-hover table-bordered" id="dev-table">
+      <thead>
+        <tr>
+          {% if status != 'Delivered' %}
+          <th><input type="checkbox" id="select-all" /></th>
+          {% endif %}
+          <th>Customer</th>
+          <th>Contact</th>
+          <th>Shipping Address</th>
+          <th>Product</th>
+          <th>Quantity</th>
+          <th>Image</th>
+          <th>Status</th>
+          {% if status != 'Delivered' %}
+          <th>Actions</th>
+          {% endif %}
+        </tr>
+      </thead>
+      {% for item in data %}
+      {% with product=item.0 customer=item.1 order=item.2 %}
+      <tr>
+        {% if status != 'Delivered' %}
+        <td>
+          <input type="checkbox" name="order_ids" value="{{ order.id }}" form="bulk-update-form" class="order-checkbox" />
+        </td>
+        {% endif %}
+        {% for c in customer %}
+        <td> {{c.get_name}}</td>
+        <td>{{c.mobile}}</td>
+        <td>{{order.address}}</td>
+        {% endfor %}
+
+        {% with items=item.3 %}
+        {% for p in product %}
+        {% for item_info in items %}
+        {% if item_info.product == p %}
+        <td> {{p.name}}</td>
+        <td> {{item_info.quantity}}</td>
+        <td> <img src="{% static p.product_image.url %}" alt="Profile Pic" height="40px" width="40px" /></td>
+        <td>{{order.status}}</td>
+        {% endif %}
+        {% endfor %}
+        {% endfor %}
+        {% endwith %}
+        
+        {% if status != 'Delivered' %}
+        <td>
+          <a class="btn btn-primary btn-xs" href="{% url 'update-order' order.id  %}"><span class="glyphicon glyphicon-edit"></span></a>
+        </td>
+        {% endif %}
+      </tr>
+      {% endwith %}
+      {% endfor %}
+    </table>
+  </div>
+</div>
+
+<script>
+  $(document).ready(function() {
+    // Handle select all checkbox
+    $('#select-all').change(function() {
+      $('.order-checkbox').prop('checked', $(this).prop('checked'));
+    });
+
+    // Update select all checkbox when individual checkboxes change
+    $('.order-checkbox').change(function() {
+      var totalCheckboxes = $('.order-checkbox').length;
+      var checkedCheckboxes = $('.order-checkbox:checked').length;
+      $('#select-all').prop('checked', totalCheckboxes === checkedCheckboxes);
+    });
+  });
+</script>
+
+{% endblock content %}

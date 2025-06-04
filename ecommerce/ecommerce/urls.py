@@ -38,8 +38,12 @@ urlpatterns = [
     path('delete-product/<int:pk>', views.delete_product_view,name='delete-product'),
     path('update-product/<int:pk>', views.update_product_view,name='update-product'),
 
-    path('admin-view-booking', views.admin_view_booking_view,name='admin-view-booking'),
-    path('admin-view-cancelled-orders', views.admin_view_cancelled_orders,name='admin-view-cancelled-orders'),
+    path('admin-view-booking', views.admin_view_booking_view, name='admin-view-booking'),
+    path('admin-view-processing-orders', views.admin_view_processing_orders, name='admin-view-processing-orders'),
+    path('admin-view-confirmed-orders', views.admin_view_confirmed_orders, name='admin-view-confirmed-orders'),
+    path('admin-view-shipping-orders', views.admin_view_shipping_orders, name='admin-view-shipping-orders'),
+    path('admin-view-delivered-orders', views.admin_view_delivered_orders, name='admin-view-delivered-orders'),
+    path('admin-view-cancelled-orders', views.admin_view_cancelled_orders, name='admin-view-cancelled-orders'),
     path('delete-order/<int:pk>', views.delete_order_view,name='delete-order'),
     path('update-order/<int:pk>', views.update_order_view,name='update-order'),
 
@@ -56,7 +60,7 @@ urlpatterns = [
     path('my-order/<int:pk>', views.my_order_view_pk, name='my-order-pk'),
     path('my-profile', views.my_profile_view,name='my-profile'),
     path('edit-profile', views.edit_profile_view,name='edit-profile'),
-    path('download-invoice/<int:orderID>/<int:productID>', views.download_invoice_view,name='download-invoice'),
+    path('download-invoice/<int:orderID>', views.download_invoice_view,name='download-invoice'),
     path('add-to-cart/<int:pk>', views.add_to_cart_view,name='add-to-cart'),
     path('cart', views.cart_view,name='cart'),
     path('remove-from-cart/<int:pk>', views.remove_from_cart_view,name='remove-from-cart'),

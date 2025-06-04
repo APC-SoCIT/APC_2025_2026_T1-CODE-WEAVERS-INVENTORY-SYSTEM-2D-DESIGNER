@@ -347,15 +347,60 @@ def update_product_view(request,pk):
 
 @login_required(login_url='adminlogin')
 def admin_view_booking_view(request):
-    orders = models.Orders.objects.exclude(status='Cancelled')
+    return redirect('admin-view-processing-orders')
+
+@login_required(login_url='adminlogin')
+def admin_view_processing_orders(request):
+    orders = models.Orders.objects.filter(status='Processing')
+    return prepare_admin_order_view(request, orders, 'Processing', 'ecom/admin_view_orders.html')
+
+@login_required(login_url='adminlogin')
+def admin_view_confirmed_orders(request):
+    orders = models.Orders.objects.filter(status='Order Confirmed')
+    return prepare_admin_order_view(request, orders, 'Order Confirmed', 'ecom/admin_view_orders.html')
+
+@login_required(login_url='adminlogin')
+def admin_view_shipping_orders(request):
+    orders = models.Orders.objects.filter(status='Out for Delivery')
+    return prepare_admin_order_view(request, orders, 'Out for Delivery', 'ecom/admin_view_orders.html')
+
+@login_required(login_url='adminlogin')
+def admin_view_delivered_orders(request):
+    orders = models.Orders.objects.filter(status='Delivered')
+    return prepare_admin_order_view(request, orders, 'Delivered', 'ecom/admin_view_orders.html')
+
+def prepare_admin_order_view(request, orders, status, template):
     ordered_products = []
     ordered_bys = []
+    order_items_list = []
+    
     for order in orders:
-        ordered_product = models.Product.objects.all().filter(id=order.product.id)
-        ordered_by = models.Customer.objects.all().filter(id=order.customer.id)
-        ordered_products.append(ordered_product)
-        ordered_bys.append(ordered_by)
-    return render(request, 'ecom/admin_view_booking.html', {'data': zip(ordered_products, ordered_bys, orders)})
+        order_items = models.OrderItem.objects.filter(order=order)
+        products = []
+        items_info = {}
+        
+        # Group items by product and sum quantities
+        for item in order_items:
+            if item.product:
+                if item.product.id in items_info:
+                    items_info[item.product.id]['quantity'] += item.quantity
+                else:
+                    items_info[item.product.id] = {
+                        'product': item.product,
+                        'quantity': item.quantity
+                    }
+                    products.append(item.product)
+        
+        customer_queryset = models.Customer.objects.filter(id=order.customer.id) if order.customer else []
+        
+        ordered_products.append(products)
+        ordered_bys.append(customer_queryset)
+        order_items_list.append(list(items_info.values()))
+    
+    return render(request, template, {
+        'data': zip(ordered_products, ordered_bys, orders, order_items_list),
+        'status': status
+    })
 
 @login_required(login_url='adminlogin')
 def admin_view_cancelled_orders(request):
@@ -526,8 +571,19 @@ def view_feedback_view(request):
 @login_required(login_url='customerlogin')
 def pending_orders_view(request):
     customer = models.Customer.objects.get(user_id=request.user.id)
-    orders = models.Orders.objects.filter(customer=customer, status='Pending').order_by('-created_at')
-    return render(request, 'ecom/order_status_page.html', {'orders': orders, 'status': 'Pending', 'title': 'Pending Orders'})
+    orders = models.Orders.objects.filter(customer=customer, status='Pending').order_by('-order_date', '-created_at')
+    orders_with_items = []
+    for order in orders:
+        order_items = models.OrderItem.objects.filter(order=order)
+        total_price = 0
+        for item in order_items:
+            total_price += item.price * item.quantity
+        order.total = total_price
+        orders_with_items.append({
+            'order': order,
+            'items': order_items
+        })
+    return render(request, 'ecom/order_status_page.html', {'orders_with_items': orders_with_items, 'status': 'Pending', 'title': 'Pending Orders'})
 
 @login_required(login_url='customerlogin')
 def to_ship_orders_view(request):
@@ -535,26 +591,70 @@ def to_ship_orders_view(request):
     orders = models.Orders.objects.filter(
         customer=customer,
         status__in=['Processing', 'Order Confirmed']
-    ).order_by('-created_at')
-    return render(request, 'ecom/order_status_page.html', {'orders': orders, 'status': 'To Ship', 'title': 'Orders To Ship'})
+    ).order_by('-order_date')
+    orders_with_items = []
+    for order in orders:
+        order_items = models.OrderItem.objects.filter(order=order)
+        total_price = 0
+        for item in order_items:
+            total_price += item.price * item.quantity
+        order.total = total_price
+        orders_with_items.append({
+            'order': order,
+            'items': order_items
+        })
+    return render(request, 'ecom/order_status_page.html', {'orders_with_items': orders_with_items, 'status': 'To Ship', 'title': 'Orders To Ship'})
 
 @login_required(login_url='customerlogin')
 def to_receive_orders_view(request):
     customer = models.Customer.objects.get(user_id=request.user.id)
-    orders = models.Orders.objects.filter(customer=customer, status='Out for Delivery').order_by('-created_at')
-    return render(request, 'ecom/order_status_page.html', {'orders': orders, 'status': 'To Receive', 'title': 'Orders To Receive'})
+    orders = models.Orders.objects.filter(customer=customer, status='Out for Delivery').order_by('-order_date')
+    orders_with_items = []
+    for order in orders:
+        order_items = models.OrderItem.objects.filter(order=order)
+        total_price = 0
+        for item in order_items:
+            total_price += item.price * item.quantity
+        order.total = total_price
+        orders_with_items.append({
+            'order': order,
+            'items': order_items
+        })
+    return render(request, 'ecom/order_status_page.html', {'orders_with_items': orders_with_items, 'status': 'To Receive', 'title': 'Orders To Receive'})
 
 @login_required(login_url='customerlogin')
 def delivered_orders_view(request):
     customer = models.Customer.objects.get(user_id=request.user.id)
-    orders = models.Orders.objects.filter(customer=customer, status='Delivered').order_by('-created_at')
-    return render(request, 'ecom/order_status_page.html', {'orders': orders, 'status': 'Delivered', 'title': 'Delivered Orders'})
+    orders = models.Orders.objects.filter(customer=customer, status='Delivered').order_by('-order_date')
+    orders_with_items = []
+    for order in orders:
+        order_items = models.OrderItem.objects.filter(order=order)
+        total_price = 0
+        for item in order_items:
+            total_price += item.price * item.quantity
+        order.total = total_price
+        orders_with_items.append({
+            'order': order,
+            'items': order_items
+        })
+    return render(request, 'ecom/order_status_page.html', {'orders_with_items': orders_with_items, 'status': 'Delivered', 'title': 'Delivered Orders'})
 
 @login_required(login_url='customerlogin')
 def cancelled_orders_view(request):
     customer = models.Customer.objects.get(user_id=request.user.id)
-    orders = models.Orders.objects.filter(customer=customer, status='Cancelled').order_by('-created_at')
-    return render(request, 'ecom/order_status_page.html', {'orders': orders, 'status': 'Cancelled', 'title': 'Cancelled Orders'})
+    orders = models.Orders.objects.filter(customer=customer, status='Cancelled').order_by('-status_updated_at')
+    orders_with_items = []
+    for order in orders:
+        order_items = models.OrderItem.objects.filter(order=order)
+        total_price = 0
+        for item in order_items:
+            total_price += item.price * item.quantity
+        order.total = total_price
+        orders_with_items.append({
+            'order': order,
+            'items': order_items
+        })
+    return render(request, 'ecom/order_status_page.html', {'orders_with_items': orders_with_items, 'status': 'Cancelled', 'title': 'Cancelled Orders'})
 
 def cart_page(request):
     user = request.user
@@ -620,6 +720,12 @@ def add_to_cart_view(request, pk):
     size = request.POST.get('size', 'M')  # Default to M if not provided
     quantity = int(request.POST.get('quantity', 1))  # Default to 1 if not provided
     
+    product = models.Product.objects.get(id=pk)
+    # Check if product quantity is sufficient
+    if product.quantity < quantity:
+        messages.error(request, f'Sorry, only {product.quantity} pcs available for {product.name} (Size: {size}).')
+        return redirect('customer-home')
+    
     # For cart counter, fetching products ids added by customer from cookies
     if 'product_ids' in request.COOKIES:
         product_ids = request.COOKIES['product_ids']
@@ -660,7 +766,6 @@ def add_to_cart_view(request, pk):
         updated_product_ids = product_key
     response.set_cookie('product_ids', updated_product_ids)
 
-    product = models.Product.objects.get(id=pk)
     messages.info(request, product.name + f' (Size: {size}) added to cart successfully!')
 
     return response
@@ -837,7 +942,16 @@ def customer_address_view(request):
             product_id_in_cart = product_ids.split('|')
             products = models.Product.objects.all().filter(id__in=product_id_in_cart)
             for p in products:
-                total = total + p.price
+                # Calculate quantity from cookies for each product
+                quantity = 1
+                for key in product_ids.split('|'):
+                    if key.startswith(f'product_{p.id}_'):
+                        cookie_key = f'{key}_details'
+                        if cookie_key in request.COOKIES:
+                            details = request.COOKIES[cookie_key].split(':')
+                            if len(details) == 2:
+                                quantity = int(details[1])
+                total += p.price * quantity
 
     # Get payment method from query parameter
     payment_method = request.GET.get('method', 'cod')
@@ -877,6 +991,7 @@ def customer_address_view(request):
 
 @login_required(login_url='customerlogin')
 def payment_success_view(request):
+    import uuid
     customer = models.Customer.objects.get(user_id=request.user.id)
     products = None
     payment_method = request.GET.get('method', 'cod')  # Default to COD if not specified
@@ -884,7 +999,7 @@ def payment_success_view(request):
     if 'product_ids' in request.COOKIES:
         product_ids = request.COOKIES['product_ids']
         if product_ids != "":
-            product_keys = product_ids.split('|')
+            product_keys = request.COOKIES['product_ids'].split('|')
             product_ids_only = set()
             for key in product_keys:
                 parts = key.split('_')
@@ -904,11 +1019,35 @@ def payment_success_view(request):
         mobile = request.COOKIES.get('mobile', str(customer.mobile))
         address = request.COOKIES.get('address', customer.get_full_address)
 
-    # Create orders for each product in the cart
+    # Generate a unique short order reference ID
+    import random
+    import string
+    def generate_order_ref(length=12):
+        return ''.join(random.choices(string.ascii_uppercase + string.digits, k=length))
+
+    order_ref = generate_order_ref()
+
+    # Create the parent order entry with order_ref
+    initial_status = 'Processing' if payment_method == 'paypal' else 'Pending'
+    parent_order = models.Orders.objects.create(
+        customer=customer,
+        status=initial_status,
+        email=email,
+        mobile=mobile,
+        address=address,
+        size='',
+        quantity=0,
+        payment_method=payment_method,
+        order_date=timezone.now(),
+        status_updated_at=timezone.now(),
+        notes=f"Order Group ID: {order_ref}",
+        order_ref=order_ref
+    )
+
+    # Create order items linked to the parent order
     for product in products:
         quantity = 1  # Default quantity to 1
         size = 'M'  # Default size
-        # Find all sizes for this product in product_keys
         for key in product_keys:
             if key.startswith(f'product_{product.id}_'):
                 cookie_key = f'{key}_details'
@@ -918,31 +1057,36 @@ def payment_success_view(request):
                         size = details[0]
                         quantity = int(details[1])
 
-                # Create the order
-                order, created = models.Orders.objects.get_or_create(
-                    customer=customer,
+                # Create order item linked to parent order with size
+                models.OrderItem.objects.create(
+                    order=parent_order,
                     product=product,
-                    status='Pending',
-                    email=email,
-                    mobile=mobile,
-                    address=address,
                     quantity=quantity,
-                    size=size,
+                    price=product.price,
+                    size=size
                 )
 
                 # Decrease product quantity
-                if created:
-                    product.quantity = max(0, product.quantity - quantity)
-                    product.save()
-                    print(f"Product {product.id} quantity decreased by {quantity}. New quantity: {product.quantity}")
+                product.quantity = max(0, product.quantity - quantity)
+                product.save()
+                print(f"Product {product.id} quantity decreased by {quantity}. New quantity: {product.quantity}")
 
-                # Log the order creation
-                print(f"Order created: {order.id}")
+                # Update inventory item quantity
+                try:
+                    inventory_item = models.InventoryItem.objects.get(name=product.name)
+                    if inventory_item.quantity >= quantity:
+                        inventory_item.quantity = max(0, inventory_item.quantity - quantity)
+                        inventory_item.save()
+                        print(f"Inventory item {inventory_item.name} quantity decreased by {quantity}. New quantity: {inventory_item.quantity}")
+                    else:
+                        print(f"Warning: Insufficient inventory for {inventory_item.name}")
+                except models.InventoryItem.DoesNotExist:
+                    print(f"Warning: No inventory item found for product {product.name}")
 
     # Clear cookies after order placement
     response = render(request, 'ecom/payment_success.html')
     response.delete_cookie('product_ids')
-    
+
     # Only clear address cookies for non-COD payments
     if payment_method != 'cod':
         response.delete_cookie('email')
@@ -1002,12 +1146,19 @@ def cancel_order_view(request, order_id):
 @user_passes_test(is_customer)
 def my_order_view(request):
     customer = models.Customer.objects.get(user_id=request.user.id)
-    orders = models.Orders.objects.filter(customer=customer)
-    data = []
+    orders = models.Orders.objects.filter(customer=customer).order_by('-order_date')
+    orders_with_items = []
     for order in orders:
-        product = order.product
-        data.append((product, order))
-    return render(request, 'ecom/my_order.html', {'data': data})
+        order_items = models.OrderItem.objects.filter(order=order)
+        total_price = 0
+        for item in order_items:
+            total_price += item.price * item.quantity
+        order.total = total_price
+        orders_with_items.append({
+            'order': order,
+            'items': order_items
+        })
+    return render(request, 'ecom/my_order.html', {'orders_with_items': orders_with_items})
 
 @login_required(login_url='customerlogin')
 @user_passes_test(is_customer)
@@ -1041,14 +1192,17 @@ def render_to_pdf(template_src, context_dict):
 
 
 
-def download_invoice_view(request, orderID, productID):
+def download_invoice_view(request, orderID):
     order = models.Orders.objects.get(id=orderID)
-    product = models.Product.objects.get(id=productID)
+    order_items = models.OrderItem.objects.filter(order=order)
 
     # Use the stored shipment address from the order
     shipment_address = order.address if order.address else order.customer.address
 
-    total_price = product.price * order.quantity
+    # Calculate total price for the whole order
+    total_price = 0
+    for item in order_items:
+        total_price += item.price * item.quantity
 
     mydict = {
         'orderDate': order.order_date,
@@ -1057,12 +1211,7 @@ def download_invoice_view(request, orderID, productID):
         'customerMobile': order.mobile,
         'shipmentAddress': shipment_address,  # Ensure this is used
         'orderStatus': order.status,
-
-        'productName': product.name,
-        'productImage': product.product_image,
-        'productPrice': product.price,
-        'productDescription': product.description,
-        'quantity': order.quantity,
+        'orderItems': order_items,
         'totalPrice': total_price,
     }
     return render_to_pdf('ecom/download_invoice.html', mydict)

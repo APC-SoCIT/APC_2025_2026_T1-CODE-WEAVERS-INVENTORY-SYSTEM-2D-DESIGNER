@@ -1098,24 +1098,27 @@
         <div class="quick-view-btn" onclick="openProductDetail('{{ p.id }}')">Quick View</div>
       </div>
       
-      <div class="product-details">
-        <h3 class="product-name">{{ p.name }}</h3>
-        <p class="product-description">{{ p.description|truncatechars:60 }}</p>
-        
-        <div class="product-rating">
-          <div class="rating-stars">
-            <i class="fa fa-star"></i>
-            <i class="fa fa-star"></i>
-            <i class="fa fa-star"></i>
-            <i class="fa fa-star"></i>
-            <i class="fa fa-star-half-o"></i>
-          </div>
-          <span class="rating-count">(24)</span>
+    <div class="product-details">
+      <h3 class="product-name">{{ p.name }}</h3>
+      <p class="product-description">{{ p.description|truncatechars:60 }}</p>
+      
+      <div class="product-rating">
+        <div class="rating-stars">
+          <i class="fa fa-star"></i>
+          <i class="fa fa-star"></i>
+          <i class="fa fa-star"></i>
+          <i class="fa fa-star"></i>
+          <i class="fa fa-star-half-o"></i>
         </div>
-        
-        <div class="product-price">₱{{ p.price }}</div>
+        <span class="rating-count">(24)</span>
       </div>
+      
+      <div class="product-price">₱{{ p.price }}</div>
+      {% if p.quantity == 0 %}
+        <div style="color: red; font-weight: bold; margin-top: 10px;">Out of Stock</div>
+      {% endif %}
     </div>
+  </div>
     {% endfor %}
   </div>
   

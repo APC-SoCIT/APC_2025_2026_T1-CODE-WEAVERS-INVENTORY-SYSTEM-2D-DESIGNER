@@ -45,6 +45,62 @@
     </style>
 
 
+    <script>
+        const philippinesCities = ['Manila', 'Quezon City', 'Davao', 'Cebu', 'Makati',];
+        const usCities = ['New York', 'Los Angeles', 'Chicago', 'Houston', 'Phoenix'];
+        
+        const barangays = {
+            'Manila': ['Barangay 1', 'Barangay 2', 'Barangay 3'],
+            'Quezon City': ['Bagong Silangan', 'Batasan Hills', 'Commonwealth'],
+            'Davao': ['Barangay 1-A', 'Barangay 2-A', 'Barangay 3-A'],
+            'Cebu': ['Apas', 'Banilad', 'Basak'],
+            'Makati': ['Bangkal', 'Bel-Air', 'Carmona'],
+            'New York': ['Manhattan', 'Brooklyn', 'Queens'],
+            'Los Angeles': ['Downtown', 'Hollywood', 'Venice'],
+            'Chicago': ['Loop', 'River North', 'Gold Coast'],
+            'Houston': ['Downtown', 'Midtown', 'Museum District'],
+            'Phoenix': ['Downtown', 'Arcadia', 'Biltmore']
+        };
+
+        function updateCities() {
+            const countrySelect = document.getElementById('country');
+            const citySelect = document.getElementById('city');
+            const selectedCountry = countrySelect.value;
+            
+            // Clear current cities
+            citySelect.innerHTML = '<option value="">Select City</option>';
+            
+            // Add new cities based on country
+            const cities = selectedCountry === 'PH' ? philippinesCities : usCities;
+            cities.forEach(city => {
+                const option = document.createElement('option');
+                option.value = city;
+                option.textContent = city;
+                citySelect.appendChild(option);
+            });
+            
+            // Clear barangay selection when country changes
+            document.getElementById('barangay').innerHTML = '<option value="">Select Barangay</option>';
+        }
+
+        function updateBarangays() {
+            const citySelect = document.getElementById('city');
+            const barangaySelect = document.getElementById('barangay');
+            const selectedCity = citySelect.value;
+            
+            // Clear current barangays
+            barangaySelect.innerHTML = '<option value="">Select Barangay</option>';
+            
+            // Add new barangays based on city
+            const cityBarangays = barangays[selectedCity] || [];
+            cityBarangays.forEach(barangay => {
+                const option = document.createElement('option');
+                option.value = barangay;
+                option.textContent = barangay;
+                barangaySelect.appendChild(option);
+            });
+        }
+    </script>
 </head>
 <br><br><br><br><br><br>
 
@@ -79,7 +135,21 @@
                             {% render_field customerForm.street_address class="form-control" placeholder="Street Address" %}
                         </div>
                         <div class="form-group">
-                            {% render_field customerForm.barangay class="form-control" placeholder="Barangay" %}
+                            <select name="country" class="form-control" id="country" onchange="updateCities()">
+                                <option value="">Select Country</option>
+                                <option value="PH" {% if customerForm.instance.country == 'PH' %}selected{% endif %}>Philippines</option>
+                                <option value="US" {% if customerForm.instance.country == 'US' %}selected{% endif %}>United States</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <select name="city" class="form-control" id="city" onchange="updateBarangays()">
+                                <option value="">Select City</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <select name="barangay" class="form-control" id="barangay">
+                                <option value="">Select Barangay</option>
+                            </select>
                         </div>
                     </div>
                     <div class="col-md-6">
@@ -88,9 +158,6 @@
                         </div>
                         <div class="form-group">
                             {% render_field userForm.password class="form-control" placeholder="Password" %}
-                        </div>
-                        <div class="form-group">
-                            {% render_field customerForm.city class="form-control" placeholder="City" %}
                         </div>
                         <div class="form-group">
                             {% render_field customerForm.postal_code class="form-control" placeholder="Postal Code" %}
