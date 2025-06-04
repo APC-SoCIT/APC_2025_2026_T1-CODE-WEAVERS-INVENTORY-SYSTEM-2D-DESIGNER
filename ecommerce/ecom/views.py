@@ -352,7 +352,7 @@ def admin_view_booking_view(request):
 
 @login_required(login_url='adminlogin')
 def admin_view_processing_orders(request):
-    orders = models.Orders.objects.filter(status='Processing')
+    orders = models.Orders.objects.filter(status__in=['Pending', 'Processing'])
     return prepare_admin_order_view(request, orders, 'Processing', 'ecom/admin_view_orders.html')
 
 @login_required(login_url='adminlogin')
@@ -371,35 +371,35 @@ def admin_view_delivered_orders(request):
     return prepare_admin_order_view(request, orders, 'Delivered', 'ecom/admin_view_orders.html')
 
 def prepare_admin_order_view(request, orders, status, template):
-    ordered_products = []
-    ordered_bys = []
-    order_items_list = []
+    # Order the orders by created_at descending to show new orders first
+    orders = orders.order_by('-created_at')
     
+    # Prepare a list of orders with their customer, shipping address, and order items
+    orders_data = []
     for order in orders:
         order_items = models.OrderItem.objects.filter(order=order)
-        products = []
-        items_info = {}
-        
-        # Group items by product and sum quantities
+        items = []
         for item in order_items:
-            if item.product:
-                if item.product.id in items_info:
-                    items_info[item.product.id]['quantity'] += item.quantity
-                else:
-                    items_info[item.product.id] = {
-                        'product': item.product,
-                        'quantity': item.quantity
-                    }
-                    products.append(item.product)
-        
-        customer_queryset = models.Customer.objects.filter(id=order.customer.id) if order.customer else []
-        
-        ordered_products.append(products)
-        ordered_bys.append(customer_queryset)
-        order_items_list.append(list(items_info.values()))
-    
+            items.append({
+                'product': item.product,
+                'quantity': item.quantity,
+                'size': item.size,
+                'price': item.price,
+                'product_image': item.product.product_image.url if item.product.product_image else None,
+            })
+        # Use order.address if available, else fallback to customer's full address
+        shipping_address = order.address if order.address else (order.customer.get_full_address if order.customer else '')
+        orders_data.append({
+            'order': order,
+            'customer': order.customer,
+            'shipping_address': shipping_address,
+            'order_items': items,
+            'status': order.status,
+            'order_id': order.order_ref,
+            'order_date': order.order_date,
+        })
     return render(request, template, {
-        'data': zip(ordered_products, ordered_bys, orders, order_items_list),
+        'orders_data': orders_data,
         'status': status
     })
 
