@@ -24,6 +24,43 @@ from django.core.files.base import ContentFile
 from django.http import HttpResponse
 from django.http import JsonResponse
 from django.shortcuts import redirect
+from django.views.decorators.http import require_GET
+from django.core.serializers.json import DjangoJSONEncoder
+from datetime import datetime
+
+
+@login_required(login_url='adminlogin')
+def get_transactions_by_month(request):
+    month = request.GET.get('month')
+    year = request.GET.get('year')
+    if not month or not year:
+        return JsonResponse({'error': 'Month and year parameters are required'}, status=400)
+    try:
+        month = int(month)
+        year = int(year)
+    except ValueError:
+        return JsonResponse({'error': 'Invalid month or year'}, status=400)
+
+    # Filter orders by delivered status and month/year
+    orders = models.Orders.objects.filter(
+        status='Delivered',
+        created_at__year=year,
+        created_at__month=month
+    ).order_by('-created_at')
+
+    transactions = []
+    for order in orders:
+        if order.product is None:
+            continue
+        transactions.append({
+            'user_name': order.customer.user.username if order.customer and order.customer.user else 'Unknown',
+            'order_id': order.order_ref or '',
+            'date': order.created_at.strftime('%Y-%m-%d'),
+            'amount': float(order.product.price) * order.quantity if order.product.price else 0,
+            'type': 'credit' if order.status == 'Delivered' else 'debit',
+        })
+
+    return JsonResponse({'transactions': transactions})
 
 def order_counts(request):
     if request.user.is_authenticated and is_customer(request.user):
@@ -193,9 +230,7 @@ def admin_dashboard_view(request):
     last_month_start = current_date - timedelta(days=30)
 
     delivered_orders = models.Orders.objects.filter(status='Delivered').order_by('-created_at')[:10]
-    recent_orders_products = []
-    recent_orders_customers = []
-    recent_orders_orders = []
+    recent_orders = models.Orders.objects.all().order_by('-created_at')[:10]
 
     # Calculate total sales and period-specific sales
     all_delivered_orders = models.Orders.objects.filter(status='Delivered')
@@ -207,6 +242,8 @@ def admin_dashboard_view(request):
     product_sales = {}
 
     for order in all_delivered_orders:
+        if order.product is None:
+            continue
         order_total = order.product.price * order.quantity
         total_sales += order_total
 
@@ -227,13 +264,12 @@ def admin_dashboard_view(request):
             if order_date >= last_month_start:
                 last_month_sales += order_total
 
-    for order in delivered_orders:
-        order.total_price = order.product.price * order.quantity  # Add total_price attribute
-        recent_orders_products.append(order.product)
-        recent_orders_customers.append(order.customer)
-        recent_orders_orders.append(order)
-        # Debug print product image info
-        print(f"Product: {order.product.name}, Image: {order.product.product_image}, Size: {order.size}")
+    # Add total_price attribute to recent_orders
+    for order in recent_orders:
+        if order.product:
+            order.total_price = order.product.price * order.quantity
+        else:
+            order.total_price = 0
 
     # Sort products by sales performance
     sorted_products = sorted(product_sales.values(), key=lambda x: x['quantity_sold'], reverse=True)
@@ -245,6 +281,26 @@ def admin_dashboard_view(request):
     formatted_last_quarter_sales = '{:,.2f}'.format(last_quarter_sales)
     formatted_last_month_sales = '{:,.2f}'.format(last_month_sales)
 
+    # Calculate monthly sales for current year
+    from django.db.models.functions import ExtractMonth, ExtractYear
+    from django.db.models import Sum, F
+
+    current_year = current_date.year
+    monthly_sales_qs = models.Orders.objects.filter(
+        status='Delivered',
+        created_at__year=current_year
+    ).annotate(
+        month=ExtractMonth('created_at')
+    ).values('month').annotate(
+        total=Sum(F('product__price') * F('quantity'))
+    ).order_by('month')
+
+    # Initialize list with 12 zeros for each month
+    monthly_sales = [0] * 12
+    for entry in monthly_sales_qs:
+        month_index = entry['month'] - 1
+        monthly_sales[month_index] = float(entry['total']) if entry['total'] else 0
+
     mydict = {
         'customercount': customercount,
         'productcount': productcount,
@@ -254,8 +310,9 @@ def admin_dashboard_view(request):
         'last_month_sales': formatted_last_month_sales,
         'fast_moving_products': fast_moving_products,
         'slow_moving_products': slow_moving_products,
-        'data': zip(recent_orders_products, recent_orders_customers, recent_orders_orders),
-        'current_date': current_date.strftime('%Y-%m-%d')
+        'recent_orders': recent_orders,
+        'current_date': current_date.strftime('%Y-%m-%d'),
+        'monthly_sales': monthly_sales
     }
     return render(request, 'ecom/admin_dashboard.html', context=mydict)
 
@@ -1388,6 +1445,43 @@ def create_gcash_payment(request):
         return redirect(checkout_url)
     except KeyError:
         return JsonResponse({"error": "Payment creation failed", "details": data}, status=400)
+
+from django.views.decorators.http import require_GET
+from django.core.serializers.json import DjangoJSONEncoder
+import datetime
+
+@require_GET
+@login_required(login_url='adminlogin')
+def get_transactions_by_month(request):
+    month = request.GET.get('month')
+    year = request.GET.get('year')
+    if not month or not year:
+        return JsonResponse({'error': 'Month and year parameters are required'}, status=400)
+    try:
+        month = int(month)
+        year = int(year)
+    except ValueError:
+        return JsonResponse({'error': 'Invalid month or year parameter'}, status=400)
+
+    # Filter delivered orders by month and year, and only those with a customer
+    orders = models.Orders.objects.filter(
+        status='Delivered',
+        order_date__year=year,
+        order_date__month=month,
+        customer__isnull=False
+    ).select_related('customer').order_by('-order_date')[:20]
+
+    transactions = []
+    for order in orders:
+        transactions.append({
+            'user_name': f"{order.customer.user.first_name} {order.customer.user.last_name}" if order.customer and order.customer.user else 'Unknown',
+            'order_id': order.order_ref,
+            'date': order.order_date.strftime('%Y-%m-%d'),
+            'amount': float(order.product.price) * order.quantity if order.product and order.product.price else 0.0,
+            'type': 'credit',  # Assuming all delivered orders are credits
+        })
+
+    return JsonResponse({'transactions': transactions}, encoder=DjangoJSONEncoder)
 
 def payment_cancel(request):
     return HttpResponse("❌ Payment canceled.")
