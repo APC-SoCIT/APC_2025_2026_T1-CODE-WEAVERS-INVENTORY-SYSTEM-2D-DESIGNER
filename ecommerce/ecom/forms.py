@@ -16,6 +16,12 @@ class CustomerUserForm(forms.ModelForm):
         }
         
 class CustomerForm(forms.ModelForm):
+    privacy_policy = forms.BooleanField(
+        required=True,
+        label='I agree to the Privacy Policy',
+        error_messages={'required': 'You must accept the privacy policy to create an account'}
+    )
+    
     class Meta:
         model=models.Customer
         fields=['street_address', 'city', 'barangay', 'postal_code', 'mobile', 'profile_pic']

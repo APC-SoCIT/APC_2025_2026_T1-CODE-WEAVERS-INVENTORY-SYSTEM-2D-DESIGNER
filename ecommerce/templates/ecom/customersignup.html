@@ -186,43 +186,212 @@
         });
       });
     </script>
-  </head>
-  <body>
-    {% include "ecom/navbar.html" %}
-    <div class="container">
-      <div class="row">
-        <div class="col-md-6">
-          <div class="card">
-            <form class="box" method="post" enctype="multipart/form-data">
-              {% csrf_token %}
-              <h1>Sign Up</h1>
-              {% render_field userForm.first_name class="form-control" placeholder="First Name" %}
-              {% render_field userForm.last_name class="form-control" placeholder="Last Name" %}
-              {% render_field userForm.username class="form-control" placeholder="Username" %}
-              {% render_field userForm.password class="form-control" placeholder="Password" %}
-              <select name="country" id="country" class="form-control" style="background: none; border: 2px solid #ffffff; color: white; border-radius: 24px; margin: 20px auto; width: 250px; text-align: center;">
-                <option value="" disabled selected>Select Country</option>
-                <option value="PH">Philippines</option>
-                <option value="US">United States</option>
-              </select>
-              <select name="city" id="city" class="form-control" style="background: none; border: 2px solid #ffffff; color: white; border-radius: 24px; margin: 20px auto; width: 250px; text-align: center;">
-                <option value="" disabled selected>Select City</option>
-              </select>
-              {% render_field customerForm.barangay class="form-control" placeholder="Barangay" %}
-              {% render_field customerForm.street_address class="form-control" placeholder="Street Address" %}
-              {% render_field customerForm.postal_code class="form-control" placeholder="Postal Code" %}
-              {% render_field customerForm.mobile class="form-control" placeholder="Contact" %}
-              <input type="submit" name="" value="Create">
-              <a href="/customerlogin" class="btn btn-primary">Have an account? Login Here!</a>
-            </form>
+    <style media="screen">
+      /* Add these new styles for the modal */
+      .modal {
+          display: none;
+          position: fixed;
+          z-index: 1000;
+          left: 0;
+          top: 0;
+          width: 100%;
+          height: 100%;
+          background-color: rgba(0,0,0,0.4);
+      }
+      
+      .modal-content {
+          background: rgba(255, 255, 255, 0.95);
+          margin: 5% auto;
+          padding: 20px;
+          width: 80%;
+          max-width: 800px;
+          max-height: 80vh;
+          overflow-y: auto;
+          border-radius: 10px;
+          position: relative;
+      }
+      
+      .close-modal {
+          position: absolute;
+          right: 20px;
+          top: 10px;
+          font-size: 28px;
+          cursor: pointer;
+      }
+      
+      .modal-content h1 {
+          color: #333;
+          margin-bottom: 20px;
+      }
+      
+      .modal-content h2 {
+          color: #444;
+          margin-top: 20px;
+      }
+      
+      .modal-content p, .modal-content ul {
+          color: #666;
+          line-height: 1.6;
+      }
+      
+      .modal-content ul {
+          margin-left: 20px;
+      }
+      </style>
+    </head>
+    <body>
+      {% include "ecom/navbar.html" %}
+      <div class="container">
+        <div class="row">
+          <div class="col-md-6">
+            <div class="card">
+              <form class="box" method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <h1>Sign Up</h1>
+                {% render_field userForm.first_name class="form-control" placeholder="First Name" %}
+                {% render_field userForm.last_name class="form-control" placeholder="Last Name" %}
+                {% render_field userForm.username class="form-control" placeholder="Username" %}
+                {% render_field userForm.password class="form-control" placeholder="Password" %}
+                <select name="country" id="country" class="form-control" style="background: none; border: 2px solid #ffffff; color: white; border-radius: 24px; margin: 20px auto; width: 250px; text-align: center;">
+                  <option value="" disabled selected>Select Country</option>
+                  <option value="PH">Philippines</option>
+                  <option value="US">United States</option>
+                </select>
+                <select name="city" id="city" class="form-control" style="background: none; border: 2px solid #ffffff; color: white; border-radius: 24px; margin: 20px auto; width: 250px; text-align: center;">
+                  <option value="" disabled selected>Select City</option>
+                </select>
+                {% render_field customerForm.barangay class="form-control" placeholder="Barangay" %}
+                {% render_field customerForm.street_address class="form-control" placeholder="Street Address" %}
+                {% render_field customerForm.postal_code class="form-control" placeholder="Postal Code" %}
+                {% render_field customerForm.mobile class="form-control" placeholder="Contact" %}
+                <!-- Add this before the submit button -->
+                <div class="form-group" style="margin: 20px auto; text-align: left;">
+                  <label class="checkbox-container" style="color: #fff; font-size: 14px;">
+                      {{ customerForm.privacy_policy }}
+                      <span>I agree to the <a href="#" style="color: #fff; text-decoration: underline;">Privacy Policy</a></span>
+                  </label>
+                  {% if customerForm.privacy_policy.errors %}
+                      <div class="error-message" style="color: #ff4444; font-size: 12px; margin-top: 5px;">
+                          {{ customerForm.privacy_policy.errors.0 }}
+                      </div>
+                  {% endif %}
+                </div>
+                <input type="submit" name="" value="Create">
+                <a href="/customerlogin" class="btn btn-primary">Have an account? Login Here!</a>
+              </form>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-    <br><br><br><br><br><br><br><br><br>
-    <br><br><br><br><br><br><br><br><br>
-    <br><br><br><br><br><br><br><br><br>
-    <br><br><br><br><br><br><br><br><br>
-    {% include "ecom/footer.html" %}
-  </body>
+      <br><br><br><br><br><br><br><br><br>
+      <br><br><br><br><br><br><br><br><br>
+      <br><br><br><br><br><br><br><br><br>
+      <br><br><br><br><br><br><br><br><br>
+      {% include "ecom/footer.html" %}
+    </body>
+    <!-- Add the modal structure just before the closing body tag -->
+    <div id="privacyModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h1>Privacy Policy and Terms & Conditions</h1>
+            
+            <!-- Privacy Policy Section -->
+            <h2>Privacy Policy</h2>
+<h2>Terms and Conditions</h2>
+<div style="text-align: left;">
+  <p><strong>Effective Date:</strong> June 07, 2025<br>
+  <strong>Business Name:</strong> WorksTeamWear</p>
+
+  <p>At WorksTeamWear, your privacy is very important to us. This Privacy Policy explains how we collect, use, protect, and disclose the personal information of users who interact with our website, particularly those who create an account or place orders for customized jerseys.</p>
+
+  <p><strong>1. Account Registration: </strong> To place an order or save customization preferences, users must create an account. You agree to:</p>
+  <ul>
+    <li>Provide accurate and complete information when creating an account.</li>
+    <li>Maintain the confidentiality of your account information and password.</li>
+    <li>Notify us immediately of any unauthorized use of your account.</li>
+    <li>We reserve the right to suspend or terminate accounts that violate these Terms.</li>
+  </ul>
+
+  <p><strong>2. Orders and Customizations: </strong> All orders are subject to acceptance and availability. We strive to provide accurate previews and customization options, but minor differences may occur in the final product due to variations in printing and materials.</p>
+  <ul>
+    <li>You are responsible for ensuring the accuracy of your customization details (e.g., name, number, size).</li>
+    <li>Once a customized jersey is in production, changes or cancellations may not be possible.</li>
+  </ul>
+
+  <p><strong>3. Pricing and Payment: </strong> All prices are listed in Philippine Peso and include applicable taxes unless stated otherwise.</p>
+  <ul>
+    <li>We reserve the right to update pricing at any time.</li>
+    <li>Payments are processed securely via third-party payment gateways. We do not store credit card details.</li>
+  </ul>
+
+  <p><strong>4. Shipping and Delivery: </strong>Estimated delivery times are provided at checkout and may vary based on your location, order volume, or other factors. We do our best to ship your products promptly and ensure they reach you on time.</p>
+  <ul>
+    <li>We are not responsible for delays caused by shipping providers, customs, or incorrect addresses.</li>
+    <li>Shipping fees (if any) will be disclosed before checkout.</li>
+  </ul>
+
+  <p><strong>5. Returns and Refunds: </strong>Due to the custom nature of our products, we generally do not accept returns or offer refunds unless the product is:</p>
+<ul>
+  <li>Defective or damaged on arrival</li>
+  <li>Significantly different from your approved design</li>
+  <li>If you have a concern, please contact us within 7 days of receiving the product.</li>
+</ul>
+</div>
+
+<p><strong>6. Intellectual Property: </strong>All content on WorksTeamWear — including logos, designs, images, and site code — is owned by or licensed to us and is protected by intellectual property laws. You may not:</p>
+<ul>
+  <li>Copy, reproduce, or sell any part of the website</li>
+  <li>Use our designs or branding for your own commercial use</li>
+</ul>
+
+<p><Strong>7. Prohibited Conduct: </Strong>Users must use our website responsibly. Any activity that is illegal, harmful, or disruptive—such as spreading false information, attempting to hack the site, or misusing our content—is strictly prohibited and may result in account suspension or legal action.</p>
+<ul>
+  <li>Use the site for fraudulent or unlawful purposes</li>
+  <li>Upload or share offensive or misleading content</li>
+  <li>Attempt to hack, disrupt, or overload the website</li>
+  <li>Violating these terms may result in account suspension and legal action.</li>
+</ul>
+
+<p><strong>8. Limitation of Liability: </strong>We are not responsible for any indirect, incidental, or consequential damages that may result from using our website or services. Our maximum liability is limited to the total amount you paid for the specific order in question.</p>
+<ul>
+  <li>Errors made by customers during customization</li>
+  <li>Delays beyond our control (e.g., shipping or supply issues)</li>
+  <li>Indirect or incidental damages arising from the use of our services</li>
+</ul>
+
+<p><strong>9.Privacy: </strong>Your personal information is handled in accordance with our [Privacy Policy]. By using our site, you agree to our data practices as described there.</p>
+<p><strong>10. Changes to These Terms: </strong>We reserve the right to modify these Terms at any time. Updates will be posted on this page, and continued use of the site means you accept the new terms.</p>
+<p><Strong>11. Contact Us: </Strong>If you have any questions, concerns, or feedback regarding our Privacy Policy or Terms and Conditions, please feel free to contact us. We are committed to responding to all inquiries promptly and professionally.</p>
+<ul>
+  <li>📧 Email: wtw104dante@gmail.com</li>
+  <li>Contact Number: +63 998 854 8632</li>
+</ul>
+
+<!-- Add all the terms and conditions content here -->
+
+
+    <script>
+    // Add this JavaScript for modal functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const modal = document.getElementById('privacyModal');
+        const privacyLink = document.querySelector('a[href="#"]');
+        const closeBtn = document.querySelector('.close-modal');
+
+        privacyLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            modal.style.display = 'block';
+        });
+
+        closeBtn.addEventListener('click', function() {
+            modal.style.display = 'none';
+        });
+
+        window.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+    });
+    </script>
+</body>
 </html>

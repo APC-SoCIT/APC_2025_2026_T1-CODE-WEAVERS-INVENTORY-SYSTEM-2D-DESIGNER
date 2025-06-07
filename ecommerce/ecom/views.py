@@ -94,6 +94,7 @@ def customer_signup_view(request):
         userForm=forms.CustomerUserForm(request.POST)
         customerForm=forms.CustomerForm(request.POST,request.FILES)
         if userForm.is_valid() and customerForm.is_valid():
+            # Privacy policy is automatically checked because it's required=True
             user=userForm.save()
             user.set_password(user.password)
             user.save()
@@ -102,7 +103,7 @@ def customer_signup_view(request):
             customer.save()
             my_customer_group = Group.objects.get_or_create(name='CUSTOMER')
             my_customer_group[0].user_set.add(user)
-        return HttpResponseRedirect('customerlogin')
+            return HttpResponseRedirect('customerlogin')
     return render(request,'ecom/customersignup.html',context=mydict)
 
 def customer_login(request):
