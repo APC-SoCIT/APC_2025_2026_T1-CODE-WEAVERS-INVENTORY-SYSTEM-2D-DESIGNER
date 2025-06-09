@@ -1111,20 +1111,36 @@ def payment_success_view(request):
     return response
 
 def place_order(request):
-  print('Place Order view function executed')
-  if request.method == 'POST':
-    print('POST request received')
-    design_data = request.POST.get('design_data')
-    print('Design data:', design_data)
-    # Process the design data and create a new order
-    order = Orders.objects.create(
-      # Add the order details here
-    )
-    print('Order created:', order)
-    return JsonResponse({'message': 'Order placed successfully'})
-  else:
-    print('Invalid request method')
-    return JsonResponse({'message': 'Invalid request method'})
+    print('Place Order view function executed')
+    if request.method == 'POST':
+        print('POST request received')
+        customer = models.Customer.objects.get(user_id=request.user.id)
+        
+        # Get address from cookies if available, otherwise use customer's profile address
+        address = request.COOKIES.get('address', customer.get_full_address)
+        mobile = request.COOKIES.get('mobile', customer.mobile)
+        
+        # Create the order with the appropriate address
+        order = Orders.objects.create(
+            customer=customer,
+            email=request.user.email,
+            address=address,
+            mobile=mobile,
+            status='Pending',
+            order_date=timezone.now()
+        )
+        
+        design_data = request.POST.get('design_data')
+        if design_data:
+            # Handle custom design data if present
+            print('Design data:', design_data)
+            # Add custom design processing logic here
+            
+        print('Order created:', order)
+        return JsonResponse({'message': 'Order placed successfully'})
+    else:
+        print('Invalid request method')
+        return JsonResponse({'message': 'Invalid request method'}, status=400)
 
 @login_required(login_url='customerlogin')
 @user_passes_test(is_customer)
@@ -1245,22 +1261,46 @@ def my_profile_view(request):
 
 @user_passes_test(is_customer)
 def edit_profile_view(request):
-    customer=models.Customer.objects.get(user_id=request.user.id)
-    user=models.User.objects.get(id=customer.user_id)
-    userForm=forms.CustomerUserForm(instance=user)
-    customerForm=forms.CustomerForm(request.FILES,instance=customer)
-    mydict={'userForm':userForm,'customerForm':customerForm}
-    if request.method=='POST':
-        userForm=forms.CustomerUserForm(request.POST,instance=user)
-        customerForm=forms.CustomerForm(request.POST,request.FILES,instance=customer)
+    customer = models.Customer.objects.get(user_id=request.user.id)
+    user = models.User.objects.get(id=customer.user_id)
+    
+    if request.method == 'POST':
+        userForm = forms.CustomerUserForm(request.POST, instance=user)
+        customerForm = forms.CustomerForm(request.POST, request.FILES, instance=customer)
+        
         if userForm.is_valid() and customerForm.is_valid():
-            user=userForm.save()
-            user.set_password(user.password)
+            # Save user without changing password if it's empty
+            if not userForm.cleaned_data['password']:
+                del userForm.cleaned_data['password']
+                user = userForm.save(commit=False)
+            else:
+                user = userForm.save(commit=False)
+                user.set_password(userForm.cleaned_data['password'])
             user.save()
-            customerForm.save()
-            messages.success(request, 'Account Information saved!')
-            return render(request,'ecom/edit_profile.html',context=mydict)
-    return render(request,'ecom/edit_profile.html',context=mydict)
+            
+            # Save customer form
+            customer = customerForm.save(commit=False)
+            customer.user = user
+            customer.save()
+            
+            messages.success(request, 'Profile updated successfully!')
+            return redirect('my-profile')
+        else:
+            # Add specific error messages for each form
+            for field, errors in userForm.errors.items():
+                for error in errors:
+                    messages.error(request, f'{field}: {error}')
+            for field, errors in customerForm.errors.items():
+                for error in errors:
+                    messages.error(request, f'{field}: {error}')
+    else:
+        userForm = forms.CustomerUserForm(instance=user)
+        customerForm = forms.CustomerForm(instance=customer)
+    
+    return render(request, 'ecom/edit_profile.html', {
+        'userForm': userForm,
+        'customerForm': customerForm
+    })
 
 
 

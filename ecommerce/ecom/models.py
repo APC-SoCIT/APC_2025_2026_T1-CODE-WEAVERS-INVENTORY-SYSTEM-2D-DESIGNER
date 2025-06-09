@@ -4,11 +4,32 @@ from django.contrib.auth.models import User
 class Customer(models.Model):
     COUNTRY_CHOICES = [
         ('PH', 'Philippines'),
-        ('US', 'United States')
     ]
+    
+    REGION_CHOICES = [
+        ('NCR', 'National Capital Region'),
+        ('CAR', 'Cordillera Administrative Region'),
+        ('R1', 'Ilocos Region'),
+        ('R2', 'Cagayan Valley'),
+        ('R3', 'Central Luzon'),
+        ('R4A', 'CALABARZON'),
+        ('R4B', 'MIMAROPA'),
+        ('R5', 'Bicol Region'),
+        ('R6', 'Western Visayas'),
+        ('R7', 'Central Visayas'),
+        ('R8', 'Eastern Visayas'),
+        ('R9', 'Zamboanga Peninsula'),
+        ('R10', 'Northern Mindanao'),
+        ('R11', 'Davao Region'),
+        ('R12', 'SOCCSKSARGEN'),
+        ('R13', 'Caraga'),
+        ('BARMM', 'Bangsamoro Autonomous Region in Muslim Mindanao'),
+    ]
+    
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     profile_pic = models.ImageField(upload_to='profile_pic/CustomerProfilePic/', null=True, blank=True)
     country = models.CharField(max_length=2, choices=COUNTRY_CHOICES, default='PH')
+    region = models.CharField(max_length=10, choices=REGION_CHOICES)
     city = models.CharField(max_length=50)
     barangay = models.CharField(max_length=50)
     street_address = models.CharField(max_length=100)
@@ -16,16 +37,12 @@ class Customer(models.Model):
     mobile = models.PositiveIntegerField()
 
     @property
-    def get_name(self):
-        return self.user.first_name + " " + self.user.last_name
-
-    @property
-    def get_id(self):
-        return self.user.id
-
-    @property
     def get_full_address(self):
-        return f"{self.street_address}, {self.barangay}, {self.city}, {self.postal_code}"
+        try:
+            region_name = dict(self.REGION_CHOICES)[self.region] if self.region else ''
+            return f"{self.street_address}, {self.barangay}, {self.city}, {region_name}, {self.postal_code}"
+        except (KeyError, AttributeError):
+            return f"{self.street_address}, {self.barangay}, {self.city}, {self.postal_code}"
 
     def __str__(self):
         return self.user.first_name

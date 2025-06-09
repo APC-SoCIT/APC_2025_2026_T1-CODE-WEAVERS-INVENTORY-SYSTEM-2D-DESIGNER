@@ -46,32 +46,70 @@
 
 
     <script>
-        const philippinesCities = ['Manila', 'Quezon City', 'Davao', 'Cebu', 'Makati',];
-        const usCities = ['New York', 'Los Angeles', 'Chicago', 'Houston', 'Phoenix'];
-        
-        const barangays = {
-            'Manila': ['Barangay 1', 'Barangay 2', 'Barangay 3'],
-            'Quezon City': ['Bagong Silangan', 'Batasan Hills', 'Commonwealth'],
-            'Davao': ['Barangay 1-A', 'Barangay 2-A', 'Barangay 3-A'],
-            'Cebu': ['Apas', 'Banilad', 'Basak'],
-            'Makati': ['Bangkal', 'Bel-Air', 'Carmona'],
-            'New York': ['Manhattan', 'Brooklyn', 'Queens'],
-            'Los Angeles': ['Downtown', 'Hollywood', 'Venice'],
-            'Chicago': ['Loop', 'River North', 'Gold Coast'],
-            'Houston': ['Downtown', 'Midtown', 'Museum District'],
-            'Phoenix': ['Downtown', 'Arcadia', 'Biltmore']
+        window.onload = function() {
+            updateRegions();
+            updateCities();
+            updateBarangays();
         };
 
+        const philippineRegions = [
+            'National Capital Region (NCR)',
+            'Cordillera Administrative Region (CAR)',
+            'Ilocos Region (Region I)',
+            'Cagayan Valley (Region II)',
+            'Central Luzon (Region III)',
+            'CALABARZON (Region IV-A)',
+            'MIMAROPA (Region IV-B)',
+            'Bicol Region (Region V)',
+            'Western Visayas (Region VI)',
+            'Central Visayas (Region VII)',
+            'Eastern Visayas (Region VIII)',
+            'Zamboanga Peninsula (Region IX)',
+            'Northern Mindanao (Region X)',
+            'Davao Region (Region XI)',
+            'SOCCSKSARGEN (Region XII)',
+            'Caraga (Region XIII)',
+            'Bangsamoro (BARMM)'
+        ];
+
+        const philippineCities = {
+            'National Capital Region (NCR)': ['Manila', 'Quezon City', 'Makati', 'Taguig', 'Pasig', 'Parañaque', 'Caloocan', 'Las Piñas', 'Malabon', 'Mandaluyong', 'Marikina', 'Muntinlupa', 'Navotas', 'Pasay', 'San Juan', 'Valenzuela'],
+            'CALABARZON (Region IV-A)': ['Bacoor', 'Dasmariñas', 'Imus', 'General Trias', 'Cavite City', 'Tagaytay', 'Batangas City', 'Lipa', 'Tanauan', 'Lucena', 'San Pablo', 'Calamba', 'Santa Rosa', 'Biñan', 'San Pedro', 'Antipolo'],
+            'Central Luzon (Region III)': ['Angeles', 'San Fernando', 'Mabalacat', 'Olongapo', 'Balanga', 'Malolos', 'Meycauayan', 'San Jose del Monte', 'Cabanatuan', 'Gapan', 'Palayan', 'San Jose', 'Tarlac City', 'Tarlac'],
+            'Central Visayas (Region VII)': ['Cebu City', 'Lapu-Lapu', 'Mandaue', 'Talisay', 'Danao', 'Toledo', 'Tagbilaran', 'Dumaguete', 'Bais', 'Bayawan', 'Canlaon', 'Guihulngan'],
+            'Davao Region (Region XI)': ['Davao City', 'Digos', 'Mati', 'Panabo', 'Samal', 'Tagum']
+            // Add more regions and cities as needed
+        };
+
+        const barangays = {
+            'Manila': ['Barangay 1', 'Barangay 2', 'Barangay 3', 'Barangay 4', 'Barangay 5', 'Binondo', 'Ermita', 'Intramuros', 'Malate', 'Paco', 'Pandacan', 'Port Area', 'Quiapo', 'Sampaloc', 'San Andres', 'San Miguel', 'San Nicolas', 'Santa Ana', 'Santa Cruz', 'Santa Mesa', 'Tondo'],
+            'Quezon City': ['Alicia', 'Bagbag', 'Bagong Lipunan ng Crame', 'Bagong Pag-asa', 'Bagong Silangan', 'Bagumbayan', 'Bahay Toro', 'Balingasa', 'Balong Bato', 'Batasan Hills', 'Commonwealth', 'Culiat', 'Damar', 'Damayan', 'Del Monte', 'Dioquino Zobel', 'Don Manuel', 'Doña Imelda', 'Doña Josefa', 'East Kamias'],
+            'Makati': ['Bangkal', 'Bel-Air', 'Carmona', 'Cembo', 'Comembo', 'Dasmariñas', 'East Rembo', 'Forbes Park', 'Guadalupe Nuevo', 'Guadalupe Viejo', 'Kasilawan', 'La Paz', 'Magallanes', 'Olympia', 'Palanan', 'Pembo', 'Pinagkaisahan', 'Pio Del Pilar', 'Pitogo', 'Poblacion'],
+            'Cebu City': ['Adlaon', 'Agsungot', 'Apas', 'Babag', 'Bacayan', 'Banilad', 'Basak Pardo', 'Basak San Nicolas', 'Binaliw', 'Bonbon', 'Budlaan', 'Buot', 'Busay', 'Calamba', 'Capitol Site', 'Carreta', 'Cogon Pardo', 'Day‑as', 'Duljo Fatima', 'Ermita'],
+            'Davao City': ['1-A', '2-A', '3-A', 'Acacia', 'Agdao', 'Agusan', 'Alejandra Navarro', 'Alfonso Angliongto Sr.', 'Bago Aplaya', 'Bago Gallera', 'Baguio District', 'Bajada', 'Balusong', 'Bangkal', 'Barpa', 'Bato', 'Bayabas', 'Bempeflor', 'Binugao', 'Buda']
+            // Add more cities and their barangays
+        };
+
+        function updateRegions() {
+            const regionSelect = document.getElementById('region');
+            regionSelect.innerHTML = '<option value="">Select Region</option>';
+            philippineRegions.forEach(region => {
+                const option = document.createElement('option');
+                option.value = region;
+                option.textContent = region;
+                regionSelect.appendChild(option);
+            });
+            updateCities();
+        }
+
         function updateCities() {
-            const countrySelect = document.getElementById('country');
+            const regionSelect = document.getElementById('region');
             const citySelect = document.getElementById('city');
-            const selectedCountry = countrySelect.value;
+            const selectedRegion = regionSelect.value;
             
-            // Clear current cities
             citySelect.innerHTML = '<option value="">Select City</option>';
             
-            // Add new cities based on country
-            const cities = selectedCountry === 'PH' ? philippinesCities : usCities;
+            const cities = philippineCities[selectedRegion] || [];
             cities.forEach(city => {
                 const option = document.createElement('option');
                 option.value = city;
@@ -79,8 +117,7 @@
                 citySelect.appendChild(option);
             });
             
-            // Clear barangay selection when country changes
-            document.getElementById('barangay').innerHTML = '<option value="">Select Barangay</option>';
+            updateBarangays();
         }
 
         function updateBarangays() {
@@ -88,10 +125,8 @@
             const barangaySelect = document.getElementById('barangay');
             const selectedCity = citySelect.value;
             
-            // Clear current barangays
             barangaySelect.innerHTML = '<option value="">Select Barangay</option>';
             
-            // Add new barangays based on city
             const cityBarangays = barangays[selectedCity] || [];
             cityBarangays.forEach(barangay => {
                 const option = document.createElement('option');
@@ -135,11 +170,12 @@
                             {% render_field customerForm.street_address class="form-control" placeholder="Street Address" %}
                         </div>
                         <div class="form-group">
-                            <select name="country" class="form-control" id="country" onchange="updateCities()">
-                                <option value="">Select Country</option>
-                                <option value="PH" {% if customerForm.instance.country == 'PH' %}selected{% endif %}>Philippines</option>
-                                <option value="US" {% if customerForm.instance.country == 'US' %}selected{% endif %}>United States</option>
-                            </select>
+                            <!-- Replace the country select with region select -->
+                            <div class="form-group">
+                                <select name="region" class="form-control" id="region" onchange="updateCities()">
+                                    <option value="">Select Region</option>
+                                </select>
+                            </div>
                         </div>
                         <div class="form-group">
                             <select name="city" class="form-control" id="city" onchange="updateBarangays()">

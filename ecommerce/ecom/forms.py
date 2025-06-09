@@ -16,6 +16,11 @@ class CustomerUserForm(forms.ModelForm):
         }
         
 class CustomerForm(forms.ModelForm):
+    class Meta:
+        model=models.Customer
+        fields=['street_address', 'city', 'barangay', 'postal_code', 'mobile', 'profile_pic']
+
+class CustomerSignupForm(CustomerForm):
     privacy_policy = forms.BooleanField(
         required=True,
         label='I agree to the Privacy Policy',
