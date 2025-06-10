@@ -222,6 +222,18 @@ def admin_dashboard_view(request):
     productcount = models.Product.objects.all().count()
     pending_ordercount = models.Orders.objects.filter(status='Pending').count()
 
+    # Prepare users data for Users section
+    customers = models.Customer.objects.select_related('user').all()
+    users = []
+    for c in customers:
+        users.append({
+            'id': c.get_id,
+            'name': c.get_name,
+            'address': c.get_full_address,
+            'phone': c.mobile,
+            'status': c.status,
+        })
+
     # Calculate sales analytics
     from django.utils import timezone
     from datetime import timedelta
@@ -312,7 +324,8 @@ def admin_dashboard_view(request):
         'slow_moving_products': slow_moving_products,
         'recent_orders': recent_orders,
         'current_date': current_date.strftime('%Y-%m-%d'),
-        'monthly_sales': monthly_sales
+        'monthly_sales': monthly_sales,
+        'users': users,
     }
     return render(request, 'ecom/admin_dashboard.html', context=mydict)
 
