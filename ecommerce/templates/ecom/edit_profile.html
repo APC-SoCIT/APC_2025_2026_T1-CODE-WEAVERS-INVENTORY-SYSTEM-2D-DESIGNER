@@ -48,55 +48,79 @@
     <script>
         window.onload = function() {
             updateRegions();
-            updateCities();
-            updateBarangays();
+            // Restore previous values if present (for validation errors or editing)
+            const prevRegion = '{{ customerForm.region.value|escapejs }}';
+            const prevCity = '{{ customerForm.city.value|escapejs }}';
+            const prevBarangay = '{{ customerForm.barangay.value|escapejs }}';
+            if (prevRegion) {
+                document.getElementById('region').value = prevRegion;
+                updateCities();
+                if (prevCity) {
+                    document.getElementById('city').value = prevCity;
+                    updateBarangays();
+                    if (prevBarangay) {
+                        document.getElementById('barangay').value = prevBarangay;
+                    }
+                }
+            } else {
+                updateCities();
+                updateBarangays();
+            }
         };
 
-        const philippineRegions = [
-            'National Capital Region (NCR)',
-            'Cordillera Administrative Region (CAR)',
-            'Ilocos Region (Region I)',
-            'Cagayan Valley (Region II)',
-            'Central Luzon (Region III)',
-            'CALABARZON (Region IV-A)',
-            'MIMAROPA (Region IV-B)',
-            'Bicol Region (Region V)',
-            'Western Visayas (Region VI)',
-            'Central Visayas (Region VII)',
-            'Eastern Visayas (Region VIII)',
-            'Zamboanga Peninsula (Region IX)',
-            'Northern Mindanao (Region X)',
-            'Davao Region (Region XI)',
-            'SOCCSKSARGEN (Region XII)',
-            'Caraga (Region XIII)',
-            'Bangsamoro (BARMM)'
-        ];
+const philippineRegions = [
+    { code: 'NCR', name: 'National Capital Region (NCR)' },
+    { code: 'CAR', name: 'Cordillera Administrative Region (CAR)' },
+    { code: 'R1', name: 'Ilocos Region (Region I)' },
+    { code: 'R2', name: 'Cagayan Valley (Region II)' },
+    { code: 'R3', name: 'Central Luzon (Region III)' },
+    { code: 'R4A', name: 'CALABARZON (Region IV-A)' },
+    { code: 'R4B', name: 'MIMAROPA (Region IV-B)' },
+    { code: 'R5', name: 'Bicol Region (Region V)' },
+    { code: 'R6', name: 'Western Visayas (Region VI)' },
+    { code: 'R7', name: 'Central Visayas (Region VII)' },
+    { code: 'R8', name: 'Eastern Visayas (Region VIII)' },
+    { code: 'R9', name: 'Zamboanga Peninsula (Region IX)' },
+    { code: 'R10', name: 'Northern Mindanao (Region X)' },
+    { code: 'R11', name: 'Davao Region (Region XI)' },
+    { code: 'R12', name: 'SOCCSKSARGEN (Region XII)' },
+    { code: 'R13', name: 'Caraga (Region XIII)' },
+    { code: 'BARMM', name: 'Bangsamoro (BARMM)' }
+];
 
-        const philippineCities = {
-            'National Capital Region (NCR)': ['Manila', 'Quezon City', 'Makati', 'Taguig', 'Pasig', 'Parañaque', 'Caloocan', 'Las Piñas', 'Malabon', 'Mandaluyong', 'Marikina', 'Muntinlupa', 'Navotas', 'Pasay', 'San Juan', 'Valenzuela'],
-            'CALABARZON (Region IV-A)': ['Bacoor', 'Dasmariñas', 'Imus', 'General Trias', 'Cavite City', 'Tagaytay', 'Batangas City', 'Lipa', 'Tanauan', 'Lucena', 'San Pablo', 'Calamba', 'Santa Rosa', 'Biñan', 'San Pedro', 'Antipolo'],
-            'Central Luzon (Region III)': ['Angeles', 'San Fernando', 'Mabalacat', 'Olongapo', 'Balanga', 'Malolos', 'Meycauayan', 'San Jose del Monte', 'Cabanatuan', 'Gapan', 'Palayan', 'San Jose', 'Tarlac City', 'Tarlac'],
-            'Central Visayas (Region VII)': ['Cebu City', 'Lapu-Lapu', 'Mandaue', 'Talisay', 'Danao', 'Toledo', 'Tagbilaran', 'Dumaguete', 'Bais', 'Bayawan', 'Canlaon', 'Guihulngan'],
-            'Davao Region (Region XI)': ['Davao City', 'Digos', 'Mati', 'Panabo', 'Samal', 'Tagum']
-            // Add more regions and cities as needed
-        };
+const philippineCities = {
+    'National Capital Region (NCR)': ['Manila', 'Quezon City', 'Makati', 'Taguig', 'Pasig'],
+    'CALABARZON (Region IV-A)': ['Calamba', 'Antipolo', 'Lipa', 'Lucena', 'Dasmariñas'],
+    'Central Luzon (Region III)': ['San Fernando', 'Angeles', 'Tarlac City', 'Balanga'],
+    'Central Visayas (Region VII)': ['Cebu City', 'Lapu-Lapu', 'Mandaue', 'Dumaguete'],
+    'Davao Region (Region XI)': ['Davao City', 'Tagum', 'Panabo', 'Digos'],
+    'Western Visayas (Region VI)': ['Iloilo City', 'Bacolod', 'Roxas City'],
+    'Ilocos Region (Region I)': ['Laoag City', 'San Fernando City', 'Vigan'],
+    'Bangsamoro (BARMM)': ['Cotabato City', 'Marawi City'],
+    'Cordillera Administrative Region (CAR)': ['Baguio City', 'Tabuk', 'La Trinidad']
+};
 
-        const barangays = {
-            'Manila': ['Barangay 1', 'Barangay 2', 'Barangay 3', 'Barangay 4', 'Barangay 5', 'Binondo', 'Ermita', 'Intramuros', 'Malate', 'Paco', 'Pandacan', 'Port Area', 'Quiapo', 'Sampaloc', 'San Andres', 'San Miguel', 'San Nicolas', 'Santa Ana', 'Santa Cruz', 'Santa Mesa', 'Tondo'],
-            'Quezon City': ['Alicia', 'Bagbag', 'Bagong Lipunan ng Crame', 'Bagong Pag-asa', 'Bagong Silangan', 'Bagumbayan', 'Bahay Toro', 'Balingasa', 'Balong Bato', 'Batasan Hills', 'Commonwealth', 'Culiat', 'Damar', 'Damayan', 'Del Monte', 'Dioquino Zobel', 'Don Manuel', 'Doña Imelda', 'Doña Josefa', 'East Kamias'],
-            'Makati': ['Bangkal', 'Bel-Air', 'Carmona', 'Cembo', 'Comembo', 'Dasmariñas', 'East Rembo', 'Forbes Park', 'Guadalupe Nuevo', 'Guadalupe Viejo', 'Kasilawan', 'La Paz', 'Magallanes', 'Olympia', 'Palanan', 'Pembo', 'Pinagkaisahan', 'Pio Del Pilar', 'Pitogo', 'Poblacion'],
-            'Cebu City': ['Adlaon', 'Agsungot', 'Apas', 'Babag', 'Bacayan', 'Banilad', 'Basak Pardo', 'Basak San Nicolas', 'Binaliw', 'Bonbon', 'Budlaan', 'Buot', 'Busay', 'Calamba', 'Capitol Site', 'Carreta', 'Cogon Pardo', 'Day‑as', 'Duljo Fatima', 'Ermita'],
-            'Davao City': ['1-A', '2-A', '3-A', 'Acacia', 'Agdao', 'Agusan', 'Alejandra Navarro', 'Alfonso Angliongto Sr.', 'Bago Aplaya', 'Bago Gallera', 'Baguio District', 'Bajada', 'Balusong', 'Bangkal', 'Barpa', 'Bato', 'Bayabas', 'Bempeflor', 'Binugao', 'Buda']
-            // Add more cities and their barangays
-        };
+const barangays = {
+    'Manila': ['Tondo', 'Binondo', 'Ermita', 'San Andres', 'Santa Mesa'],
+    'Quezon City': ['Commonwealth', 'Batasan Hills', 'Bagong Silangan', 'Pinyahan', 'Tandang Sora'],
+    'Makati': ['Bel-Air', 'Poblacion', 'Bangkal', 'San Antonio', 'Guadalupe Viejo'],
+    'Cebu City': ['Banilad', 'Lahug', 'Guadalupe', 'Pardo', 'Talamban'],
+    'Davao City': ['Agdao', 'Bangkal', 'Bunawan', 'Talomo', 'Toril'],
+    'Iloilo City': ['Jaro', 'Mandurriao', 'Lapuz', 'La Paz', 'Molo'],
+    'Baguio City': ['Asin Road', 'Aurora Hill', 'Burnham-Legarda', 'Camp 7', 'Loakan Proper'],
+    'Calamba': ['Canlubang', 'Halang', 'Paciano Rizal', 'Parian', 'Lecheria'],
+    'Antipolo': ['San Jose', 'Dela Paz', 'Cupang', 'Dalig', 'Bagong Nayon'],
+    'San Fernando': ['Sindalan', 'San Agustin', 'Sto. Rosario', 'Maimpis', 'Del Pilar']
+};
+
 
         function updateRegions() {
             const regionSelect = document.getElementById('region');
             regionSelect.innerHTML = '<option value="">Select Region</option>';
             philippineRegions.forEach(region => {
                 const option = document.createElement('option');
-                option.value = region;
-                option.textContent = region;
+                option.value = region.code;
+                option.textContent = region.name;
                 regionSelect.appendChild(option);
             });
             updateCities();
@@ -105,18 +129,18 @@
         function updateCities() {
             const regionSelect = document.getElementById('region');
             const citySelect = document.getElementById('city');
-            const selectedRegion = regionSelect.value;
-            
+            const selectedRegionCode = regionSelect.value;
+            // Find the region name from the code
+            const regionObj = philippineRegions.find(r => r.code === selectedRegionCode);
+            const regionName = regionObj ? regionObj.name : '';
             citySelect.innerHTML = '<option value="">Select City</option>';
-            
-            const cities = philippineCities[selectedRegion] || [];
+            const cities = philippineCities[regionName] || [];
             cities.forEach(city => {
                 const option = document.createElement('option');
                 option.value = city;
                 option.textContent = city;
                 citySelect.appendChild(option);
             });
-            
             updateBarangays();
         }
 
@@ -161,43 +185,39 @@
                             {% render_field userForm.first_name class="form-control" placeholder="First Name" %}
                         </div>
                         <div class="form-group">
-                            {% render_field userForm.username class="form-control" placeholder="Username" %}
-                        </div>
-                        <div class="form-group">
-                            {% render_field customerForm.mobile class="form-control" placeholder="Mobile" %}
-                        </div>
-                        <div class="form-group">
-                            {% render_field customerForm.street_address class="form-control" placeholder="Street Address" %}
-                        </div>
-                        <div class="form-group">
-                            <!-- Replace the country select with region select -->
-                            <div class="form-group">
-                                <select name="region" class="form-control" id="region" onchange="updateCities()">
-                                    <option value="">Select Region</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <select name="city" class="form-control" id="city" onchange="updateBarangays()">
-                                <option value="">Select City</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <select name="barangay" class="form-control" id="barangay">
-                                <option value="">Select Barangay</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
                             {% render_field userForm.last_name class="form-control" placeholder="Last Name" %}
+                        </div>
+                        <div class="form-group">
+                            {% render_field userForm.username class="form-control" placeholder="Username" %}
                         </div>
                         <div class="form-group">
                             {% render_field userForm.password class="form-control" placeholder="Password" %}
                         </div>
                         <div class="form-group">
+                            {% render_field userForm.confirm_password class="form-control" placeholder="Confirm Password" %}
+                        </div>
+                        <div class="form-group">
+                            {% render_field customerForm.street_address class="form-control" placeholder="Street Address" %}
+                        </div>
+                        <div class="form-group">
                             {% render_field customerForm.postal_code class="form-control" placeholder="Postal Code" %}
                         </div>
+                        <div class="form-group">
+                            {% render_field customerForm.mobile class="form-control" placeholder="Mobile" %}
+                        </div>
+                        <div class="form-group">
+                            <!-- Replace the country select with region select -->
+                            <div class="form-group">
+                                {% render_field customerForm.region class="form-control" id="region" onchange="updateCities()" %}
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            {% render_field customerForm.city class="form-control" id="city" onchange="updateBarangays()" %}
+                        </div>
+                        <div class="form-group">
+                            {% render_field customerForm.barangay class="form-control" id="barangay" %}
+                        </div>
+                    </div>
 
                     </div>
                 </div>

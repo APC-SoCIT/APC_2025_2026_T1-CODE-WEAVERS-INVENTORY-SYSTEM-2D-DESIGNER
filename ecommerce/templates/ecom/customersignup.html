@@ -162,29 +162,133 @@
       }
     </style>
     <script>
-      const cities = {
-        'PH': ['Manila', 'Quezon City', 'Davao', 'Cebu', 'Makati', 'Taguig', 'Pasig', 'Pasay', 'Mandaluyong', 'San Juan'],
-        'US': ['New York', 'Los Angeles', 'Chicago', 'Houston', 'Phoenix', 'Philadelphia', 'San Antonio', 'San Diego', 'Dallas', 'San Jose']
+      // Use only the region/city/barangay logic
+      document.addEventListener('DOMContentLoaded', function() {
+          updateRegions();
+          // Restore previous values if present (for validation errors)
+          const prevRegion = '{{ customerForm.region.value|escapejs }}';
+          const prevCity = '{{ customerForm.city.value|escapejs }}';
+          const prevBarangay = '{{ customerForm.barangay.value|escapejs }}';
+          if (prevRegion) {
+              document.getElementById('region').value = prevRegion;
+              updateCities();
+              if (prevCity) {
+                  document.getElementById('city').value = prevCity;
+                  updateBarangays();
+                  if (prevBarangay) {
+                      document.getElementById('barangay').value = prevBarangay;
+                  }
+              }
+          }
+      });
+
+      // Use region codes for values, but show full names
+      const philippineRegions = [
+        { code: 'NCR', name: 'National Capital Region (NCR)' },
+        { code: 'CAR', name: 'Cordillera Administrative Region (CAR)' },
+        { code: 'R1', name: 'Ilocos Region (Region I)' },
+        { code: 'R2', name: 'Cagayan Valley (Region II)' },
+        { code: 'R3', name: 'Central Luzon (Region III)' },
+        { code: 'R4A', name: 'CALABARZON (Region IV-A)' },
+        { code: 'R4B', name: 'MIMAROPA (Region IV-B)' },
+        { code: 'R5', name: 'Bicol Region (Region V)' },
+        { code: 'R6', name: 'Western Visayas (Region VI)' },
+        { code: 'R7', name: 'Central Visayas (Region VII)' },
+        { code: 'R8', name: 'Eastern Visayas (Region VIII)' },
+        { code: 'R9', name: 'Zamboanga Peninsula (Region IX)' },
+        { code: 'R10', name: 'Northern Mindanao (Region X)' },
+        { code: 'R11', name: 'Davao Region (Region XI)' },
+        { code: 'R12', name: 'SOCCSKSARGEN (Region XII)' },
+        { code: 'R13', name: 'Caraga (Region XIII)' },
+        { code: 'BARMM', name: 'Bangsamoro (BARMM)' }
+      ];
+
+      const philippineCities = {
+        'NCR': [
+          'Caloocan', 'Las Piñas', 'Makati', 'Malabon', 'Mandaluyong', 'Manila',
+          'Marikina', 'Muntinlupa', 'Navotas', 'Parañaque', 'Pasay', 'Pasig',
+          'Pateros', 'Quezon City', 'San Juan', 'Taguig', 'Valenzuela'
+        ],
+        'CAR': [
+          'Baguio City', 'Tabuk City', 'Bangued', 'La Trinidad', 'Lagawe', 'Bontoc'
+        ],
+        'R1': [
+          'Laoag City', 'San Fernando City', 'Vigan City', 'Candon City', 'Batac City'
+        ]
+        // Add more regions and their cities as needed
       };
 
-      document.addEventListener('DOMContentLoaded', function() {
-        const countrySelect = document.getElementById('country');
-        const citySelect = document.getElementById('city');
+      const barangays = {
+          'Manila': [
+              'Binondo', 'Ermita', 'Intramuros', 'Malate', 'Paco', 'Pandacan', 'Port Area',
+              'Quiapo', 'Sampaloc', 'San Andres', 'San Miguel', 'San Nicolas', 'Santa Ana',
+              'Santa Cruz', 'Santa Mesa', 'Tondo'
+          ],
+          'Quezon City': [
+              'Alicia', 'Bagbag', 'Bagong Lipunan ng Crame', 'Bagong Pag-asa',
+              'Bagong Silangan', 'Bagumbayan', 'Bahay Toro', 'Balingasa', 'Balong Bato',
+              'Batasan Hills', 'Commonwealth', 'Culiat', 'Diliman', 'Fairview', 'Holy Spirit'
+          ],
+          'Makati': [
+              'Bangkal', 'Bel-Air', 'Carmona', 'Cembo', 'Comembo', 'Dasmariñas',
+              'East Rembo', 'Forbes Park', 'Guadalupe Nuevo', 'Guadalupe Viejo',
+              'Kasilawan', 'La Paz', 'Magallanes', 'Olympia', 'Palanan'
+          ]
+          // Add more cities and their barangays
+      };
 
-        countrySelect.addEventListener('change', function() {
-          const selectedCountry = this.value;
-          citySelect.innerHTML = '<option value="" disabled selected>Select City</option>';
+      function updateRegions() {
+        const regionSelect = document.getElementById('region');
+        regionSelect.innerHTML = '<option value="">Select Region</option>';
+        philippineRegions.forEach(region => {
+          const option = document.createElement('option');
+          option.value = region.code;
+          option.textContent = region.name;
+          regionSelect.appendChild(option);
+        });
+        // If a value is already set (edit form), select it
+        if (regionSelect.dataset.value) {
+          regionSelect.value = regionSelect.dataset.value;
+        }
+        updateCities();
+      }
 
-          if (selectedCountry && cities[selectedCountry]) {
-            cities[selectedCountry].forEach(city => {
+      function updateCities() {
+          const regionSelect = document.getElementById('region');
+          const citySelect = document.getElementById('city');
+          const selectedRegion = regionSelect.value;
+          citySelect.innerHTML = '<option value="">Select City</option>';
+          const cities = philippineCities[selectedRegion] || [];
+          cities.forEach(city => {
               const option = document.createElement('option');
               option.value = city;
               option.textContent = city;
               citySelect.appendChild(option);
-            });
+          });
+          // If a value is already set (edit form), select it
+          if (citySelect.dataset.value) {
+            citySelect.value = citySelect.dataset.value;
           }
-        });
-      });
+          updateBarangays();
+      }
+
+      function updateBarangays() {
+          const citySelect = document.getElementById('city');
+          const barangaySelect = document.getElementById('barangay');
+          const selectedCity = citySelect.value;
+          barangaySelect.innerHTML = '<option value="">Select Barangay</option>';
+          const cityBarangays = barangays[selectedCity] || [];
+          cityBarangays.forEach(barangay => {
+              const option = document.createElement('option');
+              option.value = barangay;
+              option.textContent = barangay;
+              barangaySelect.appendChild(option);
+          });
+          // If a value is already set (edit form), select it
+          if (barangaySelect.dataset.value) {
+            barangaySelect.value = barangaySelect.dataset.value;
+          }
+      }
     </script>
     <style media="screen">
       /* Add these new styles for the modal */
@@ -252,146 +356,62 @@
                 {% render_field userForm.last_name class="form-control" placeholder="Last Name" %}
                 {% render_field userForm.username class="form-control" placeholder="Username" %}
                 {% render_field userForm.password class="form-control" placeholder="Password" %}
-                <select name="country" id="country" class="form-control" style="background: none; border: 2px solid #ffffff; color: white; border-radius: 24px; margin: 20px auto; width: 250px; text-align: center;">
-                  <option value="" disabled selected>Select Country</option>
-                  <option value="PH">Philippines</option>
-                  <option value="US">United States</option>
-                </select>
-                <select name="city" id="city" class="form-control" style="background: none; border: 2px solid #ffffff; color: white; border-radius: 24px; margin: 20px auto; width: 250px; text-align: center;">
-                  <option value="" disabled selected>Select City</option>
-                </select>
-                {% render_field customerForm.barangay class="form-control" placeholder="Barangay" %}
+                {% render_field userForm.confirm_password class="form-control" placeholder="Confirm Password" %}
                 {% render_field customerForm.street_address class="form-control" placeholder="Street Address" %}
                 {% render_field customerForm.postal_code class="form-control" placeholder="Postal Code" %}
-                {% render_field customerForm.mobile class="form-control" placeholder="Contact" %}
-                <!-- Add this before the submit button -->
-                <div class="form-group" style="margin: 20px auto; text-align: left;">
-                  <label class="checkbox-container" style="color: #fff; font-size: 14px;">
-                      {{ customerForm.privacy_policy }}
-                      <span>I agree to the <a href="#" style="color: #fff; text-decoration: underline;">Privacy Policy</a></span>
-                  </label>
-                  {% if customerForm.privacy_policy.errors %}
-                      <div class="error-message" style="color: #ff4444; font-size: 12px; margin-top: 5px;">
-                          {{ customerForm.privacy_policy.errors.0 }}
-                      </div>
-                  {% endif %}
+                {% render_field customerForm.mobile class="form-control" placeholder="Mobile" %}
+                {% render_field customerForm.region class="form-control" id="region" style="background: none; border: 2px solid #ffffff; color: white; border-radius: 24px; margin: 20px auto; width: 250px; text-align: center;" onchange="updateCities()" %}
+                {% render_field customerForm.city class="form-control" id="city" style="background: none; border: 2px solid #ffffff; color: white; border-radius: 24px; margin: 20px auto; width: 250px; text-align: center;" onchange="updateBarangays()" %}
+                {% render_field customerForm.barangay class="form-control" id="barangay" style="background: none; border: 2px solid #ffffff; color: white; border-radius: 24px; margin: 20px auto; width: 250px; text-align: center;" %}
+                
+                {% if userForm.errors or customerForm.errors %}
+                <div style="color: #ffb3b3; background: #2c2c2c; border-radius: 10px; padding: 10px; margin-bottom: 10px;">
+                  {% for field in userForm %}
+                    {% for error in field.errors %}
+                      <div>{{ field.label }}: {{ error }}</div>
+                    {% endfor %}
+                  {% endfor %}
+                  {% for error in userForm.non_field_errors %}
+                    <div>{{ error }}</div>
+                  {% endfor %}
+                  {% for field in customerForm %}
+                    {% for error in field.errors %}
+                      <div>{{ field.label }}: {{ error }}</div>
+                    {% endfor %}
+                  {% endfor %}
+                  {% for error in customerForm.non_field_errors %}
+                    <div>{{ error }}</div>
+                  {% endfor %}
                 </div>
-                <input type="submit" name="" value="Create">
-                <a href="/customerlogin" class="btn btn-primary">Have an account? Login Here!</a>
-              </form>
-            </div>
-          </div>
-        </div>
-      </div>
-      <br><br><br><br><br><br><br><br><br>
-      <br><br><br><br><br><br><br><br><br>
-      <br><br><br><br><br><br><br><br><br>
-      <br><br><br><br><br><br><br><br><br>
-      {% include "ecom/footer.html" %}
+                {% endif %}
+
+                <div class="form-check" style="text-align: left; margin: 20px auto; width: 250px;">
+                    <input type="checkbox" class="form-check-input" id="privacy_policy" name="privacy_policy" required>
+                    <label class="form-check-label" for="privacy_policy" style="color: white;">
+                        I agree to the <a href="#" onclick="showPrivacyPolicy()" style="color: #2ecc71;">Privacy Policy</a>
+                    </label>
+                </div>
+
+                <input type="submit" name="" value="Sign Up">
+
+                <!-- Privacy Policy Modal -->
+                <div id="privacyPolicyModal" class="modal">
+                    <div class="modal-content">
+                        <span class="close-modal" onclick="closePrivacyPolicy()">&times;</span>
+                        <h1>Privacy Policy</h1>
+                        <p>This Privacy Policy describes how your personal information is collected, used, and shared when you visit or make a purchase from our site.</p>
+                        <!-- Add more privacy policy content here -->
+                    </div>
+                </div>
+
+                <script>
+                    function showPrivacyPolicy() {
+                        document.getElementById('privacyPolicyModal').style.display = 'block';
+                    }
+
+                    function closePrivacyPolicy() {
+                        document.getElementById('privacyPolicyModal').style.display = 'none';
+                    }
+                </script>
     </body>
-    <!-- Add the modal structure just before the closing body tag -->
-    <div id="privacyModal" class="modal">
-        <div class="modal-content">
-            <span class="close-modal">&times;</span>
-            <h1>Privacy Policy and Terms & Conditions</h1>
-            
-            <!-- Privacy Policy Section -->
-            <h2>Privacy Policy</h2>
-<h2>Terms and Conditions</h2>
-<div style="text-align: left;">
-  <p><strong>Effective Date:</strong> June 07, 2025<br>
-  <strong>Business Name:</strong> WorksTeamWear</p>
-
-  <p>At WorksTeamWear, your privacy is very important to us. This Privacy Policy explains how we collect, use, protect, and disclose the personal information of users who interact with our website, particularly those who create an account or place orders for customized jerseys.</p>
-
-  <p><strong>1. Account Registration: </strong> To place an order or save customization preferences, users must create an account. You agree to:</p>
-  <ul>
-    <li>Provide accurate and complete information when creating an account.</li>
-    <li>Maintain the confidentiality of your account information and password.</li>
-    <li>Notify us immediately of any unauthorized use of your account.</li>
-    <li>We reserve the right to suspend or terminate accounts that violate these Terms.</li>
-  </ul>
-
-  <p><strong>2. Orders and Customizations: </strong> All orders are subject to acceptance and availability. We strive to provide accurate previews and customization options, but minor differences may occur in the final product due to variations in printing and materials.</p>
-  <ul>
-    <li>You are responsible for ensuring the accuracy of your customization details (e.g., name, number, size).</li>
-    <li>Once a customized jersey is in production, changes or cancellations may not be possible.</li>
-  </ul>
-
-  <p><strong>3. Pricing and Payment: </strong> All prices are listed in Philippine Peso and include applicable taxes unless stated otherwise.</p>
-  <ul>
-    <li>We reserve the right to update pricing at any time.</li>
-    <li>Payments are processed securely via third-party payment gateways. We do not store credit card details.</li>
-  </ul>
-
-  <p><strong>4. Shipping and Delivery: </strong>Estimated delivery times are provided at checkout and may vary based on your location, order volume, or other factors. We do our best to ship your products promptly and ensure they reach you on time.</p>
-  <ul>
-    <li>We are not responsible for delays caused by shipping providers, customs, or incorrect addresses.</li>
-    <li>Shipping fees (if any) will be disclosed before checkout.</li>
-  </ul>
-
-  <p><strong>5. Returns and Refunds: </strong>Due to the custom nature of our products, we generally do not accept returns or offer refunds unless the product is:</p>
-<ul>
-  <li>Defective or damaged on arrival</li>
-  <li>Significantly different from your approved design</li>
-  <li>If you have a concern, please contact us within 7 days of receiving the product.</li>
-</ul>
-</div>
-
-<p><strong>6. Intellectual Property: </strong>All content on WorksTeamWear — including logos, designs, images, and site code — is owned by or licensed to us and is protected by intellectual property laws. You may not:</p>
-<ul>
-  <li>Copy, reproduce, or sell any part of the website</li>
-  <li>Use our designs or branding for your own commercial use</li>
-</ul>
-
-<p><Strong>7. Prohibited Conduct: </Strong>Users must use our website responsibly. Any activity that is illegal, harmful, or disruptive—such as spreading false information, attempting to hack the site, or misusing our content—is strictly prohibited and may result in account suspension or legal action.</p>
-<ul>
-  <li>Use the site for fraudulent or unlawful purposes</li>
-  <li>Upload or share offensive or misleading content</li>
-  <li>Attempt to hack, disrupt, or overload the website</li>
-  <li>Violating these terms may result in account suspension and legal action.</li>
-</ul>
-
-<p><strong>8. Limitation of Liability: </strong>We are not responsible for any indirect, incidental, or consequential damages that may result from using our website or services. Our maximum liability is limited to the total amount you paid for the specific order in question.</p>
-<ul>
-  <li>Errors made by customers during customization</li>
-  <li>Delays beyond our control (e.g., shipping or supply issues)</li>
-  <li>Indirect or incidental damages arising from the use of our services</li>
-</ul>
-
-<p><strong>9.Privacy: </strong>Your personal information is handled in accordance with our [Privacy Policy]. By using our site, you agree to our data practices as described there.</p>
-<p><strong>10. Changes to These Terms: </strong>We reserve the right to modify these Terms at any time. Updates will be posted on this page, and continued use of the site means you accept the new terms.</p>
-<p><Strong>11. Contact Us: </Strong>If you have any questions, concerns, or feedback regarding our Privacy Policy or Terms and Conditions, please feel free to contact us. We are committed to responding to all inquiries promptly and professionally.</p>
-<ul>
-  <li>📧 Email: wtw104dante@gmail.com</li>
-  <li>Contact Number: +63 998 854 8632</li>
-</ul>
-
-<!-- Add all the terms and conditions content here -->
-
-
-    <script>
-    // Add this JavaScript for modal functionality
-    document.addEventListener('DOMContentLoaded', function() {
-        const modal = document.getElementById('privacyModal');
-        const privacyLink = document.querySelector('a[href="#"]');
-        const closeBtn = document.querySelector('.close-modal');
-
-        privacyLink.addEventListener('click', function(e) {
-            e.preventDefault();
-            modal.style.display = 'block';
-        });
-
-        closeBtn.addEventListener('click', function() {
-            modal.style.display = 'none';
-        });
-
-        window.addEventListener('click', function(e) {
-            if (e.target === modal) {
-                modal.style.display = 'none';
-            }
-        });
-    });
-    </script>
-</body>
 </html>

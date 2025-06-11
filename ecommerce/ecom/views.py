@@ -87,24 +87,27 @@ def adminclick_view(request):
 
 
 def customer_signup_view(request):
-    userForm=forms.CustomerUserForm()
-    customerForm=forms.CustomerForm()
-    mydict={'userForm':userForm,'customerForm':customerForm}
-    if request.method=='POST':
-        userForm=forms.CustomerUserForm(request.POST)
-        customerForm=forms.CustomerForm(request.POST,request.FILES)
+    userForm = forms.CustomerUserForm()
+    customerForm = forms.CustomerSignupForm()
+    mydict = {'userForm': userForm, 'customerForm': customerForm}
+    if request.method == 'POST':
+        userForm = forms.CustomerUserForm(request.POST)
+        customerForm = forms.CustomerSignupForm(request.POST, request.FILES)
         if userForm.is_valid() and customerForm.is_valid():
-            # Privacy policy is automatically checked because it's required=True
-            user=userForm.save()
-            user.set_password(user.password)
+            user = userForm.save(commit=False)
+            user.set_password(userForm.cleaned_data['password'])
             user.save()
-            customer=customerForm.save(commit=False)
-            customer.user=user
+            customer = customerForm.save(commit=False)
+            customer.user = user
             customer.save()
             my_customer_group = Group.objects.get_or_create(name='CUSTOMER')
             my_customer_group[0].user_set.add(user)
-            return HttpResponseRedirect('customerlogin')
-    return render(request,'ecom/customersignup.html',context=mydict)
+            login(request, user)  # Log the user in after registration
+            return redirect('customer-home')  # Redirect to customer home page after signup
+        else:
+            # Show errors in the template
+            mydict = {'userForm': userForm, 'customerForm': customerForm}
+    return render(request, 'ecom/customersignup.html', context=mydict)
 
 def customer_login(request):
   if request.method == 'POST':
@@ -789,6 +792,23 @@ def cart_view(request):
 
     products = []
     total = 0
+    delivery_fee = 0
+    region = None
+    if request.user.is_authenticated:
+        try:
+            customer = models.Customer.objects.get(user=request.user)
+            region = customer.region
+        except models.Customer.DoesNotExist:
+            region = None
+    # Set delivery fee based on region
+    if region == 'NCR':
+        delivery_fee = 49
+    elif region == 'CAR':
+        delivery_fee = 59
+    elif region:
+        delivery_fee = 69
+    else:
+        delivery_fee = 0
 
     if 'product_ids' in request.COOKIES:
         product_ids = request.COOKIES['product_ids']
@@ -826,9 +846,12 @@ def cart_view(request):
                                 'quantity': quantity
                             })
 
+    grand_total = total + delivery_fee
     return render(request, 'ecom/cart.html', {
         'products': products,
         'total': total,
+        'delivery_fee': delivery_fee,
+        'grand_total': grand_total,
         'product_count_in_cart': product_count_in_cart
     })
 
