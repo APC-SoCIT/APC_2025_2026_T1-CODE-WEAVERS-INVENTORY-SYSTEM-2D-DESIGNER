@@ -69,44 +69,29 @@
                     <a href="{% url 'admin-view-processing-orders' %}" 
                        class="order-tab {% if status == 'Processing' %}active border-b-2 border-blue-500 text-blue-600{% else %}border-b-2 border-transparent text-gray-500 hover:text-gray-700{% endif %} py-2 px-1 text-sm font-medium">
                         Processing
-                        <span class="ml-2 bg-{% if status == 'Processing' %}blue{% else %}gray{% endif %}-100 text-{% if status == 'Processing' %}blue{% else %}gray{% endif %}-600 text-xs font-medium px-2 py-1 rounded-full">
-                            {{ processing_count|default:0 }}
-                        </span>
                     </a>
                     <a href="{% url 'admin-view-confirmed-orders' %}" 
                        class="order-tab {% if status == 'Order Confirmed' %}active border-b-2 border-blue-500 text-blue-600{% else %}border-b-2 border-transparent text-gray-500 hover:text-gray-700{% endif %} py-2 px-1 text-sm font-medium">
                         Confirmed
-                        <span class="ml-2 bg-{% if status == 'Order Confirmed' %}blue{% else %}gray{% endif %}-100 text-{% if status == 'Order Confirmed' %}blue{% else %}gray{% endif %}-600 text-xs font-medium px-2 py-1 rounded-full">
-                            {{ confirmed_count|default:0 }}
-                        </span>
                     </a>
                     <a href="{% url 'admin-view-shipping-orders' %}" 
                        class="order-tab {% if status == 'Out for Delivery' %}active border-b-2 border-blue-500 text-blue-600{% else %}border-b-2 border-transparent text-gray-500 hover:text-gray-700{% endif %} py-2 px-1 text-sm font-medium">
                         Shipping
-                        <span class="ml-2 bg-{% if status == 'Out for Delivery' %}blue{% else %}gray{% endif %}-100 text-{% if status == 'Out for Delivery' %}blue{% else %}gray{% endif %}-600 text-xs font-medium px-2 py-1 rounded-full">
-                            {{ shipping_count|default:0 }}
-                        </span>
                     </a>
                     <a href="{% url 'admin-view-delivered-orders' %}" 
                        class="order-tab {% if status == 'Delivered' %}active border-b-2 border-blue-500 text-blue-600{% else %}border-b-2 border-transparent text-gray-500 hover:text-gray-700{% endif %} py-2 px-1 text-sm font-medium">
                         Delivered
-                        <span class="ml-2 bg-{% if status == 'Delivered' %}blue{% else %}gray{% endif %}-100 text-{% if status == 'Delivered' %}blue{% else %}gray{% endif %}-600 text-xs font-medium px-2 py-1 rounded-full">
-                            {{ delivered_count|default:0 }}
-                        </span>
                     </a>
                     <a href="{% url 'admin-view-cancelled-orders' %}" 
                        class="order-tab {% if status == 'Cancelled' %}active border-b-2 border-blue-500 text-blue-600{% else %}border-b-2 border-transparent text-gray-500 hover:text-gray-700{% endif %} py-2 px-1 text-sm font-medium">
                         Cancelled
-                        <span class="ml-2 bg-{% if status == 'Cancelled' %}blue{% else %}gray{% endif %}-100 text-{% if status == 'Cancelled' %}blue{% else %}gray{% endif %}-600 text-xs font-medium px-2 py-1 rounded-full">
-                            {{ cancelled_count|default:0 }}
-                        </span>
                     </a>
                 </nav>
             </div>
         </div>
 
-        <!-- Bulk Actions (hidden for delivered orders) -->
-        {% if status != 'Delivered' %}
+        <!-- Bulk Actions (hidden for delivered and cancelled orders) -->
+        {% if status != 'Delivered' and status != 'Cancelled' %}
         <div id="bulk-actions" class="bg-white rounded-lg shadow p-4 mb-6">
             <form id="bulk-update-form" method="post" action="{% url 'bulk-update-orders' %}" class="flex flex-col sm:flex-row sm:items-center gap-4">
                 {% csrf_token %}
@@ -117,7 +102,6 @@
                         <option value="Order Confirmed">Order Confirmed</option>
                         <option value="Out for Delivery">Out for Delivery</option>
                         <option value="Delivered">Delivered</option>
-                        <option value="Cancelled">Cancelled</option>
                     </select>
                 </div>
                 <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center">
@@ -132,16 +116,11 @@
         <div class="bg-white rounded-lg shadow">
             <div class="p-6 border-b border-gray-200">
                 <div class="flex flex-col sm:flex-row sm:items-center gap-4">
-                    <div class="flex items-center gap-2 flex-1 max-w-sm">
+                    <div class="flex items-center gap-2 flex-1 max-w-sm border border-gray-300 rounded-md px-2 py-1">
                         <i data-lucide="search" class="h-4 w-4 text-gray-400"></i>
                         <input type="text" id="order-search" placeholder="Search orders..." class="w-full border-0 focus:ring-0 text-sm">
                     </div>
                     <div class="flex items-center gap-2">
-                        <select id="customer-filter" class="px-3 py-1.5 text-sm border border-gray-300 rounded-md">
-                            <option value="">All Customers</option>
-                            <option value="vip">VIP Customers</option>
-                            <option value="new">New Customers</option>
-                        </select>
                         <button onclick="exportOrders()" class="px-3 py-1.5 text-sm border border-gray-300 rounded-md hover:bg-gray-50 flex items-center">
                             <i data-lucide="download" class="mr-1 h-4 w-4"></i>
                             Export
@@ -152,31 +131,33 @@
             
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            {% if status != 'Delivered' %}
-                            <th class="px-6 py-3 text-left">
-                                <input type="checkbox" id="select-all-orders" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                            </th>
-                            {% endif %}
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order ID</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Address</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Products</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                            {% if status != 'Delivered' %}
+                        <thead class="bg-gray-50">
+                            <tr>
+                                {% if status != 'Delivered' and status != 'Cancelled' %}
+                                <th class="px-6 py-3 text-left">
+                                    <input type="checkbox" id="select-all-orders" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                </th>
+                                {% endif %}
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order ID</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Address</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Products</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                {% if status != 'Delivered' and status != 'Cancelled' %}
+                            {% if status != 'Cancelled' %}
                             <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                             {% endif %}
-                        </tr>
-                    </thead>
+                                {% endif %}
+                            </tr>
+                        </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
                         {% for order_data in orders_data %}
                         {% with order=order_data.order customer=order_data.customer items=order_data.order_items %}
                         <tr class="hover:bg-gray-50 order-row" data-customer="{{ customer.get_name|lower }}" data-order-id="{{ order_data.order_id|lower }}">
-                            {% if status != 'Delivered' %}
+                            {% if status != 'Delivered' and status != 'Cancelled' %}
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <input type="checkbox" name="order_ids" value="{{ order.id }}" form="bulk-update-form" class="order-checkbox rounded border-gray-300 text-blue-600 focus:ring-blue-500">
                             </td>
@@ -223,13 +204,13 @@
                                     {{ order.status }}
                                 </span>
                             </td>
-                            {% if status != 'Delivered' %}
-                            <td class="px-8 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            {% if status != 'Delivered' and status != 'Cancelled' %}
+                            <td class="px-11 py-4 whitespace-nowrap text-right text-sm font-medium">
                                 <a href="{% url 'update-order' order.id %}" class="text-green-600 hover:text-green-900" title="Edit Order">
                                     <i data-lucide="edit" class="h-4 w-4"></i>
                                 </a>
                             </td>
-                            {% else %}
+                            {% elif status == 'Delivered' %}
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                 <button onclick="openOrderDetail('{{ order.id }}')" class="inline-block text-blue-600 hover:text-blue-900" title="View Details">
                                     <i data-lucide="eye" class="h-4 w-4"></i>

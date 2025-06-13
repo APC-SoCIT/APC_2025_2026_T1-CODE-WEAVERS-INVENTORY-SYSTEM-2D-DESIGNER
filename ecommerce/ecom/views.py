@@ -514,27 +514,83 @@ def update_product_view(request,pk):
 def admin_view_booking_view(request):
     return redirect('admin-view-processing-orders')
 
+def get_order_status_counts():
+    counts = {
+        'processing': models.Orders.objects.filter(status__in=['Pending', 'Processing']).count(),
+        'confirmed': models.Orders.objects.filter(status='Order Confirmed').count(),
+        'shipping': models.Orders.objects.filter(status='Out for Delivery').count(),
+        'delivered': models.Orders.objects.filter(status='Delivered').count(),
+        'cancelled': models.Orders.objects.filter(status='Cancelled').count(),
+    }
+    return counts
+
 @login_required(login_url='adminlogin')
 def admin_view_processing_orders(request):
     orders = models.Orders.objects.filter(status__in=['Pending', 'Processing'])
-    return prepare_admin_order_view(request, orders, 'Processing', 'ecom/admin_view_orders.html')
+    counts = get_order_status_counts()
+    context = {
+        'processing_count': counts.get('processing', 0),
+        'confirmed_count': counts.get('confirmed', 0),
+        'shipping_count': counts.get('shipping', 0),
+        'delivered_count': counts.get('delivered', 0),
+        'cancelled_count': counts.get('cancelled', 0),
+    }
+    return prepare_admin_order_view(request, orders, 'Processing', 'ecom/admin_view_orders.html', extra_context=context)
 
 @login_required(login_url='adminlogin')
 def admin_view_confirmed_orders(request):
     orders = models.Orders.objects.filter(status='Order Confirmed')
-    return prepare_admin_order_view(request, orders, 'Order Confirmed', 'ecom/admin_view_orders.html')
+    counts = get_order_status_counts()
+    context = {
+        'processing_count': counts.get('processing', 0),
+        'confirmed_count': counts.get('confirmed', 0),
+        'shipping_count': counts.get('shipping', 0),
+        'delivered_count': counts.get('delivered', 0),
+        'cancelled_count': counts.get('cancelled', 0),
+    }
+    return prepare_admin_order_view(request, orders, 'Order Confirmed', 'ecom/admin_view_orders.html', extra_context=context)
 
 @login_required(login_url='adminlogin')
 def admin_view_shipping_orders(request):
     orders = models.Orders.objects.filter(status='Out for Delivery')
-    return prepare_admin_order_view(request, orders, 'Out for Delivery', 'ecom/admin_view_orders.html')
+    counts = get_order_status_counts()
+    context = {
+        'processing_count': counts.get('processing', 0),
+        'confirmed_count': counts.get('confirmed', 0),
+        'shipping_count': counts.get('shipping', 0),
+        'delivered_count': counts.get('delivered', 0),
+        'cancelled_count': counts.get('cancelled', 0),
+    }
+    return prepare_admin_order_view(request, orders, 'Out for Delivery', 'ecom/admin_view_orders.html', extra_context=context)
 
 @login_required(login_url='adminlogin')
 def admin_view_delivered_orders(request):
     orders = models.Orders.objects.filter(status='Delivered')
-    return prepare_admin_order_view(request, orders, 'Delivered', 'ecom/admin_view_orders.html')
+    counts = get_order_status_counts()
+    context = {
+        'processing_count': counts.get('processing', 0),
+        'confirmed_count': counts.get('confirmed', 0),
+        'shipping_count': counts.get('shipping', 0),
+        'delivered_count': counts.get('delivered', 0),
+        'cancelled_count': counts.get('cancelled', 0),
+    }
+    return prepare_admin_order_view(request, orders, 'Delivered', 'ecom/admin_view_orders.html', extra_context=context)
 
-def prepare_admin_order_view(request, orders, status, template):
+@login_required(login_url='adminlogin')
+def admin_view_cancelled_orders(request):
+    orders = models.Orders.objects.filter(status='Cancelled').prefetch_related('orderitem_set').order_by('-created_at')
+    counts = get_order_status_counts()
+    context = {
+        'cancelled_count': counts.get('cancelled', 0),
+        'processing_count': counts.get('processing', 0),
+        'confirmed_count': counts.get('confirmed', 0),
+        'shipping_count': counts.get('shipping', 0),
+        'delivered_count': counts.get('delivered', 0),
+    }
+    return prepare_admin_order_view(request, orders, 'Cancelled', 'ecom/admin_view_orders.html', extra_context=context)
+
+
+def prepare_admin_order_view(request, orders, status, template, extra_context=None):
     # Order the orders by created_at descending to show new orders first
     orders = orders.order_by('-created_at')
     
@@ -568,22 +624,51 @@ def prepare_admin_order_view(request, orders, status, template):
             'total_price': total_price,
         })
     
-    return render(request, template, {
+    context = {
         'orders_data': orders_data,
         'status': status
-    })
+    }
+    if extra_context:
+        context.update(extra_context)
+    
+    return render(request, template, context)
 
 @login_required(login_url='adminlogin')
 def admin_view_cancelled_orders(request):
-    orders = models.Orders.objects.filter(status='Cancelled')
-    ordered_products = []
-    ordered_bys = []
+    orders = models.Orders.objects.filter(status='Cancelled').prefetch_related('orderitem_set').order_by('-created_at')
+    # Prepare orders_data with order_id fallback and total price calculation
+    orders_data = []
     for order in orders:
-        ordered_product = models.Product.objects.all().filter(id=order.product.id)
-        ordered_by = models.Customer.objects.all().filter(id=order.customer.id)
-        ordered_products.append(ordered_product)
-        ordered_bys.append(ordered_by)
-    return render(request, 'ecom/admin_view_cancelled_orders.html', {'data': zip(ordered_products, ordered_bys, orders)})
+        order_id = order.order_ref if order.order_ref else f"ORD-{order.id}"
+        order_items_qs = order.orderitem_set.all()
+        order_items = []
+        total_price = 0
+        for item in order_items_qs:
+            price = item.price if item.price else 0
+            quantity = item.quantity if item.quantity else 0
+            total_price += price * quantity
+            order_items.append({
+                'product': item.product,
+                'quantity': quantity,
+                'size': item.size,
+                'price': price,
+                'product_image': item.product.product_image.url if item.product and item.product.product_image else None,
+            })
+        orders_data.append({
+            'order': order,
+            'customer': order.customer,
+            'order_items': order_items,
+            'order_id': order_id,
+            'order_date': order.order_date.strftime('%B %d, %Y') if order.order_date else order.created_at.strftime('%B %d, %Y'),
+            'total_price': total_price,
+        })
+    # Pass orders_data to template
+    context = {
+        'orders_data': orders_data,
+        'status': 'Cancelled',
+        'cancelled_count': orders.count(),
+    }
+    return render(request, 'ecom/admin_view_orders.html', context)
 
 
 @login_required(login_url='adminlogin')

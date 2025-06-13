@@ -90,7 +90,7 @@ urlpatterns = [
     path('facebook/', RedirectView.as_view(url='https://www.facebook.com/worksteamwear'), name='facebook'),
     path('instagram/', RedirectView.as_view(url='https://www.instagram.com/worksteamwear/'), name='instagram'),
     path('create/', views.create, name='create'),
-    path('jersey-customizer/advanced/', views.jersey_customizer_advanced, name='jersey_customizer_advanced'),
+    path('jersey-customizer/advanced', views.jersey_customizer_advanced, name='jersey_customizer_advanced'),
     path('jersey-customizer/', views.jersey_customizer, name='jersey_customizer'),
     path('jersey-template/', views.jersey_template, name='jersey_template'),
     path('interactive-jersey/', views.interactive_jersey, name='interactive_jersey'),
