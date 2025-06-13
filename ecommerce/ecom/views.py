@@ -28,6 +28,34 @@ from django.views.decorators.http import require_GET
 from django.core.serializers.json import DjangoJSONEncoder
 from datetime import datetime
 
+@login_required(login_url='adminlogin')
+def user_profile_page(request, user_id):
+    try:
+        customer = Customer.objects.get(user_id=user_id)
+    except Customer.DoesNotExist:
+        # Redirect back to users list with error message instead of rendering missing template
+        from django.contrib import messages
+        messages.error(request, 'User profile not found.')
+        return redirect('admin-view-users')
+
+    orders = Orders.objects.filter(customer=customer).order_by('-order_date')[:20]
+
+    transactions = []
+    for order in orders:
+        transactions.append({
+            'product_name': order.product.name if order.product else '',
+            'order_date': order.order_date.strftime('%Y-%m-%d %H:%M') if order.order_date else '',
+            'order_ref': order.order_ref or '',
+            'amount': float(order.product.price) * order.quantity if order.product and order.product.price else 0.0,
+            'status': order.status,
+        })
+
+    context = {
+        'customer': customer,
+        'transactions': transactions,
+    }
+    return render(request, 'ecom/user_profile_page.html', context)
+
 
 @login_required(login_url='adminlogin')
 def get_transactions_by_month(request):
@@ -332,22 +360,76 @@ def admin_dashboard_view(request):
 
 # admin view customer table
 @login_required(login_url='adminlogin')
-def view_customer_view(request):
-    customers = Customer.objects.all()
-    
-    # Prepare customer data with profile_pic_url
-    customer_data = []
-    for customer in customers:
-        profile_pic_url = customer.profile_pic.url if customer.profile_pic else None
-        customer_data.append({
-            'customer': customer,
-            'profile_pic_url': profile_pic_url,
+def admin_view_users(request):
+    import csv
+    from django.http import HttpResponse
+
+    customers = models.Customer.objects.select_related('user').all()
+    users = []
+    for c in customers:
+        users.append({
+            'id': c.id,
+            'name': f"{c.user.first_name} {c.user.last_name}" if c.user else '',
+            'surname': '',
+            'customer_id': c.customer_code,
+            'email': c.user.email if c.user else '',
+            'contact': c.mobile,
+            'address': c.get_full_address,
+            'balance': getattr(c, 'balance', 0),
+            'status': c.status,
+            'is_active': c.status == 'Active',
+            'wallet_status': getattr(c, 'wallet_status', 'Active'),
+            'created_date': c.created_at.strftime('%Y-%m-%d') if hasattr(c, 'created_at') else '',
         })
-    
+
+    if request.GET.get('export') == 'csv':
+        # Create the HttpResponse object with CSV header.
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="users.csv"'
+
+        writer = csv.writer(response)
+        # Write CSV header
+        writer.writerow(['Customer ID', 'Name', 'Email', 'Contact', 'Address', 'Balance', 'Status', 'Wallet Status', 'Created Date'])
+
+        # Write user data rows
+        for user in users:
+            writer.writerow([
+                user['customer_id'],
+                user['name'],
+                user['email'],
+                user['contact'],
+                user['address'],
+                user['balance'],
+                user['status'],
+                user['wallet_status'],
+                user['created_date'],
+            ])
+
+        return response
+
     context = {
-        'customers': customer_data,
+        'users': users,
+        'active_count': sum(1 for u in users if u['status'] == 'Active'),
+        'pending_count': sum(1 for u in users if u['status'] == 'Pending'),
+        'suspended_count': sum(1 for u in users if u['status'] == 'Suspended'),
+        'total_count': len(users),
     }
-    return render(request, 'ecom/view_customer.html', context)
+    return render(request, 'ecom/admin_view_users.html', context)
+
+@login_required(login_url='adminlogin')
+def bulk_update_users(request):
+    if request.method == 'POST':
+        user_ids = request.POST.getlist('user_ids')
+        new_status = request.POST.get('bulk_status')
+
+        if user_ids and new_status:
+            customers = models.Customer.objects.filter(id__in=user_ids)
+            customers.update(status=new_status)
+            messages.success(request, f'Successfully updated {len(user_ids)} users to {new_status}')
+        else:
+            messages.error(request, 'Please select users and status to update')
+
+    return redirect('view-customer')
 
 # admin delete customer
 @login_required(login_url='adminlogin')
@@ -1498,3 +1580,43 @@ def get_transactions_by_month(request):
 
 def payment_cancel(request):
     return HttpResponse("❌ Payment canceled.")
+
+
+from django.http import JsonResponse
+from django.core.serializers.json import DjangoJSONEncoder
+from django.shortcuts import get_object_or_404
+from .models import Customer, Orders
+from django.contrib.auth.decorators import login_required
+
+@login_required(login_url='adminlogin')
+def api_user_profile(request, user_id):
+    # Fetch customer by user_id
+    customer = get_object_or_404(Customer, user_id=user_id)
+    user = customer.user
+
+    # Fetch orders for the customer
+    orders = Orders.objects.filter(customer=customer).order_by('-order_date')[:20]
+
+    transactions = []
+    for order in orders:
+        transactions.append({
+            'product_name': order.product.name if order.product else '',
+            'order_date': order.order_date.strftime('%Y-%m-%d') if order.order_date else '',
+            'order_ref': order.order_ref or '',
+            'amount': float(order.product.price) * order.quantity if order.product and order.product.price else 0.0,
+            'status': order.status,
+        })
+
+    data = {
+        'id': user.id,
+        'name': f"{user.first_name} {user.last_name}",
+        'address': customer.get_full_address,
+        'phone': customer.mobile,
+        'status': getattr(customer, 'status', 'Active'),  # Default to Active if no status field
+        'transactions': transactions,
+    }
+    return JsonResponse(data, encoder=DjangoJSONEncoder)
+
+
+    
+
