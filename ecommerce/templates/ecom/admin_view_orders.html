@@ -1,5 +1,6 @@
 {% extends 'ecom/admin_base.html' %}
 {% load static %}
+{% load humanize %}
 {% block content %}
 
  <div class="mb-8">
@@ -188,7 +189,7 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm font-medium text-gray-900">{{ customer.get_name }}</div>
-                                <div class="text-sm text-gray-500">{{ customer.email|default:"No email" }}</div>
+                                <div class="text-sm text-gray-500">{{ customer.customer_code|default:"No ID" }}</div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm text-gray-900">{{ customer.mobile }}</div>
@@ -202,13 +203,13 @@
                                 <div class="text-sm text-gray-900">{{ items|length }} item{{ items|length|pluralize }}</div>
                                 <div class="text-xs text-gray-500 max-w-xs">
                                     {% for item in items %}
-                                        {{ item.product.name }}{% if item.quantity > 1 %} ({{ item.quantity }}x){% endif %}{% if not forloop.last %}, {% endif %}
+                                    {{ item.product.name }} ({{ item.size }}){% if item.quantity > 1 %} ({{ item.quantity }}x){% endif %}{% if not forloop.last %}, {% endif %}
                                     {% endfor %}
                                 </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm font-medium text-gray-900">
-                                    R {% widthratio order.total_amount 1 1 %}
+                                    ₱ {{ order_data.total_price|floatformat:2|intcomma|default:"0.00" }}
                                 </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
@@ -223,17 +224,14 @@
                                 </span>
                             </td>
                             {% if status != 'Delivered' %}
-                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                <button onclick="openOrderDetail('{{ order.id }}')" class="text-blue-600 hover:text-blue-900 mr-2" title="View Details">
-                                    <i data-lucide="eye" class="h-4 w-4"></i>
-                                </button>
+                            <td class="px-8 py-4 whitespace-nowrap text-right text-sm font-medium">
                                 <a href="{% url 'update-order' order.id %}" class="text-green-600 hover:text-green-900" title="Edit Order">
                                     <i data-lucide="edit" class="h-4 w-4"></i>
                                 </a>
                             </td>
                             {% else %}
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                <button onclick="openOrderDetail('{{ order.id }}')" class="text-blue-600 hover:text-blue-900" title="View Details">
+                                <button onclick="openOrderDetail('{{ order.id }}')" class="inline-block text-blue-600 hover:text-blue-900" title="View Details">
                                     <i data-lucide="eye" class="h-4 w-4"></i>
                                 </button>
                             </td>

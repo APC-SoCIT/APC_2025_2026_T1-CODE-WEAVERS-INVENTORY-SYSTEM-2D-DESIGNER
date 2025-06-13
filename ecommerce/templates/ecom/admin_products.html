@@ -3,98 +3,914 @@
 {% block content %}
 
 
-<head>
-  <link href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
-  <script src="//netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js"></script>
-  <script src="//code.jquery.com/jquery-1.11.1.min.js"></script>
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900">Products</h1>
+                <p class="text-gray-600">Manage your product inventory and details</p>
+            </div>
+            <button onclick="openAddProductModal()" class="mt-4 sm:mt-0 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center">
+                <i data-lucide="plus" class="mr-2 h-4 w-4"></i>
+                Add Product
+            </button>
+        </div>
 
-  <style media="screen">
-    a:link {
-      text-decoration: none;
-    }
-
-    h6 {
-      text-align: center;
-    }
-
-    .row {
-      margin: 100px;
-    }
-
-    .float{
-      position:fixed;
-      width:70px;
-      height:70px;
-      bottom:60px;
-      right:60px;
-      background-color:#428bca;
-      color:#FFF;
-      border-radius:50px;
-      text-align:center;
-      box-shadow: 5px 5px 5px #505050;
-    }
-
-.my-float{
-	margin-top:22px;
-}
-.fa{
-  padding: 0em 0.5em;
-}
-  </style>
-</head>
-
-
-<div class="container">
-  {% regroup products by size as size_list %}
-  {% for size in size_list %}
-  <div class="panel panel-primary" style="margin-bottom: 20px;">
-    <div class="panel-heading">
-      <h6 class="panel-title" style="font-size: 18px; padding: 10px;">Size {{ size.grouper|default:"Not Specified" }}</h6>
+        <!-- Product List -->
+        <div id="product-list-view" class="bg-white rounded-lg shadow">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+                    <div class="flex items-center gap-2 flex-1 max-w-sm">
+                        <i data-lucide="search" class="h-4 w-4 text-gray-400"></i>
+                        <input type="text" id="product-search" placeholder="Search products..." class="w-full border-0 focus:ring-0 text-sm">
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <select id="category-filter" class="text-sm border-gray-300 rounded-md">
+                            <option value="">All Categories</option>
+                            <option value="clothing">Clothing</option>
+                            <option value="accessories">Accessories</option>
+                            <option value="footwear">Footwear</option>
+                            <option value="safety">Safety Equipment</option>
+                            <option value="electronics">Electronics</option>
+                            <option value="tools">Tools</option>
+                        </select>
+                        <button onclick="exportProducts()" class="px-3 py-1.5 text-sm border border-gray-300 rounded-md hover:bg-gray-50">Export</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Image</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Size</th>
+                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200" id="product-list-body">
+                        <!-- Sample product data -->
+                        <tr class="hover:bg-gray-50" data-category="clothing">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <img src="https://via.placeholder.com/40x40" alt="Work Shirt" class="h-10 w-10 rounded-md object-cover">
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm font-medium text-gray-900">Professional Work Shirt</div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="text-sm text-gray-900 truncate max-w-xs">High-quality cotton work shirt with company logo</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-900">R 299.99</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-900">25</div>
+                                <span class="inline-flex px-2 py-0.5 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                    In Stock
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-900 capitalize">clothing</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-900">M</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <div class="flex justify-end space-x-2">
+                                    <button onclick="viewProduct(1)" class="text-blue-600 hover:text-blue-900" title="View Product">
+                                        <i data-lucide="eye" class="h-4 w-4"></i>
+                                    </button>
+                                    <button onclick="openEditProductModal(1)" class="text-blue-600 hover:text-blue-900" title="Edit Product">
+                                        <i data-lucide="edit" class="h-4 w-4"></i>
+                                    </button>
+                                    <button onclick="confirmDeleteProduct(1)" class="text-red-600 hover:text-red-900" title="Delete Product">
+                                        <i data-lucide="trash-2" class="h-4 w-4"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr class="hover:bg-gray-50" data-category="safety">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <img src="https://via.placeholder.com/40x40" alt="Safety Helmet" class="h-10 w-10 rounded-md object-cover">
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm font-medium text-gray-900">Safety Helmet</div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="text-sm text-gray-900 truncate max-w-xs">OSHA compliant safety helmet with adjustable straps</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-900">R 149.99</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-900">5</div>
+                                <span class="inline-flex px-2 py-0.5 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                    Low Stock
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-900 capitalize">safety</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-900">One Size</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <div class="flex justify-end space-x-2">
+                                    <button onclick="viewProduct(2)" class="text-blue-600 hover:text-blue-900" title="View Product">
+                                        <i data-lucide="eye" class="h-4 w-4"></i>
+                                    </button>
+                                    <button onclick="openEditProductModal(2)" class="text-blue-600 hover:text-blue-900" title="Edit Product">
+                                        <i data-lucide="edit" class="h-4 w-4"></i>
+                                    </button>
+                                    <button onclick="confirmDeleteProduct(2)" class="text-red-600 hover:text-red-900" title="Delete Product">
+                                        <i data-lucide="trash-2" class="h-4 w-4"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr class="hover:bg-gray-50" data-category="footwear">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <img src="https://via.placeholder.com/40x40" alt="Work Boots" class="h-10 w-10 rounded-md object-cover">
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm font-medium text-gray-900">Steel Toe Work Boots</div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="text-sm text-gray-900 truncate max-w-xs">Durable steel toe boots for construction work</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-900">R 899.99</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-900">0</div>
+                                <span class="inline-flex px-2 py-0.5 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                                    Out of Stock
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-900 capitalize">footwear</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-900">10</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <div class="flex justify-end space-x-2">
+                                    <button onclick="viewProduct(3)" class="text-blue-600 hover:text-blue-900" title="View Product">
+                                        <i data-lucide="eye" class="h-4 w-4"></i>
+                                    </button>
+                                    <button onclick="openEditProductModal(3)" class="text-blue-600 hover:text-blue-900" title="Edit Product">
+                                        <i data-lucide="edit" class="h-4 w-4"></i>
+                                    </button>
+                                    <button onclick="confirmDeleteProduct(3)" class="text-red-600 hover:text-red-900" title="Delete Product">
+                                        <i data-lucide="trash-2" class="h-4 w-4"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr class="hover:bg-gray-50" data-category="clothing">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <img src="https://via.placeholder.com/40x40" alt="Work Pants" class="h-10 w-10 rounded-md object-cover">
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm font-medium text-gray-900">Cargo Work Pants</div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="text-sm text-gray-900 truncate max-w-xs">Durable cargo pants with multiple pockets</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-900">R 399.99</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-900">15</div>
+                                <span class="inline-flex px-2 py-0.5 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                    In Stock
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-900 capitalize">clothing</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-900">L</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <div class="flex justify-end space-x-2">
+                                    <button onclick="viewProduct(4)" class="text-blue-600 hover:text-blue-900" title="View Product">
+                                        <i data-lucide="eye" class="h-4 w-4"></i>
+                                    </button>
+                                    <button onclick="openEditProductModal(4)" class="text-blue-600 hover:text-blue-900" title="Edit Product">
+                                        <i data-lucide="edit" class="h-4 w-4"></i>
+                                    </button>
+                                    <button onclick="confirmDeleteProduct(4)" class="text-red-600 hover:text-red-900" title="Delete Product">
+                                        <i data-lucide="trash-2" class="h-4 w-4"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr class="hover:bg-gray-50" data-category="accessories">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <img src="https://via.placeholder.com/40x40" alt="Work Gloves" class="h-10 w-10 rounded-md object-cover">
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm font-medium text-gray-900">Leather Work Gloves</div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="text-sm text-gray-900 truncate max-w-xs">Heavy-duty leather gloves for protection</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-900">R 89.99</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-900">30</div>
+                                <span class="inline-flex px-2 py-0.5 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                    In Stock
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-900 capitalize">accessories</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-900">L</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <div class="flex justify-end space-x-2">
+                                    <button onclick="viewProduct(5)" class="text-blue-600 hover:text-blue-900" title="View Product">
+                                        <i data-lucide="eye" class="h-4 w-4"></i>
+                                    </button>
+                                    <button onclick="openEditProductModal(5)" class="text-blue-600 hover:text-blue-900" title="Edit Product">
+                                        <i data-lucide="edit" class="h-4 w-4"></i>
+                                    </button>
+                                    <button onclick="confirmDeleteProduct(5)" class="text-red-600 hover:text-red-900" title="Delete Product">
+                                        <i data-lucide="trash-2" class="h-4 w-4"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr class="hover:bg-gray-50" data-category="safety">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <img src="https://via.placeholder.com/40x40" alt="Safety Vest" class="h-10 w-10 rounded-md object-cover">
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm font-medium text-gray-900">High-Vis Safety Vest</div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="text-sm text-gray-900 truncate max-w-xs">Reflective safety vest for high visibility</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-900">R 129.99</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-900">8</div>
+                                <span class="inline-flex px-2 py-0.5 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                    Low Stock
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-900 capitalize">safety</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-900">XL</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <div class="flex justify-end space-x-2">
+                                    <button onclick="viewProduct(6)" class="text-blue-600 hover:text-blue-900" title="View Product">
+                                        <i data-lucide="eye" class="h-4 w-4"></i>
+                                    </button>
+                                    <button onclick="openEditProductModal(6)" class="text-blue-600 hover:text-blue-900" title="Edit Product">
+                                        <i data-lucide="edit" class="h-4 w-4"></i>
+                                    </button>
+                                    <button onclick="confirmDeleteProduct(6)" class="text-red-600 hover:text-red-900" title="Delete Product">
+                                        <i data-lucide="trash-2" class="h-4 w-4"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Pagination -->
+            <div class="px-6 py-4 flex items-center justify-between border-t border-gray-200">
+                <div class="flex-1 flex justify-between sm:hidden">
+                    <a href="#" class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                        Previous
+                    </a>
+                    <a href="#" class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                        Next
+                    </a>
+                </div>
+                <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                    <div>
+                        <p class="text-sm text-gray-700">
+                            Showing <span class="font-medium">1</span> to <span class="font-medium">6</span> of <span class="font-medium">6</span> products
+                        </p>
+                    </div>
+                    <div>
+                        <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                            <a href="#" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                <span class="sr-only">Previous</span>
+                                <i data-lucide="chevron-left" class="h-5 w-5"></i>
+                            </a>
+                            <a href="#" class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                1
+                            </a>
+                            <a href="#" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                <span class="sr-only">Next</span>
+                                <i data-lucide="chevron-right" class="h-5 w-5"></i>
+                            </a>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-    <table class="table table-hover table-bordered" id="dev-table">
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Image</th>
-          <th>Price</th>
-          <th>Available Quantity</th>
-          <th>Description</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      {% for p in size.list %}
-      <tr>
-        <td>{{p.name}}</td>
-        <td>
-          {% if p.product_image %}
-            <img src="{{ p.product_image.url }}" alt="Product Image" height="40px" width="40px" />
-          {% else %}
-            <img src="{% static 'images/no-image.svg' %}" alt="No Image Available" height="40px" width="40px" />
-          {% endif %}
-        </td>
-        <td>₱{{p.price}}</td>
-        <td>
-          <span class="{% if p.quantity <= 5 %}text-danger{% elif p.quantity <= 10 %}text-warning{% else %}text-success{% endif %}">
-            {{p.quantity}} pcs
-          </span>
-        </td>
-        <td>{{p.description}}</td>
-        <td>
-          <a class="btn btn-primary btn-xs" href="{% url 'update-product' p.id %}"><span class="glyphicon glyphicon-edit"></span></a>
-          <a class="btn btn-danger btn-xs" href="{% url 'delete-product' p.id %}"><span class="glyphicon glyphicon-trash"></span></a>
-        </td>
-      </tr>
-      {% endfor %}
-    </table>
-  </div>
-  {% empty %}
-  <div class="alert alert-info">
-    <h4 class="text-center">No Products Available</h4>
-  </div>
-  {% endfor %}
-</div>
-<!-- add product floating button -->
-<a href="/admin-add-product" class="float">
-<i class="fa fa-plus my-float"></i>
-</a>
+
+    <!-- Add/Edit Product Modal -->
+    <div id="productModal" class="fixed inset-0 z-50 hidden overflow-y-auto">
+        <div class="flex items-center justify-center min-h-screen px-4">
+            <div class="fixed inset-0 bg-black opacity-50"></div>
+            <div class="relative bg-white rounded-lg max-w-2xl w-full p-6 max-h-screen overflow-y-auto">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 id="productModalTitle" class="text-lg font-medium text-gray-900">Add Product</h3>
+                    <button onclick="closeProductModal()" class="text-gray-400 hover:text-gray-600">
+                        <i data-lucide="x" class="h-6 w-6"></i>
+                    </button>
+                </div>
+                
+                <form id="productForm" class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Product Name *</label>
+                                <input type="text" id="productName" name="name" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Description *</label>
+                                <textarea id="productDescription" name="description" rows="4" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent" required></textarea>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                                <select id="productCategory" name="category" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    <option value="">Select Category</option>
+                                    <option value="clothing">Clothing</option>
+                                    <option value="accessories">Accessories</option>
+                                    <option value="footwear">Footwear</option>
+                                    <option value="safety">Safety Equipment</option>
+                                    <option value="electronics">Electronics</option>
+                                    <option value="tools">Tools</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Price (ZAR) *</label>
+                                <input type="number" id="productPrice" name="price" step="0.01" min="0" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Quantity *</label>
+                                <input type="number" id="productQuantity" name="quantity" min="0" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Size</label>
+                                <select id="productSize" name="size" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    <option value="">Select Size</option>
+                                    <option value="XS">XS</option>
+                                    <option value="S">S</option>
+                                    <option value="M">M</option>
+                                    <option value="L">L</option>
+                                    <option value="XL">XL</option>
+                                    <option value="XXL">XXL</option>
+                                    <option value="One Size">One Size</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Product Image</label>
+                                <input type="file" id="productImage" name="image" accept="image/*" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <div id="imagePreview" class="mt-2 hidden">
+                                    <img id="previewImg" src="/placeholder.svg" alt="Preview" class="w-32 h-32 object-cover rounded-md border">
+                                    <button type="button" onclick="removeImagePreview()" class="mt-2 text-red-600 text-sm hover:text-red-800">Remove Image</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-end space-x-3 pt-4">
+                        <button type="button" onclick="closeProductModal()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">Cancel</button>
+                        <button type="submit" id="productSubmitBtn" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700">Add Product</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Product View Modal -->
+    <div id="productViewModal" class="fixed inset-0 z-50 hidden overflow-y-auto">
+        <div class="flex items-center justify-center min-h-screen px-4">
+            <div class="fixed inset-0 bg-black opacity-50"></div>
+            <div class="relative bg-white rounded-lg max-w-2xl w-full p-6 max-h-screen overflow-y-auto">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 id="viewProductName" class="text-lg font-medium text-gray-900">Product Details</h3>
+                    <button onclick="closeProductViewModal()" class="text-gray-400 hover:text-gray-600">
+                        <i data-lucide="x" class="h-6 w-6"></i>
+                    </button>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <div id="viewProductImage" class="w-full h-48 bg-gray-200 rounded-lg flex items-center justify-center mb-4">
+                            <i data-lucide="image" class="h-16 w-16 text-gray-400"></i>
+                        </div>
+                        
+                        <div class="space-y-3">
+                            <div>
+                                <label class="text-sm font-medium text-gray-500">Description</label>
+                                <p id="viewProductDescription" class="text-gray-900"></p>
+                            </div>
+                            
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="text-sm font-medium text-gray-500">Category</label>
+                                    <p id="viewProductCategory" class="text-gray-900 capitalize"></p>
+                                </div>
+                                <div>
+                                    <label class="text-sm font-medium text-gray-500">Size</label>
+                                    <p id="viewProductSize" class="text-gray-900"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <div class="bg-blue-50 p-4 rounded-lg">
+                            <label class="text-sm font-medium text-gray-500">Price</label>
+                            <p id="viewProductPrice" class="text-2xl font-bold text-blue-600"></p>
+                        </div>
+                        
+                        <div class="bg-green-50 p-4 rounded-lg">
+                            <label class="text-sm font-medium text-gray-500">Stock Status</label>
+                            <div class="flex items-center justify-between">
+                                <p id="viewProductQuantity" class="text-xl font-semibold text-green-600"></p>
+                                <span id="viewProductStatus" class="px-2 py-1 text-xs font-semibold rounded-full"></span>
+                            </div>
+                        </div>
+                        
+                        <div class="pt-4">
+                            <button onclick="editProductFromView()" class="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+                                <i data-lucide="edit" class="h-4 w-4 mr-2"></i>
+                                Edit Product
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteProductModal" class="fixed inset-0 z-50 hidden overflow-y-auto">
+        <div class="flex items-center justify-center min-h-screen px-4">
+            <div class="fixed inset-0 bg-black opacity-50"></div>
+            <div class="relative bg-white rounded-lg max-w-md w-full p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-medium text-gray-900">Confirm Deletion</h3>
+                    <button onclick="closeDeleteProductModal()" class="text-gray-400 hover:text-gray-600">
+                        <i data-lucide="x" class="h-6 w-6"></i>
+                    </button>
+                </div>
+                
+                <div class="mb-4">
+                    <p class="text-gray-600">Are you sure you want to delete the product "<span id="deleteProductName" class="font-medium"></span>"?</p>
+                    <p class="text-red-600 text-sm mt-2">This action cannot be undone.</p>
+                </div>
+                
+                <div class="flex justify-end space-x-3">
+                    <button onclick="closeDeleteProductModal()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">Cancel</button>
+                    <button onclick="deleteProduct()" class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Lucide icons
+        document.addEventListener('DOMContentLoaded', function() {
+            lucide.createIcons();
+        });
+
+        // Product Management JavaScript
+        let currentEditingProductId = null;
+        let currentDeletingProductId = null;
+
+        // Sample product data (replace with Django backend data)
+        let products = [
+            {
+                id: 1,
+                name: "Professional Work Shirt",
+                description: "High-quality cotton work shirt with company logo",
+                price: 299.99,
+                quantity: 25,
+                category: "clothing",
+                size: "M",
+                image: "https://via.placeholder.com/200x200"
+            },
+            {
+                id: 2,
+                name: "Safety Helmet",
+                description: "OSHA compliant safety helmet with adjustable straps",
+                price: 149.99,
+                quantity: 5,
+                category: "safety",
+                size: "One Size",
+                image: "https://via.placeholder.com/200x200"
+            },
+            {
+                id: 3,
+                name: "Steel Toe Work Boots",
+                description: "Durable steel toe boots for construction work",
+                price: 899.99,
+                quantity: 0,
+                category: "footwear",
+                size: "10",
+                image: "https://via.placeholder.com/200x200"
+            },
+            {
+                id: 4,
+                name: "Cargo Work Pants",
+                description: "Durable cargo pants with multiple pockets",
+                price: 399.99,
+                quantity: 15,
+                category: "clothing",
+                size: "L",
+                image: "https://via.placeholder.com/200x200"
+            },
+            {
+                id: 5,
+                name: "Leather Work Gloves",
+                description: "Heavy-duty leather gloves for protection",
+                price: 89.99,
+                quantity: 30,
+                category: "accessories",
+                size: "L",
+                image: "https://via.placeholder.com/200x200"
+            },
+            {
+                id: 6,
+                name: "High-Vis Safety Vest",
+                description: "Reflective safety vest for high visibility",
+                price: 129.99,
+                quantity: 8,
+                category: "safety",
+                size: "XL",
+                image: "https://via.placeholder.com/200x200"
+            }
+        ];
+
+        // Open Add Product Modal
+        function openAddProductModal() {
+            currentEditingProductId = null;
+            document.getElementById('productModalTitle').textContent = 'Add Product';
+            document.getElementById('productSubmitBtn').textContent = 'Add Product';
+            document.getElementById('productForm').reset();
+            document.getElementById('imagePreview').classList.add('hidden');
+            document.getElementById('productModal').classList.remove('hidden');
+        }
+
+        // Open Edit Product Modal
+        function openEditProductModal(productId) {
+            const product = products.find(p => p.id === productId);
+            if (!product) return;
+            
+            currentEditingProductId = productId;
+            document.getElementById('productModalTitle').textContent = 'Edit Product';
+            document.getElementById('productSubmitBtn').textContent = 'Update Product';
+            
+            // Populate form fields
+            document.getElementById('productName').value = product.name;
+            document.getElementById('productDescription').value = product.description;
+            document.getElementById('productPrice').value = product.price;
+            document.getElementById('productQuantity').value = product.quantity;
+            document.getElementById('productCategory').value = product.category;
+            document.getElementById('productSize').value = product.size;
+            
+            // Show image preview if exists
+            if (product.image) {
+                document.getElementById('previewImg').src = product.image;
+                document.getElementById('imagePreview').classList.remove('hidden');
+            } else {
+                document.getElementById('imagePreview').classList.add('hidden');
+            }
+            
+            document.getElementById('productModal').classList.remove('hidden');
+        }
+
+        // Close Product Modal
+        function closeProductModal() {
+            document.getElementById('productModal').classList.add('hidden');
+            currentEditingProductId = null;
+        }
+
+        // View Product Details
+        function viewProduct(productId) {
+            const product = products.find(p => p.id === productId);
+            if (!product) return;
+            
+            document.getElementById('viewProductName').textContent = product.name;
+            document.getElementById('viewProductDescription').textContent = product.description;
+            document.getElementById('viewProductPrice').textContent = `R ${product.price.toFixed(2)}`;
+            document.getElementById('viewProductQuantity').textContent = `${product.quantity} units`;
+            document.getElementById('viewProductCategory').textContent = product.category;
+            document.getElementById('viewProductSize').textContent = product.size || 'N/A';
+            
+            // Set stock status
+            const statusElement = document.getElementById('viewProductStatus');
+            if (product.quantity === 0) {
+                statusElement.textContent = 'Out of Stock';
+                statusElement.className = 'px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800';
+            } else if (product.quantity < 10) {
+                statusElement.textContent = 'Low Stock';
+                statusElement.className = 'px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800';
+            } else {
+                statusElement.textContent = 'In Stock';
+                statusElement.className = 'px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800';
+            }
+            
+            // Set product image
+            const imageContainer = document.getElementById('viewProductImage');
+            if (product.image) {
+                imageContainer.innerHTML = `<img src="${product.image}" alt="${product.name}" class="w-full h-48 object-cover rounded-lg">`;
+            } else {
+                imageContainer.innerHTML = '<i data-lucide="image" class="h-16 w-16 text-gray-400"></i>';
+                lucide.createIcons();
+            }
+            
+            // Store product ID for editing
+            currentEditingProductId = productId;
+            
+            document.getElementById('productViewModal').classList.remove('hidden');
+        }
+
+        // Close Product View Modal
+        function closeProductViewModal() {
+            document.getElementById('productViewModal').classList.add('hidden');
+        }
+
+        // Edit Product from View Modal
+        function editProductFromView() {
+            closeProductViewModal();
+            openEditProductModal(currentEditingProductId);
+        }
+
+        // Confirm Delete Product
+        function confirmDeleteProduct(productId) {
+            const product = products.find(p => p.id === productId);
+            if (!product) return;
+            
+            currentDeletingProductId = productId;
+            document.getElementById('deleteProductName').textContent = product.name;
+            document.getElementById('deleteProductModal').classList.remove('hidden');
+        }
+
+        // Close Delete Product Modal
+        function closeDeleteProductModal() {
+            document.getElementById('deleteProductModal').classList.add('hidden');
+            currentDeletingProductId = null;
+        }
+
+        // Delete Product
+        function deleteProduct() {
+            if (!currentDeletingProductId) return;
+            
+            // Remove from products array
+            products = products.filter(p => p.id !== currentDeletingProductId);
+            
+            // Remove from table
+            const row = document.querySelector(`button[onclick="confirmDeleteProduct(${currentDeletingProductId})"]`).closest('tr');
+            if (row) {
+                row.remove();
+            }
+            
+            closeDeleteProductModal();
+            
+            // Show success message
+            alert('Product deleted successfully!');
+        }
+
+        // Handle Product Form Submission
+        document.getElementById('productForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const productData = {
+                name: formData.get('name'),
+                description: formData.get('description'),
+                price: parseFloat(formData.get('price')),
+                quantity: parseInt(formData.get('quantity')),
+                category: formData.get('category'),
+                size: formData.get('size'),
+                image: document.getElementById('previewImg').src || null
+            };
+            
+            if (currentEditingProductId) {
+                // Update existing product
+                const productIndex = products.findIndex(p => p.id === currentEditingProductId);
+                if (productIndex !== -1) {
+                    products[productIndex] = { ...products[productIndex], ...productData };
+                    updateProductRow(currentEditingProductId, products[productIndex]);
+                    alert('Product updated successfully!');
+                }
+            } else {
+                // Add new product
+                const newProduct = {
+                    id: Math.max(...products.map(p => p.id)) + 1,
+                    ...productData
+                };
+                products.push(newProduct);
+                addProductRow(newProduct);
+                alert('Product added successfully!');
+            }
+            
+            closeProductModal();
+        });
+
+        // Update Product Row in Table
+        function updateProductRow(productId, product) {
+            const row = document.querySelector(`button[onclick="confirmDeleteProduct(${productId})"]`).closest('tr');
+            if (!row) return;
+            
+            // Update row data
+            row.setAttribute('data-category', product.category);
+            
+            // Update cells
+            const cells = row.querySelectorAll('td');
+            cells[0].innerHTML = `<img src="${product.image || 'https://via.placeholder.com/40x40'}" alt="${product.name}" class="h-10 w-10 rounded-md object-cover">`;
+            cells[1].innerHTML = `<div class="text-sm font-medium text-gray-900">${product.name}</div>`;
+            cells[2].innerHTML = `<div class="text-sm text-gray-900 truncate max-w-xs">${product.description}</div>`;
+            cells[3].innerHTML = `<div class="text-sm text-gray-900">R ${product.price.toFixed(2)}</div>`;
+            
+            // Update quantity and status
+            let statusClass, statusText;
+            if (product.quantity === 0) {
+                statusClass = 'bg-red-100 text-red-800';
+                statusText = 'Out of Stock';
+            } else if (product.quantity < 10) {
+                statusClass = 'bg-yellow-100 text-yellow-800';
+                statusText = 'Low Stock';
+            } else {
+                statusClass = 'bg-green-100 text-green-800';
+                statusText = 'In Stock';
+            }
+            
+            cells[4].innerHTML = `
+                <div class="text-sm text-gray-900">${product.quantity}</div>
+                <span class="inline-flex px-2 py-0.5 text-xs font-semibold rounded-full ${statusClass}">
+                    ${statusText}
+                </span>
+            `;
+            
+            cells[5].innerHTML = `<div class="text-sm text-gray-900 capitalize">${product.category}</div>`;
+            cells[6].innerHTML = `<div class="text-sm text-gray-900">${product.size || 'N/A'}</div>`;
+        }
+
+        // Add Product Row to Table
+        function addProductRow(product) {
+            const tbody = document.getElementById('product-list-body');
+            const row = document.createElement('tr');
+            row.className = 'hover:bg-gray-50';
+            row.setAttribute('data-category', product.category);
+            
+            let statusClass, statusText;
+            if (product.quantity === 0) {
+                statusClass = 'bg-red-100 text-red-800';
+                statusText = 'Out of Stock';
+            } else if (product.quantity < 10) {
+                statusClass = 'bg-yellow-100 text-yellow-800';
+                statusText = 'Low Stock';
+            } else {
+                statusClass = 'bg-green-100 text-green-800';
+                statusText = 'In Stock';
+            }
+            
+            row.innerHTML = `
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <img src="${product.image || 'https://via.placeholder.com/40x40'}" alt="${product.name}" class="h-10 w-10 rounded-md object-cover">
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="text-sm font-medium text-gray-900">${product.name}</div>
+                </td>
+                <td class="px-6 py-4">
+                    <div class="text-sm text-gray-900 truncate max-w-xs">${product.description}</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="text-sm text-gray-900">R ${product.price.toFixed(2)}</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="text-sm text-gray-900">${product.quantity}</div>
+                    <span class="inline-flex px-2 py-0.5 text-xs font-semibold rounded-full ${statusClass}">
+                        ${statusText}
+                    </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="text-sm text-gray-900 capitalize">${product.category}</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="text-sm text-gray-900">${product.size || 'N/A'}</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <div class="flex justify-end space-x-2">
+                        <button onclick="viewProduct(${product.id})" class="text-blue-600 hover:text-blue-900" title="View Product">
+                            <i data-lucide="eye" class="h-4 w-4"></i>
+                        </button>
+                        <button onclick="openEditProductModal(${product.id})" class="text-blue-600 hover:text-blue-900" title="Edit Product">
+                            <i data-lucide="edit" class="h-4 w-4"></i>
+                        </button>
+                        <button onclick="confirmDeleteProduct(${product.id})" class="text-red-600 hover:text-red-900" title="Delete Product">
+                            <i data-lucide="trash-2" class="h-4 w-4"></i>
+                        </button>
+                    </div>
+                </td>
+            `;
+            
+            tbody.appendChild(row);
+            lucide.createIcons();
+        }
+
+        // Image Preview Functionality
+        document.getElementById('productImage').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('previewImg').src = e.target.result;
+                    document.getElementById('imagePreview').classList.remove('hidden');
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Remove Image Preview
+        function removeImagePreview() {
+            document.getElementById('productImage').value = '';
+            document.getElementById('imagePreview').classList.add('hidden');
+        }
+
+        // Search Functionality
+        document.getElementById('product-search').addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const categoryFilter = document.getElementById('category-filter').value;
+            filterProducts(searchTerm, categoryFilter);
+        });
+
+        // Category Filter
+        document.getElementById('category-filter').addEventListener('change', function(e) {
+            const categoryFilter = e.target.value;
+            const searchTerm = document.getElementById('product-search').value.toLowerCase();
+            filterProducts(searchTerm, categoryFilter);
+        });
+
+        // Filter Products
+        function filterProducts(searchTerm, categoryFilter) {
+            const rows = document.querySelectorAll('#product-list-body tr');
+            
+            rows.forEach(row => {
+                const productName = row.querySelector('td:nth-child(2)')?.textContent.toLowerCase() || '';
+                const productDescription = row.querySelector('td:nth-child(3)')?.textContent.toLowerCase() || '';
+                const productCategory = row.getAttribute('data-category') || '';
+                
+                const matchesSearch = productName.includes(searchTerm) || productDescription.includes(searchTerm);
+                const matchesCategory = !categoryFilter || productCategory === categoryFilter;
+                
+                if (matchesSearch && matchesCategory) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+
+        // Export Products
+        function exportProducts() {
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += "Name,Description,Price,Quantity,Category,Size\n";
+            
+            products.forEach(product => {
+                csvContent += `"${product.name}","${product.description}","R ${product.price}","${product.quantity}","${product.category}","${product.size || 'N/A'}"\n`;
+            });
+            
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "products.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
 {% endblock content %}

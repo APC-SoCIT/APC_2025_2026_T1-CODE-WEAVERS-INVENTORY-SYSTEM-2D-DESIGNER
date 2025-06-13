@@ -30,10 +30,15 @@ from datetime import datetime
 
 @login_required(login_url='adminlogin')
 def user_profile_page(request, user_id):
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info(f"User profile page requested for user_id: {user_id}")
+
     try:
         customer = Customer.objects.get(user_id=user_id)
+        logger.info(f"Customer found: {customer.get_name} with user_id: {user_id}")
     except Customer.DoesNotExist:
-        # Redirect back to users list with error message instead of rendering missing template
+        logger.error(f"Customer not found for user_id: {user_id}")
         from django.contrib import messages
         messages.error(request, 'User profile not found.')
         return redirect('admin-view-users')
@@ -42,11 +47,13 @@ def user_profile_page(request, user_id):
 
     transactions = []
     for order in orders:
+        order_items = order.orderitem_set.all()
+        total_price = sum([item.price * item.quantity for item in order_items])
         transactions.append({
             'product_name': order.product.name if order.product else '',
             'order_date': order.order_date.strftime('%Y-%m-%d %H:%M') if order.order_date else '',
             'order_ref': order.order_ref or '',
-            'amount': float(order.product.price) * order.quantity if order.product and order.product.price else 0.0,
+            'amount': total_price,
             'status': order.status,
         })
 
@@ -54,7 +61,10 @@ def user_profile_page(request, user_id):
         'customer': customer,
         'transactions': transactions,
     }
-    return render(request, 'ecom/user_profile_page.html', context)
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        return render(request, 'ecom/user_profile_page_partial.html', context)
+    else:
+        return render(request, 'ecom/user_profile_page.html', context)
 
 
 @login_required(login_url='adminlogin')
@@ -159,7 +169,7 @@ def customer_signup_view(request):
         userForm=forms.CustomerUserForm(request.POST)
         customerForm=forms.CustomerForm(request.POST,request.FILES)
         if userForm.is_valid() and customerForm.is_valid():
-            user=userForm.save()
+            user=userForm.save(commit=False)
             user.set_password(user.password)
             user.save()
             customer=customerForm.save(commit=False)
@@ -167,7 +177,7 @@ def customer_signup_view(request):
             customer.save()
             my_customer_group = Group.objects.get_or_create(name='CUSTOMER')
             my_customer_group[0].user_set.add(user)
-        return HttpResponseRedirect('customerlogin')
+            return HttpResponseRedirect('customerlogin')
     return render(request,'ecom/customersignup.html',context=mydict)
 
 def customer_login(request):
@@ -367,8 +377,10 @@ def admin_view_users(request):
     customers = models.Customer.objects.select_related('user').all()
     users = []
     for c in customers:
+        print(f"DEBUG: Customer ID: {c.id}, User ID: {c.user.id if c.user else 'None'}, Name: {c.user.first_name if c.user else 'N/A'} {c.user.last_name if c.user else ''}")
         users.append({
             'id': c.id,
+            'user_id': c.user.id if c.user else None,
             'name': f"{c.user.first_name} {c.user.last_name}" if c.user else '',
             'surname': '',
             'customer_id': c.customer_code,
@@ -528,7 +540,9 @@ def prepare_admin_order_view(request, orders, status, template):
     
     # Prepare a list of orders with their customer, shipping address, and order items
     orders_data = []
+    
     for order in orders:
+        total_price = 0
         order_items = models.OrderItem.objects.filter(order=order)
         items = []
         for item in order_items:
@@ -539,6 +553,8 @@ def prepare_admin_order_view(request, orders, status, template):
                 'price': item.price,
                 'product_image': item.product.product_image.url if item.product.product_image else None,
             })
+            total_price += item.price * item.quantity
+        
         # Use order.address if available, else fallback to customer's full address
         shipping_address = order.address if order.address else (order.customer.get_full_address if order.customer else '')
         orders_data.append({
@@ -549,7 +565,9 @@ def prepare_admin_order_view(request, orders, status, template):
             'status': order.status,
             'order_id': order.order_ref,
             'order_date': order.order_date,
+            'total_price': total_price,
         })
+    
     return render(request, template, {
         'orders_data': orders_data,
         'status': status
@@ -657,6 +675,8 @@ def bulk_update_orders(request):
                 # First pass: Calculate total quantities needed for each product
                 for order in orders:
                     product = order.product
+                    if product is None:
+                        continue
                     if product.id in inventory_updates:
                         inventory_updates[product.id]['quantity_needed'] += order.quantity
                     else:
