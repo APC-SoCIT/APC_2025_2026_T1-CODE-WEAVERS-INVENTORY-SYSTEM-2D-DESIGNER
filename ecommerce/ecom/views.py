@@ -799,6 +799,7 @@ def add_to_cart_view(request, pk):
     return response
 
 def cart_view(request):
+    region_choices = Customer.REGION_CHOICES  # <-- No extra indentation here!
 
     # For cart counter
     if 'product_ids' in request.COOKIES:
@@ -936,8 +937,13 @@ def remove_from_cart_view(request, pk):
     response = render(request, 'ecom/cart.html', {
         'products': products,
         'total': total,
+        'delivery_fee': delivery_fee,
+        'vat_rate': vat_rate,
+        'vat_amount': vat_amount,
+        'grand_total': grand_total,
         'product_count_in_cart': product_count_in_cart,
-        'redirect_to': next_page
+        'user_address': customer,  # Make sure this is passed!
+        'region_choices': region_choices,  # <-- Add this line
     })
 
     # Remove cookie for the specific product-size combination
@@ -1499,3 +1505,17 @@ def create_gcash_payment(request):
 
 def payment_cancel(request):
     return HttpResponse("❌ Payment canceled.")
+
+@login_required
+def update_address(request):
+    if request.method == 'POST':
+        customer = Customer.objects.get(user=request.user)
+        customer.full_name = request.POST.get('full_name')
+        customer.region = request.POST.get('region')  # <-- Add this line
+        customer.city = request.POST.get('city')
+        customer.barangay = request.POST.get('brgy')
+        customer.street_address = request.POST.get('street')
+        customer.postal_code = request.POST.get('postal_code')
+        customer.save()
+        return redirect('cart')
+    return redirect('cart')

@@ -87,6 +87,7 @@ urlpatterns = [
     path('pay-with-gcash/', views.create_gcash_payment, name='pay_with_gcash'),
     path('payment-success/', views.payment_success_view, name='payment_success'),
     path('payment-cancel/', views.payment_cancel, name='payment_cancel'),
+    path('update-address/', views.update_address, name='update-address'),
 ] + static(settings.MEDIA_URL, document_root=settings.STATIC_ROOT) if settings.DEBUG else []
 
 
