@@ -292,6 +292,58 @@
 
 <br><br><br><br>
 
+<!-- Place this just above your cart table (after <br><br><br><br> or at the top of your cart content) -->
+<div class="address-card" style="max-width: 420px; margin: 0 auto 30px auto; background: #f8fafc; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.07); padding: 24px 28px 20px 28px; position: relative;">
+  <div style="display: flex; align-items: center; justify-content: space-between;">
+    <div>
+      <div style="font-size: 17px; font-weight: 700; color: #222;">Shipping Address</div>
+      <div style="font-size: 13px; color: #888;">Current delivery address</div>
+    </div>
+    <button type="button" onclick="showAddressForm()" class="btn btn-outline-primary btn-sm" style="font-size: 13px; font-weight: 600; border-radius: 6px;">Change</button>
+  </div>
+  <div id="cart-address-display" style="margin-top: 18px;">
+    <div style="font-size: 15px; font-weight: 600; color: #333; margin-bottom: 2px;">{{ user_address.full_name }}</div>
+    <div style="font-size: 14px; color: #444;">{{ user_address.street }}, Brgy. {{ user_address.brgy }}</div>
+    <div style="font-size: 14px; color: #444;">{{ user_address.city }}, {{ user_address.postal_code }}</div>
+  </div>
+  <!-- Modal-style address form -->
+<form id="cart-address-form" method="post" action="{% url 'update-address' %}" style="display:none; margin-top:18px; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); padding: 18px;">
+  {% csrf_token %}
+  <div class="form-group" style="margin-bottom: 10px;">
+    <label style="font-size: 13px;">Full Name</label>
+    <input type="text" name="full_name" value="{{ user_address.full_name }}" class="form-control" required>
+  </div>
+  <div class="form-group" style="margin-bottom: 10px;">
+  <label style="font-size: 13px;">Region</label>
+  <select name="region" id="region-select" class="form-control" required onchange="updateDeliveryFee()">
+    {% for code, name in region_choices %}
+      <option value="{{ code }}" {% if user_address.region == code %}selected{% endif %}>{{ name }}</option>
+    {% endfor %}
+    </select>
+  </div>
+  <div class="form-group" style="margin-bottom: 10px;">
+    <label style="font-size: 13px;">City</label>
+    <input type="text" name="city" value="{{ user_address.city }}" class="form-control" required>
+  </div>
+  <div class="form-group" style="margin-bottom: 10px;">
+    <label style="font-size: 13px;">Barangay</label>
+    <input type="text" name="brgy" value="{{ user_address.barangay }}" class="form-control" required>
+  </div>
+  <div class="form-group" style="margin-bottom: 10px;">
+    <label style="font-size: 13px;">Street</label>
+    <input type="text" name="street" value="{{ user_address.street_address }}" class="form-control" required>
+  </div>
+  <div class="form-group" style="margin-bottom: 16px;">
+    <label style="font-size: 13px;">Postal Code</label>
+    <input type="text" name="postal_code" value="{{ user_address.postal_code }}" class="form-control" required>
+  </div>
+  <div style="display: flex; gap: 10px;">
+    <button type="submit" class="btn btn-primary btn-sm" style="font-weight: 600;">Save</button>
+    <button type="button" onclick="hideAddressForm()" class="btn btn-link btn-sm" style="color: #888;">Cancel</button>
+  </div>
+</form>
+</div>
+
 <div class="container">
   <div class="panel panel-success">
     <div class="panel-heading">
@@ -485,4 +537,14 @@
 
 <br><br><br><br><br>
 
+<script>
+function showAddressForm() {
+  document.getElementById('cart-address-display').style.display = 'none';
+  document.getElementById('cart-address-form').style.display = 'block';
+}
+function hideAddressForm() {
+  document.getElementById('cart-address-form').style.display = 'none';
+  document.getElementById('cart-address-display').style.display = 'block';
+}
+</script>
 {% endblock content %}
