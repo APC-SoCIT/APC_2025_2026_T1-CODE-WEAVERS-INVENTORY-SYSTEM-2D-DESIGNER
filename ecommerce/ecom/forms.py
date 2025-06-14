@@ -21,9 +21,40 @@ class CustomerForm(forms.ModelForm):
         fields=['street_address', 'city', 'barangay', 'postal_code', 'mobile', 'profile_pic']
 
 class ProductForm(forms.ModelForm):
+    size = forms.ChoiceField(choices=[
+        ('XS', 'Extra Small'),
+        ('S', 'Small'),
+        ('M', 'Medium'),
+        ('L', 'Large'),
+        ('XL', 'Extra Large'),
+    ], required=True)
+    quantity = forms.IntegerField(min_value=0, required=False)
+
     class Meta:
         model=models.Product
-        fields=['name','price','description','product_image','quantity','size']
+        fields=['name','price','description','product_image']
+
+    def __init__(self, *args, **kwargs):
+        self.product_instance = kwargs.get('instance', None)
+        super().__init__(*args, **kwargs)
+
+    def clean(self):
+        cleaned_data = super().clean()
+        size = cleaned_data.get('size')
+        quantity = cleaned_data.get('quantity')
+
+        if self.product_instance:
+            # Check if size exists for this product
+            from .models import ProductSize
+            if size:
+                exists = ProductSize.objects.filter(product=self.product_instance, size=size).exists()
+                if not exists and (quantity is None or quantity == 0):
+                    self.add_error('quantity', 'Quantity is required when adding a new size.')
+        else:
+            if quantity is None or quantity == 0:
+                self.add_error('quantity', 'Quantity is required.')
+
+        return cleaned_data
 
 #address of shipment
 class AddressForm(forms.Form):

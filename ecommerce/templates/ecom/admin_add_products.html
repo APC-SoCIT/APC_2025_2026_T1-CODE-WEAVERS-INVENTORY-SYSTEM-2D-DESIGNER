@@ -47,7 +47,7 @@
 </head>
 <br><br><br><br><br><br>
 <!------ update page for doctor by admin(sumit)  ---------->
-<form method="post" enctype="multipart/form-data">
+<form id="addProductForm" method="post" enctype="multipart/form-data">
     {% csrf_token %}
     <div class="container register-form">
         <div class="form">
@@ -71,7 +71,24 @@
                         </div>
                         <div class="form-group">
                             <label for="">Product Image</label> {% render_field productForm.product_image class="form-control" placeholder="product_image" %}
+                            <img id="imagePreview" src="#" alt="Image Preview" style="display:none; max-width: 200px; margin-top: 10px; border-radius: 8px;" />
                         </div>
+                        <script>
+                            document.addEventListener('DOMContentLoaded', function() {
+                                const input = document.querySelector('input[name="product_image"]');
+                                const preview = document.getElementById('imagePreview');
+                                input.addEventListener('change', function(event) {
+                                    const [file] = input.files;
+                                    if (file) {
+                                        preview.src = URL.createObjectURL(file);
+                                        preview.style.display = 'block';
+                                    } else {
+                                        preview.src = '#';
+                                        preview.style.display = 'none';
+                                    }
+                                });
+                            });
+                        </script>
                         <div class="form-group">
                             <label for="">Quantity</label> {% render_field productForm.quantity class="form-control" placeholder="0" type="number" min="0" %}
                         </div>
@@ -87,5 +104,37 @@
         </div>
     </div>
 </form>
+
+<script>
+document.getElementById('addProductForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const form = e.target;
+    const formData = new FormData(form);
+
+    fetch("{% url 'admin-add-product' %}", {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRFToken': form.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Product added successfully!');
+            // Optionally, update the product list dynamically here or reload the page
+            window.location.href = "{% url 'admin-products' %}";
+        } else {
+            alert('Failed to add product. Please check the form and try again.');
+            console.error(data.errors);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while adding the product.');
+    });
+});
+</script>
 
 {% endblock content %}

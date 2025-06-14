@@ -474,8 +474,8 @@ def update_customer_view(request,pk):
 # admin view the product
 @login_required(login_url='adminlogin')
 def admin_products_view(request):
-    # Get all products and order them by size
-    products = models.Product.objects.all().order_by('size')
+    # Get all products and order them by id descending (newest first)
+    products = models.Product.objects.all().order_by('-id')
     return render(request, 'ecom/admin_products.html', {'products': products})
 
 
@@ -486,28 +486,98 @@ def admin_add_product_view(request):
     if request.method=='POST':
         productForm=forms.ProductForm(request.POST, request.FILES)
         if productForm.is_valid():
-            productForm.save()
-        return HttpResponseRedirect('admin-products')
+            new_product = productForm.save()
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                # Return JSON response with new product data
+                data = {
+                    'id': new_product.id,
+                    'name': new_product.name,
+                    'description': new_product.description,
+                    'price': new_product.price,
+                    'quantity': new_product.quantity,
+                    'size': new_product.size,
+                    'product_image_url': new_product.product_image.url if new_product.product_image else '',
+                }
+                return JsonResponse({'success': True, 'product': data})
+            else:
+                # After saving, redirect to admin-products page to show updated list including new image
+                return HttpResponseRedirect(f'/admin-products?new=1&new_product_id={new_product.id}')
+        else:
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                # Return form errors as JSON
+                errors = productForm.errors.as_json()
+                return JsonResponse({'success': False, 'errors': errors})
+            else:
+                # If form is invalid, render the form with errors
+                return render(request,'ecom/admin_add_products.html',{'productForm':productForm})
     return render(request,'ecom/admin_add_products.html',{'productForm':productForm})
 
 
-@login_required(login_url='adminlogin')
-def delete_product_view(request,pk):
-    product=models.Product.objects.get(id=pk)
-    product.delete()
-    return redirect('admin-products')
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+from django.http import JsonResponse
 
+import logging
+
+logger = logging.getLogger(__name__)
 
 @login_required(login_url='adminlogin')
-def update_product_view(request,pk):
-    product=models.Product.objects.get(id=pk)
-    productForm=forms.ProductForm(instance=product)
-    if request.method=='POST':
-        productForm=forms.ProductForm(request.POST,request.FILES,instance=product)
-        if productForm.is_valid():
-            productForm.save()
+@require_POST
+@csrf_exempt
+def delete_product_view(request, pk):
+    try:
+        product = models.Product.objects.get(id=pk)
+        product.delete()
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({'success': True})
+        else:
             return redirect('admin-products')
-    return render(request,'ecom/admin_update_product.html',{'productForm':productForm})
+    except models.Product.DoesNotExist:
+        logger.error(f"Product with id {pk} not found for deletion.")
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({'success': False, 'error': 'Product not found'}, status=404)
+        else:
+            return redirect('admin-products')
+    except Exception as e:
+        logger.error(f"Error deleting product with id {pk}: {str(e)}")
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({'success': False, 'error': 'Error deleting product: ' + str(e)}, status=500)
+        else:
+            return redirect('admin-products')
+
+
+@login_required(login_url='adminlogin')
+def update_product_view(request, pk):
+    product = models.Product.objects.get(id=pk)
+    if request.method == 'POST':
+        productForm = forms.ProductForm(request.POST, request.FILES, instance=product)
+        if productForm.is_valid():
+            new_size = productForm.cleaned_data.get('size')
+            product_name = productForm.cleaned_data.get('name')
+            # Check if size changed
+            if new_size != product.size:
+                # Check if product with same name and new size exists
+                try:
+                    existing_product = models.Product.objects.get(name=product_name, size=new_size)
+                    # Update existing product
+                    existing_product.description = productForm.cleaned_data.get('description')
+                    existing_product.price = productForm.cleaned_data.get('price')
+                    existing_product.quantity = productForm.cleaned_data.get('quantity')
+                    if 'product_image' in request.FILES:
+                        existing_product.product_image = request.FILES['product_image']
+                    existing_product.save()
+                except models.Product.DoesNotExist:
+                    # Create new product with new size
+                    new_product = productForm.save(commit=False)
+                    new_product.id = None  # Ensure new object
+                    new_product.save()
+            else:
+                # Size same, update current product
+                productForm.save()
+            return redirect('admin-products')
+    else:
+        productForm = forms.ProductForm(instance=product)
+    return render(request, 'ecom/admin_update_product.html', {'productForm': productForm})
 
 
 @login_required(login_url='adminlogin')
