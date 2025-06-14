@@ -46,41 +46,102 @@
 
 
     <script>
-        const philippinesCities = ['Manila', 'Quezon City', 'Davao', 'Cebu', 'Makati',];
-        const usCities = ['New York', 'Los Angeles', 'Chicago', 'Houston', 'Phoenix'];
-        
-        const barangays = {
-            'Manila': ['Barangay 1', 'Barangay 2', 'Barangay 3'],
-            'Quezon City': ['Bagong Silangan', 'Batasan Hills', 'Commonwealth'],
-            'Davao': ['Barangay 1-A', 'Barangay 2-A', 'Barangay 3-A'],
-            'Cebu': ['Apas', 'Banilad', 'Basak'],
-            'Makati': ['Bangkal', 'Bel-Air', 'Carmona'],
-            'New York': ['Manhattan', 'Brooklyn', 'Queens'],
-            'Los Angeles': ['Downtown', 'Hollywood', 'Venice'],
-            'Chicago': ['Loop', 'River North', 'Gold Coast'],
-            'Houston': ['Downtown', 'Midtown', 'Museum District'],
-            'Phoenix': ['Downtown', 'Arcadia', 'Biltmore']
+        window.onload = function() {
+            updateRegions();
+            // Restore previous values if present (for validation errors or editing)
+            const prevRegion = '{{ customerForm.region.value|escapejs }}';
+            const prevCity = '{{ customerForm.city.value|escapejs }}';
+            const prevBarangay = '{{ customerForm.barangay.value|escapejs }}';
+            if (prevRegion) {
+                document.getElementById('region').value = prevRegion;
+                updateCities();
+                if (prevCity) {
+                    document.getElementById('city').value = prevCity;
+                    updateBarangays();
+                    if (prevBarangay) {
+                        document.getElementById('barangay').value = prevBarangay;
+                    }
+                }
+            } else {
+                updateCities();
+                updateBarangays();
+            }
         };
 
+const philippineRegions = [
+    { code: 'NCR', name: 'National Capital Region (NCR)' },
+    { code: 'CAR', name: 'Cordillera Administrative Region (CAR)' },
+    { code: 'R1', name: 'Ilocos Region (Region I)' },
+    { code: 'R2', name: 'Cagayan Valley (Region II)' },
+    { code: 'R3', name: 'Central Luzon (Region III)' },
+    { code: 'R4A', name: 'CALABARZON (Region IV-A)' },
+    { code: 'R4B', name: 'MIMAROPA (Region IV-B)' },
+    { code: 'R5', name: 'Bicol Region (Region V)' },
+    { code: 'R6', name: 'Western Visayas (Region VI)' },
+    { code: 'R7', name: 'Central Visayas (Region VII)' },
+    { code: 'R8', name: 'Eastern Visayas (Region VIII)' },
+    { code: 'R9', name: 'Zamboanga Peninsula (Region IX)' },
+    { code: 'R10', name: 'Northern Mindanao (Region X)' },
+    { code: 'R11', name: 'Davao Region (Region XI)' },
+    { code: 'R12', name: 'SOCCSKSARGEN (Region XII)' },
+    { code: 'R13', name: 'Caraga (Region XIII)' },
+    { code: 'BARMM', name: 'Bangsamoro (BARMM)' }
+];
+
+const philippineCities = {
+    'National Capital Region (NCR)': ['Manila', 'Quezon City', 'Makati', 'Taguig', 'Pasig'],
+    'CALABARZON (Region IV-A)': ['Calamba', 'Antipolo', 'Lipa', 'Lucena', 'Dasmariñas'],
+    'Central Luzon (Region III)': ['San Fernando', 'Angeles', 'Tarlac City', 'Balanga'],
+    'Central Visayas (Region VII)': ['Cebu City', 'Lapu-Lapu', 'Mandaue', 'Dumaguete'],
+    'Davao Region (Region XI)': ['Davao City', 'Tagum', 'Panabo', 'Digos'],
+    'Western Visayas (Region VI)': ['Iloilo City', 'Bacolod', 'Roxas City'],
+    'Ilocos Region (Region I)': ['Laoag City', 'San Fernando City', 'Vigan'],
+    'Bangsamoro (BARMM)': ['Cotabato City', 'Marawi City'],
+    'Cordillera Administrative Region (CAR)': ['Baguio City', 'Tabuk', 'La Trinidad']
+};
+
+const barangays = {
+    'Manila': ['Tondo', 'Binondo', 'Ermita', 'San Andres', 'Santa Mesa'],
+    'Quezon City': ['Commonwealth', 'Batasan Hills', 'Bagong Silangan', 'Pinyahan', 'Tandang Sora'],
+    'Makati': ['Bel-Air', 'Poblacion', 'Bangkal', 'San Antonio', 'Guadalupe Viejo'],
+    'Cebu City': ['Banilad', 'Lahug', 'Guadalupe', 'Pardo', 'Talamban'],
+    'Davao City': ['Agdao', 'Bangkal', 'Bunawan', 'Talomo', 'Toril'],
+    'Iloilo City': ['Jaro', 'Mandurriao', 'Lapuz', 'La Paz', 'Molo'],
+    'Baguio City': ['Asin Road', 'Aurora Hill', 'Burnham-Legarda', 'Camp 7', 'Loakan Proper'],
+    'Calamba': ['Canlubang', 'Halang', 'Paciano Rizal', 'Parian', 'Lecheria'],
+    'Antipolo': ['San Jose', 'Dela Paz', 'Cupang', 'Dalig', 'Bagong Nayon'],
+    'San Fernando': ['Sindalan', 'San Agustin', 'Sto. Rosario', 'Maimpis', 'Del Pilar']
+};
+
+
+        function updateRegions() {
+            const regionSelect = document.getElementById('region');
+            regionSelect.innerHTML = '<option value="">Select Region</option>';
+            philippineRegions.forEach(region => {
+                const option = document.createElement('option');
+                option.value = region.code;
+                option.textContent = region.name;
+                regionSelect.appendChild(option);
+            });
+            updateCities();
+        }
+
         function updateCities() {
-            const countrySelect = document.getElementById('country');
+            const regionSelect = document.getElementById('region');
             const citySelect = document.getElementById('city');
-            const selectedCountry = countrySelect.value;
-            
-            // Clear current cities
+            const selectedRegionCode = regionSelect.value;
+            // Find the region name from the code
+            const regionObj = philippineRegions.find(r => r.code === selectedRegionCode);
+            const regionName = regionObj ? regionObj.name : '';
             citySelect.innerHTML = '<option value="">Select City</option>';
-            
-            // Add new cities based on country
-            const cities = selectedCountry === 'PH' ? philippinesCities : usCities;
+            const cities = philippineCities[regionName] || [];
             cities.forEach(city => {
                 const option = document.createElement('option');
                 option.value = city;
                 option.textContent = city;
                 citySelect.appendChild(option);
             });
-            
-            // Clear barangay selection when country changes
-            document.getElementById('barangay').innerHTML = '<option value="">Select Barangay</option>';
+            updateBarangays();
         }
 
         function updateBarangays() {
@@ -88,10 +149,8 @@
             const barangaySelect = document.getElementById('barangay');
             const selectedCity = citySelect.value;
             
-            // Clear current barangays
             barangaySelect.innerHTML = '<option value="">Select Barangay</option>';
             
-            // Add new barangays based on city
             const cityBarangays = barangays[selectedCity] || [];
             cityBarangays.forEach(barangay => {
                 const option = document.createElement('option');
@@ -126,42 +185,39 @@
                             {% render_field userForm.first_name class="form-control" placeholder="First Name" %}
                         </div>
                         <div class="form-group">
-                            {% render_field userForm.username class="form-control" placeholder="Username" %}
-                        </div>
-                        <div class="form-group">
-                            {% render_field customerForm.mobile class="form-control" placeholder="Mobile" %}
-                        </div>
-                        <div class="form-group">
-                            {% render_field customerForm.street_address class="form-control" placeholder="Street Address" %}
-                        </div>
-                        <div class="form-group">
-                            <select name="country" class="form-control" id="country" onchange="updateCities()">
-                                <option value="">Select Country</option>
-                                <option value="PH" {% if customerForm.instance.country == 'PH' %}selected{% endif %}>Philippines</option>
-                                <option value="US" {% if customerForm.instance.country == 'US' %}selected{% endif %}>United States</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <select name="city" class="form-control" id="city" onchange="updateBarangays()">
-                                <option value="">Select City</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <select name="barangay" class="form-control" id="barangay">
-                                <option value="">Select Barangay</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
                             {% render_field userForm.last_name class="form-control" placeholder="Last Name" %}
+                        </div>
+                        <div class="form-group">
+                            {% render_field userForm.username class="form-control" placeholder="Username" %}
                         </div>
                         <div class="form-group">
                             {% render_field userForm.password class="form-control" placeholder="Password" %}
                         </div>
                         <div class="form-group">
+                            {% render_field userForm.confirm_password class="form-control" placeholder="Confirm Password" %}
+                        </div>
+                        <div class="form-group">
+                            {% render_field customerForm.street_address class="form-control" placeholder="Street Address" %}
+                        </div>
+                        <div class="form-group">
                             {% render_field customerForm.postal_code class="form-control" placeholder="Postal Code" %}
                         </div>
+                        <div class="form-group">
+                            {% render_field customerForm.mobile class="form-control" placeholder="Mobile" %}
+                        </div>
+                        <div class="form-group">
+                            <!-- Replace the country select with region select -->
+                            <div class="form-group">
+                                {% render_field customerForm.region class="form-control" id="region" onchange="updateCities()" %}
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            {% render_field customerForm.city class="form-control" id="city" onchange="updateBarangays()" %}
+                        </div>
+                        <div class="form-group">
+                            {% render_field customerForm.barangay class="form-control" id="barangay" %}
+                        </div>
+                    </div>
 
                     </div>
                 </div>

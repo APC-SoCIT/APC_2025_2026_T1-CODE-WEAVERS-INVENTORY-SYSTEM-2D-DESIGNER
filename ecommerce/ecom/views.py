@@ -1,4 +1,5 @@
 from django.shortcuts import render,redirect,reverse,get_object_or_404
+import decimal
 from . import forms,models
 from django.http import HttpResponseRedirect,HttpResponse, JsonResponse
 from django.core.mail import send_mail
@@ -86,23 +87,27 @@ def adminclick_view(request):
 
 
 def customer_signup_view(request):
-    userForm=forms.CustomerUserForm()
-    customerForm=forms.CustomerForm()
-    mydict={'userForm':userForm,'customerForm':customerForm}
-    if request.method=='POST':
-        userForm=forms.CustomerUserForm(request.POST)
-        customerForm=forms.CustomerForm(request.POST,request.FILES)
+    userForm = forms.CustomerUserForm()
+    customerForm = forms.CustomerSignupForm()
+    mydict = {'userForm': userForm, 'customerForm': customerForm}
+    if request.method == 'POST':
+        userForm = forms.CustomerUserForm(request.POST)
+        customerForm = forms.CustomerSignupForm(request.POST, request.FILES)
         if userForm.is_valid() and customerForm.is_valid():
-            user=userForm.save()
-            user.set_password(user.password)
+            user = userForm.save(commit=False)
+            user.set_password(userForm.cleaned_data['password'])
             user.save()
-            customer=customerForm.save(commit=False)
-            customer.user=user
+            customer = customerForm.save(commit=False)
+            customer.user = user
             customer.save()
             my_customer_group = Group.objects.get_or_create(name='CUSTOMER')
             my_customer_group[0].user_set.add(user)
-        return HttpResponseRedirect('customerlogin')
-    return render(request,'ecom/customersignup.html',context=mydict)
+            login(request, user)  # Log the user in after registration
+            return redirect('customer-home')  # Redirect to customer home page after signup
+        else:
+            # Show errors in the template
+            mydict = {'userForm': userForm, 'customerForm': customerForm}
+    return render(request, 'ecom/customersignup.html', context=mydict)
 
 def customer_login(request):
   if request.method == 'POST':
@@ -206,6 +211,8 @@ def admin_dashboard_view(request):
     product_sales = {}
 
     for order in all_delivered_orders:
+        if not order.product:
+            continue  # Skip orders with missing product
         order_total = order.product.price * order.quantity
         total_sales += order_total
 
@@ -227,6 +234,8 @@ def admin_dashboard_view(request):
                 last_month_sales += order_total
 
     for order in delivered_orders:
+        if not order.product:
+            continue  # Skip orders with missing product
         order.total_price = order.product.price * order.quantity  # Add total_price attribute
         recent_orders_products.append(order.product)
         recent_orders_customers.append(order.customer)
@@ -351,7 +360,7 @@ def admin_view_booking_view(request):
 
 @login_required(login_url='adminlogin')
 def admin_view_processing_orders(request):
-    orders = models.Orders.objects.filter(status='Processing')
+    orders = models.Orders.objects.filter(status__in=['Pending', 'Processing'])
     return prepare_admin_order_view(request, orders, 'Processing', 'ecom/admin_view_orders.html')
 
 @login_required(login_url='adminlogin')
@@ -370,35 +379,35 @@ def admin_view_delivered_orders(request):
     return prepare_admin_order_view(request, orders, 'Delivered', 'ecom/admin_view_orders.html')
 
 def prepare_admin_order_view(request, orders, status, template):
-    ordered_products = []
-    ordered_bys = []
-    order_items_list = []
+    # Order the orders by created_at descending to show new orders first
+    orders = orders.order_by('-created_at')
     
+    # Prepare a list of orders with their customer, shipping address, and order items
+    orders_data = []
     for order in orders:
         order_items = models.OrderItem.objects.filter(order=order)
-        products = []
-        items_info = {}
-        
-        # Group items by product and sum quantities
+        items = []
         for item in order_items:
-            if item.product:
-                if item.product.id in items_info:
-                    items_info[item.product.id]['quantity'] += item.quantity
-                else:
-                    items_info[item.product.id] = {
-                        'product': item.product,
-                        'quantity': item.quantity
-                    }
-                    products.append(item.product)
-        
-        customer_queryset = models.Customer.objects.filter(id=order.customer.id) if order.customer else []
-        
-        ordered_products.append(products)
-        ordered_bys.append(customer_queryset)
-        order_items_list.append(list(items_info.values()))
-    
+            items.append({
+                'product': item.product,
+                'quantity': item.quantity,
+                'size': item.size,
+                'price': item.price,
+                'product_image': item.product.product_image.url if item.product.product_image else None,
+            })
+        # Use order.address if available, else fallback to customer's full address
+        shipping_address = order.address if order.address else (order.customer.get_full_address if order.customer else '')
+        orders_data.append({
+            'order': order,
+            'customer': order.customer,
+            'shipping_address': shipping_address,
+            'order_items': items,
+            'status': order.status,
+            'order_id': order.order_ref,
+            'order_date': order.order_date,
+        })
     return render(request, template, {
-        'data': zip(ordered_products, ordered_bys, orders, order_items_list),
+        'orders_data': orders_data,
         'status': status
     })
 
@@ -720,7 +729,13 @@ def add_to_cart_view(request, pk):
     size = request.POST.get('size', 'M')  # Default to M if not provided
     quantity = int(request.POST.get('quantity', 1))  # Default to 1 if not provided
     
-    product = models.Product.objects.get(id=pk)
+    # Check if product with given id and size exists
+    try:
+        product = models.Product.objects.get(id=pk, size=size)
+    except models.Product.DoesNotExist:
+        messages.error(request, f'Sorry, size {size} is not available for this product.')
+        return redirect('customer-home')
+    
     # Check if product quantity is sufficient
     if product.quantity < quantity:
         messages.error(request, f'Sorry, only {product.quantity} pcs available for {product.name} (Size: {size}).')
@@ -771,6 +786,7 @@ def add_to_cart_view(request, pk):
     return response
 
 def cart_view(request):
+
     # For cart counter
     if 'product_ids' in request.COOKIES:
         product_ids = request.COOKIES['product_ids']
@@ -781,6 +797,23 @@ def cart_view(request):
 
     products = []
     total = 0
+    delivery_fee = 0
+    region = None
+    if request.user.is_authenticated:
+        try:
+            customer = models.Customer.objects.get(user=request.user)
+            region = customer.region
+        except models.Customer.DoesNotExist:
+            region = None
+    # Set delivery fee based on region
+    if region == 'NCR':
+        delivery_fee = 49
+    elif region == 'CAR':
+        delivery_fee = 59
+    elif region:
+        delivery_fee = 69
+    else:
+        delivery_fee = 0
 
     if 'product_ids' in request.COOKIES:
         product_ids = request.COOKIES['product_ids']
@@ -818,9 +851,17 @@ def cart_view(request):
                                 'quantity': quantity
                             })
 
+    # VAT calculation
+    vat_rate = 12
+    vat_amount = total * (vat_rate / 100)
+    grand_total = total + delivery_fee + vat_amount
     return render(request, 'ecom/cart.html', {
         'products': products,
         'total': total,
+        'delivery_fee': delivery_fee,
+        'vat_rate': vat_rate,
+        'vat_amount': vat_amount,
+        'grand_total': grand_total,
         'product_count_in_cart': product_count_in_cart
     })
 
@@ -1103,20 +1144,36 @@ def payment_success_view(request):
     return response
 
 def place_order(request):
-  print('Place Order view function executed')
-  if request.method == 'POST':
-    print('POST request received')
-    design_data = request.POST.get('design_data')
-    print('Design data:', design_data)
-    # Process the design data and create a new order
-    order = Orders.objects.create(
-      # Add the order details here
-    )
-    print('Order created:', order)
-    return JsonResponse({'message': 'Order placed successfully'})
-  else:
-    print('Invalid request method')
-    return JsonResponse({'message': 'Invalid request method'})
+    print('Place Order view function executed')
+    if request.method == 'POST':
+        print('POST request received')
+        customer = models.Customer.objects.get(user_id=request.user.id)
+        
+        # Get address from cookies if available, otherwise use customer's profile address
+        address = request.COOKIES.get('address', customer.get_full_address)
+        mobile = request.COOKIES.get('mobile', customer.mobile)
+        
+        # Create the order with the appropriate address
+        order = Orders.objects.create(
+            customer=customer,
+            email=request.user.email,
+            address=address,
+            mobile=mobile,
+            status='Pending',
+            order_date=timezone.now()
+        )
+        
+        design_data = request.POST.get('design_data')
+        if design_data:
+            # Handle custom design data if present
+            print('Design data:', design_data)
+            # Add custom design processing logic here
+            
+        print('Order created:', order)
+        return JsonResponse({'message': 'Order placed successfully'})
+    else:
+        print('Invalid request method')
+        return JsonResponse({'message': 'Invalid request method'}, status=400)
 
 @login_required(login_url='customerlogin')
 @user_passes_test(is_customer)
@@ -1199,20 +1256,45 @@ def download_invoice_view(request, orderID):
     # Use the stored shipment address from the order
     shipment_address = order.address if order.address else order.customer.address
 
-    # Calculate total price for the whole order
-    total_price = 0
+    # Calculate item totals and order totals
     for item in order_items:
-        total_price += item.price * item.quantity
+        item.unit_price = item.price  # Add unit price for display
+        item.total = item.price * item.quantity
+
+    subtotal = sum(item.total for item in order_items)
+    
+    # --- Delivery Fee Logic ---
+    delivery_fee = 0
+    region = None
+    if order.customer and hasattr(order.customer, 'region'):
+        region = order.customer.region
+    if region == 'NCR':
+        delivery_fee = 49
+    elif region == 'CAR':
+        delivery_fee = 59
+    elif region:
+        delivery_fee = 69
+    else:
+        delivery_fee = 0
+    # --- End Delivery Fee Logic ---
+
+    vat_rate = decimal.Decimal('12')  # Convert VAT rate to Decimal
+    vat_amount = subtotal * (vat_rate / decimal.Decimal('100'))  # All calculations use Decimal
+    total_price = subtotal + vat_amount + delivery_fee
 
     mydict = {
         'orderDate': order.order_date,
         'customerName': request.user,
         'customerEmail': order.email,
         'customerMobile': order.mobile,
-        'shipmentAddress': shipment_address,  # Ensure this is used
+        'shipmentAddress': shipment_address,
         'orderStatus': order.status,
         'orderItems': order_items,
-        'totalPrice': total_price,
+        'subtotal': subtotal,
+        'vat_rate': vat_rate,
+        'vat_amount': vat_amount,
+        'delivery_fee': delivery_fee,
+        'totalPrice': total_price
     }
     return render_to_pdf('ecom/download_invoice.html', mydict)
 
@@ -1229,22 +1311,46 @@ def my_profile_view(request):
 
 @user_passes_test(is_customer)
 def edit_profile_view(request):
-    customer=models.Customer.objects.get(user_id=request.user.id)
-    user=models.User.objects.get(id=customer.user_id)
-    userForm=forms.CustomerUserForm(instance=user)
-    customerForm=forms.CustomerForm(request.FILES,instance=customer)
-    mydict={'userForm':userForm,'customerForm':customerForm}
-    if request.method=='POST':
-        userForm=forms.CustomerUserForm(request.POST,instance=user)
-        customerForm=forms.CustomerForm(request.POST,request.FILES,instance=customer)
+    customer = models.Customer.objects.get(user_id=request.user.id)
+    user = models.User.objects.get(id=customer.user_id)
+    
+    if request.method == 'POST':
+        userForm = forms.CustomerUserForm(request.POST, instance=user)
+        customerForm = forms.CustomerForm(request.POST, request.FILES, instance=customer)
+        
         if userForm.is_valid() and customerForm.is_valid():
-            user=userForm.save()
-            user.set_password(user.password)
+            # Save user without changing password if it's empty
+            if not userForm.cleaned_data['password']:
+                del userForm.cleaned_data['password']
+                user = userForm.save(commit=False)
+            else:
+                user = userForm.save(commit=False)
+                user.set_password(userForm.cleaned_data['password'])
             user.save()
-            customerForm.save()
-            messages.success(request, 'Account Information saved!')
-            return render(request,'ecom/edit_profile.html',context=mydict)
-    return render(request,'ecom/edit_profile.html',context=mydict)
+            
+            # Save customer form
+            customer = customerForm.save(commit=False)
+            customer.user = user
+            customer.save()
+            
+            messages.success(request, 'Profile updated successfully!')
+            return redirect('my-profile')
+        else:
+            # Add specific error messages for each form
+            for field, errors in userForm.errors.items():
+                for error in errors:
+                    messages.error(request, f'{field}: {error}')
+            for field, errors in customerForm.errors.items():
+                for error in errors:
+                    messages.error(request, f'{field}: {error}')
+    else:
+        userForm = forms.CustomerUserForm(instance=user)
+        customerForm = forms.CustomerForm(instance=customer)
+    
+    return render(request, 'ecom/edit_profile.html', {
+        'userForm': userForm,
+        'customerForm': customerForm
+    })
 
 
 

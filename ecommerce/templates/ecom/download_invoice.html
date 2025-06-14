@@ -165,9 +165,9 @@
               <td>
                 Product Image :<br>
                  <img src="{% static productImage.url %}" alt="Profile Pic" height="40px" width="40px" /><br><br>
-                <td>Product Price: ₱{{productPrice}}</td>
+                <td>Product Price: ₱{{productPrice|floatformat:2|intcomma}}</td>
                 <td>Quantity: {{quantity}}</td>
-                <td>Total Price: ₱{{totalPrice}}</td>
+                <td>Total Price: ₱{{totalPrice|floatformat:2|intcomma}}</td>
               </td>
               <td>
                 Product: <br> {{productName}}<br><br>
@@ -181,6 +181,51 @@
 
 
 
+      <tr class="information">
+        <td colspan="2">
+          <table>
+            <tr>
+              <th>Product</th>
+              <th>Size</th>
+              <th>Quantity</th>
+              <th>Unit Price</th>
+              <th>Total</th>
+            </tr>
+            {% for item in orderItems %}
+            <tr>
+              <td>{{ item.product.name }}</td>
+              <td>{{ item.size }}</td>
+              <td>{{ item.quantity }}</td>
+              <td>₱{{ item.price|floatformat:2|intcomma }}</td>
+              <td>₱{{ item.total|floatformat:2|intcomma }}</td>
+            </tr>
+            {% endfor %}
+          </table>
+        </td>
+      </tr>
+
+      <tr class="total">
+        <td colspan="2">
+          <table>
+            <tr>
+              <td>Subtotal:</td>
+              <td>₱{{ subtotal|floatformat:2|intcomma }}</td>
+            </tr>
+            <tr>
+              <td>VAT ({{ vat_rate }}%):</td>
+              <td>₱{{ vat_amount|floatformat:2|intcomma }}</td>
+            </tr>
+            <tr>
+              <td>Delivery fee:</td>
+              <td>₱{{ delivery_fee|floatformat:2|intcomma }}</td>
+            </tr>
+            <tr>
+              <td><strong>Total:</strong></td>
+              <td><strong>₱{{ totalPrice|floatformat:2|intcomma }}</strong></td>
+            </tr>
+          </table>
+        </td>
+      </tr>
       <tr class="information">
         <td colspan="2">
           <table>

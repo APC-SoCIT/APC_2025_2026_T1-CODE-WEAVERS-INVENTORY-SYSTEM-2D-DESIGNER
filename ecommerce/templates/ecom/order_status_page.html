@@ -1,5 +1,6 @@
 {% extends 'ecom/customer_base.html' %}
 {% load static %}
+{% load humanize %}
 {% block content %}
 
 <style media="screen">
@@ -117,7 +118,7 @@
                                 <tfoot>
                                     <tr>
                                         <th colspan="4" style="text-align: right;">Total</th>
-                                        <th>₱{{ order_dict.order.total|default:"0.00" }}</th>
+                                        <th>₱{{ order_dict.order.total|default:"0.00"|intcomma }}</th>
                                     </tr>
                                 </tfoot>
                             </table>

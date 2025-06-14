@@ -27,6 +27,24 @@
     .nav-pills {
       margin-bottom: 20px;
     }
+
+    /* Add border lines between list items in product columns */
+    ul.product-item-list {
+      list-style-type: none;
+      padding-left: 0;
+      margin: 0;
+      border-collapse: separate;
+      border-spacing: 0 4px;
+    }
+
+    ul.product-item-list li {
+      border-bottom: 1px solid #ddd;
+      padding: 4px 0;
+    }
+
+    ul.product-item-list li:last-child {
+      border-bottom: none;
+    }
   </style>
 </head>
 <div class="container">
@@ -83,11 +101,14 @@
           {% if status != 'Delivered' %}
           <th><input type="checkbox" id="select-all" /></th>
           {% endif %}
+          <th>Order ID</th>
+          <th>Order Date</th>
           <th>Customer</th>
           <th>Contact</th>
           <th>Shipping Address</th>
           <th>Product</th>
           <th>Quantity</th>
+          <th>Size</th>
           <th>Image</th>
           <th>Status</th>
           {% if status != 'Delivered' %}
@@ -95,39 +116,50 @@
           {% endif %}
         </tr>
       </thead>
-      {% for item in data %}
-      {% with product=item.0 customer=item.1 order=item.2 %}
+      {% for order_data in orders_data %}
+      {% with order=order_data.order customer=order_data.customer items=order_data.order_items %}
       <tr>
         {% if status != 'Delivered' %}
-        <td>
+        <td rowspan="{{ items|length }}">
           <input type="checkbox" name="order_ids" value="{{ order.id }}" form="bulk-update-form" class="order-checkbox" />
         </td>
         {% endif %}
-        {% for c in customer %}
-        <td> {{c.get_name}}</td>
-        <td>{{c.mobile}}</td>
-        <td>{{order.address}}</td>
-        {% endfor %}
-
-        {% with items=item.3 %}
-        {% for p in product %}
-        {% for item_info in items %}
-        {% if item_info.product == p %}
-        <td> {{p.name}}</td>
-        <td> {{item_info.quantity}}</td>
-        <td> <img src="{% static p.product_image.url %}" alt="Profile Pic" height="40px" width="40px" /></td>
-        <td>{{order.status}}</td>
-        {% endif %}
-        {% endfor %}
-        {% endfor %}
-        {% endwith %}
-        
-        {% if status != 'Delivered' %}
+        <td rowspan="{{ items|length }}">{{ order_data.order_id }}</td>
+        <td rowspan="{{ items|length }}">{{ order_data.order_date }}</td>
+        <td rowspan="{{ items|length }}">{{ customer.get_name }}</td>
+        <td rowspan="{{ items|length }}">{{ customer.mobile }}</td>
+        <td rowspan="{{ items|length }}">{{ customer.street_address }}, {{ customer.barangay }}, {{ customer.city }}, {{ customer.postal_code }}</td>
+        <td>{{ items.0.product.name }}</td>
+        <td>{{ items.0.quantity }}</td>
+        <td>{{ items.0.size }}</td>
         <td>
+          {% if items.0.product_image %}
+          <img src="{% static items.0.product_image %}" alt="Product Image" height="40px" width="40px" />
+          {% else %}
+          No Image
+          {% endif %}
+        </td>
+        <td rowspan="{{ items|length }}">{{ order.status }}</td>
+        {% if status != 'Delivered' %}
+        <td rowspan="{{ items|length }}">
           <a class="btn btn-primary btn-xs" href="{% url 'update-order' order.id  %}"><span class="glyphicon glyphicon-edit"></span></a>
         </td>
         {% endif %}
       </tr>
+      {% for item in items|slice:"1:" %}
+      <tr>
+        <td>{{ item.product.name }}</td>
+        <td>{{ item.quantity }}</td>
+        <td>{{ item.size }}</td>
+        <td>
+          {% if item.product_image %}
+          <img src="{% static item.product_image %}" alt="Product Image" height="40px" width="40px" />
+          {% else %}
+          No Image
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
       {% endwith %}
       {% endfor %}
     </table>

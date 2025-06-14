@@ -3,10 +3,14 @@ from .models import Customer,Product,Orders,Feedback, OrderItem
 
 @admin.register(Customer)
 class CustomerAdmin(admin.ModelAdmin):
-    list_display = ['get_name', 'country', 'city', 'mobile']
+    list_display = ['user', 'country', 'city', 'mobile']
     list_filter = ['country', 'city']
     search_fields = ['user__first_name', 'user__last_name', 'city', 'street_address']
     readonly_fields = ['get_full_address']
+
+    def get_name(self, obj):
+        return obj.get_name
+    get_name.short_description = 'Name'
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
