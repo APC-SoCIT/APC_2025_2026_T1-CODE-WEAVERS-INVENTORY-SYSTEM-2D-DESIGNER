@@ -913,7 +913,6 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-  transition: all 0.3s ease;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1081,54 +1080,46 @@
   <!-- Products Grid -->
   {% if products %}
   <h3 class="text-center mb-4" style="color:#3E454C; font-weight: 600;">{{ word }}</h3>
-  
+
+  <!-- Product data for modal logic -->
+  <script>
+    var productStockData = {
+      {% for product in products %}
+        "{{ product.id }}": {{ product.get_size_stock_json|safe }},
+      {% endfor %}
+    };
+    var productInfoData = {
+      {% for product in products %}
+        "{{ product.id }}": {
+          id: "{{ product.id }}",
+          name: "{{ product.name|escapejs }}",
+          price: "{{ product.price }}",
+          description: "{{ product.description|escapejs }}",
+          image: "{% if product.product_image %}{{ product.product_image.url }}{% endif %}"
+        },
+      {% endfor %}
+    };
+    var sizeLabels = { S: 'Small', XS: 'Extra Small', M: 'Medium', L: 'Large', XL: 'Extra Large' };
+    var sizeOrder = ['XS', 'S', 'M', 'L', 'XL'];
+  </script>
+
   <div class="products-grid">
-    {% for p in products %}
-    <div class="product-card" data-category="all" data-product-id="{{ p.id }}" data-upload-date="{{ p.created_at|date:'Y-m-d' }}" data-original-position="{{ forloop.counter }}">
-      <div class="product-badge" style="display: none;">New</div>
-      <div class="product-wishlist" onclick="toggleWishlist(this, event)"><i class="fa fa-heart-o"></i></div>
-      
+    {% for product in products %}
+    <div class="product-card" data-product-id="{{ product.id }}">
       <div class="product-image-container">
-        {% if p.product_image %}
-          <img class="product-image" src="{% static p.product_image.url %}" alt="{{ p.name }}">
-        {% else %}
-          <img class="product-image" src="{% static 'images/placeholder.jpg' %}" alt="{{ p.name }}">
-        {% endif %}
-        <div class="product-overlay"></div>
-        <div class="quick-view-btn" onclick="openProductDetail('{{ p.id }}')">Quick View</div>
+        <img src="{{ product.product_image.url }}" alt="{{ product.name }}" class="product-image">
+        <button class="quick-view-btn" onclick="openProductDetail('{{ product.id }}')">Quick View</button>
       </div>
-      
-    <div class="product-details">
-      <h3 class="product-name">{{ p.name }}</h3>
-      <p class="product-description">{{ p.description|truncatechars:60 }}</p>
-      
-      <div class="product-rating">
-        <div class="rating-stars">
-          <i class="fa fa-star"></i>
-          <i class="fa fa-star"></i>
-          <i class="fa fa-star"></i>
-          <i class="fa fa-star"></i>
-          <i class="fa fa-star-half-o"></i>
-        </div>
-        <span class="rating-count">(24)</span>
+      <div class="product-details">
+        <div class="product-name">{{ product.name }}</div>
+        <div class="product-description">{{ product.description }}</div>
+        <div class="product-price">₱{{ product.price }}</div>
       </div>
-      
-      <div class="product-price">₱{{ p.price }}</div>
-      {% if p.quantity == 0 %}
-        <div style="color: red; font-weight: bold; margin-top: 10px;">Out of Stock</div>
-      {% endif %}
     </div>
-  </div>
     {% endfor %}
   </div>
-  
   <!-- Pagination -->
   <div class="pagination">
-    <div class="pagination-item"><i class="fa fa-angle-left"></i></div>
-    <div class="pagination-item active">1</div>
-    <div class="pagination-item">2</div>
-    <div class="pagination-item">3</div>
-    <div class="pagination-item"><i class="fa fa-angle-right"></i></div>
   </div>
   
   {% else %}
@@ -1142,83 +1133,21 @@
 
 <!-- Product Detail Modal -->
 <div class="product-detail-modal" id="productDetailModal">
-  <div class="product-detail-content">
-    <div class="product-detail-close" onclick="closeProductDetail()">
-      <i class="fa fa-times"></i>
-    </div>
-    <div class="product-detail-body">
-      <div class="product-detail-image">
-        <img id="detail-product-image" src="/placeholder.svg" alt="Product Image">
-      </div>
-      <div class="product-detail-info">
-        <h1 class="product-detail-title" id="detail-product-name"></h1>
-        <div class="product-detail-price" id="detail-product-price"></div>
-        <p class="product-detail-description" id="detail-product-description"></p>
-        
-        <div class="product-detail-options">
-          <form id="detail-add-to-cart-form" method="post" action="">
-            {% csrf_token %}
-            <input type="hidden" name="next_page" value="{{ request.path }}">
-            
-            <div class="option-title">Size</div>
-            <div class="size-option-group">
-              <button type="button" class="size-option-btn" onclick="selectDetailSize(this, 'XS')">XS</button>
-              <button type="button" class="size-option-btn" onclick="selectDetailSize(this, 'S')">S</button>
-              <button type="button" class="size-option-btn" onclick="selectDetailSize(this, 'M')">M</button>
-              <button type="button" class="size-option-btn" onclick="selectDetailSize(this, 'L')">L</button>
-              <button type="button" class="size-option-btn" onclick="selectDetailSize(this, 'XL')">XL</button>
-            </div>
-            <div class="option-message">Please select a size</div>
-            <input type="hidden" name="size" id="detail-size-input" value="">
-            
-            <div class="option-title" style="margin-top: 20px;">Quantity</div>
-            <div class="quantity-input-group">
-              <button type="button" class="quantity-btn" onclick="decrementDetailQuantity()">-</button>
-              <input type="number" name="quantity" id="detail-quantity-input" class="quantity-input" value="1" min="1" max="10">
-              <button type="button" class="quantity-btn" onclick="incrementDetailQuantity()">+</button>
-            </div>
-            
-            <button type="submit" class="add-to-cart-button" style="margin-top: 5px;">
-              <i class="fa fa-shopping-cart"></i> Add to Cart
-            </button>
-          </form>
-        </div>
-        
-        <div class="product-detail-tabs">
-          <div class="product-detail-tab active" onclick="switchTab(this, 'details')">Details</div>
-          <div class="product-detail-tab" onclick="switchTab(this, 'shipping')">Shipping & Returns</div>
-        </div>
-        
-        <div class="product-detail-tab-content" id="tab-details">
-          <div class="product-specs">
-            <div class="product-spec">
-              <span class="spec-label">Material:</span>
-              <span class="spec-value" id="detail-material"></span>
-            </div>
-            <div class="product-spec">
-              <span class="spec-label">Fit:</span>
-              <span class="spec-value" id="detail-fit"></span>
-            </div>
-          </div>
-        </div>
-        
-        <div class="product-detail-tab-content" id="tab-shipping" style="display: none;">
-          <p>Free shipping on all orders over ₱1000. Standard delivery 3-5 working days.</p>
-          <p>Returns accepted within 30 days of delivery if items are in original condition.</p>
-        </div>
-      </div>
-    </div>
+  <div class="product-detail-content" id="productDetailContent">
+    <!-- Content will be injected by JS -->
   </div>
 </div>
 
-<script>
-  {% if messages %}
-  {% for message in messages %}
-  // Replace alert with a nicer notification
-  showNotification('{{ message }}');
-  {% endfor %}
-  {% endif %}
+<!-- Notification messages (Django messages) -->
+{% if messages %}
+  <script>
+    {% for message in messages %}
+      showNotification("{{ message|escapejs }}");
+    {% endfor %}
+  </script>
+{% endif %}
 
+<script>
   // Functions for size and quantity selectors
   function selectSize(element, size, productId) {
     // Remove selected class from all size options in the same container
@@ -1298,38 +1227,149 @@
   }
   
   function openProductDetail(productId) {
-    const modal = document.getElementById('productDetailModal');
-    const card = document.querySelector(`.product-card[data-product-id="${productId}"]`);
-    
-    // Set product details in modal
-    document.getElementById('detail-product-name').textContent = card.querySelector('.product-name').textContent;
-    document.getElementById('detail-product-price').textContent = card.querySelector('.product-price').textContent;
-    document.getElementById('detail-product-description').textContent = card.querySelector('.product-description').textContent;
-    document.getElementById('detail-product-image').src = card.querySelector('.product-image').src;
-    
-    // Set form action
-    document.getElementById('detail-add-to-cart-form').action = "{% url 'add-to-cart' 0 %}".replace('0', productId);
-    
-    // Set material and fit (example values)
-    document.getElementById('detail-material').textContent = "98% Cotton, 2% Elastane";
-    document.getElementById('detail-fit').textContent = "Regular";
-    
-    // Reset selections
-    document.querySelectorAll('.size-option-btn').forEach(btn => btn.classList.remove('selected'));
-    document.getElementById('detail-size-input').value = '';
-    document.getElementById('detail-quantity-input').value = '1';
-    
-    // Show modal
+    var product = productInfoData[productId];
+    var stock = productStockData[productId];
+    var modal = document.getElementById('productDetailModal');
+    var content = document.getElementById('productDetailContent');
+    var firstAvailableSize = null;
+    var sizeButtons = '';
+    sizeOrder.forEach(function(size) {
+      var stockCount = stock[size] || 0;
+      var disabled = stockCount < 1 ? 'disabled' : '';
+      var outOfStock = stockCount < 1 ? ' (Out of stock)' : ' (' + stockCount + ' in stock)';
+      if (!firstAvailableSize && stockCount > 0) firstAvailableSize = size;
+      sizeButtons += `<button type="button" class="size-option-btn" data-size="${size}" ${disabled}>${sizeLabels[size]}${outOfStock}</button>`;
+    });
+    var html = `
+      <span class="product-detail-close" onclick="closeProductDetail()"><i class="fa fa-times"></i></span>
+      <div class="product-detail-body">
+        <div class="product-detail-image">
+          <img src="${product.image}" alt="${product.name}">
+        </div>
+        <div class="product-detail-info">
+          <div class="product-detail-title">${product.name}</div>
+          <div class="product-detail-price">₱${product.price}</div>
+          <div class="product-detail-description">${product.description}</div>
+          <div class="product-detail-options">
+            <div class="option-title">Select Size</div>
+            <div class="size-option-group" id="modalSizeOptions">
+              ${sizeButtons}
+            </div>
+            <div class="option-message" id="modalStockMessage"></div>
+          </div>
+          <div class="quantity-control">
+            <span class="quantity-label">Quantity</span>
+            <div class="quantity-input-group">
+              <button class="quantity-btn" id="modalQtyMinus">-</button>
+              <input type="number" class="quantity-input" id="modalQtyInput" value="1" min="1">
+              <button class="quantity-btn" id="modalQtyPlus">+</button>
+            </div>
+          </div>
+          <button class="add-to-cart-button" id="modalAddToCartBtn"><i class="fa fa-shopping-cart"></i> Add to Cart</button>
+        </div>
+      </div>
+    `;
+    content.innerHTML = html;
     modal.classList.add('active');
-    document.body.style.overflow = 'hidden';
+
+    // Modal state
+    var selectedSize = firstAvailableSize;
+    var maxQty = selectedSize ? stock[selectedSize] : 0;
+    var qtyInput = document.getElementById('modalQtyInput');
+    var addToCartBtn = document.getElementById('modalAddToCartBtn');
+    var stockMsg = document.getElementById('modalStockMessage');
+    var sizeBtns = document.querySelectorAll('#modalSizeOptions .size-option-btn');
+
+    // Highlight first available size
+    sizeBtns.forEach(function(btn) {
+      if (btn.getAttribute('data-size') === selectedSize) btn.classList.add('selected');
+      btn.addEventListener('click', function() {
+        if (btn.hasAttribute('disabled')) return;
+        sizeBtns.forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        selectedSize = btn.getAttribute('data-size');
+        maxQty = stock[selectedSize];
+        qtyInput.value = 1;
+        updateStockMsg();
+        updateAddToCartBtn();
+      });
+    });
+
+    // Quantity controls
+    document.getElementById('modalQtyMinus').onclick = function() {
+      var v = parseInt(qtyInput.value);
+      if (v > 1) qtyInput.value = v - 1;
+      updateAddToCartBtn();
+    };
+    document.getElementById('modalQtyPlus').onclick = function() {
+      var v = parseInt(qtyInput.value);
+      if (v < maxQty) qtyInput.value = v + 1;
+      updateAddToCartBtn();
+    };
+    qtyInput.oninput = function() {
+      var v = parseInt(qtyInput.value);
+      if (isNaN(v) || v < 1) qtyInput.value = 1;
+      else if (v > maxQty) qtyInput.value = maxQty;
+      updateAddToCartBtn();
+    };
+
+    // Add to cart button logic
+    function updateAddToCartBtn() {
+      if (!selectedSize || maxQty < 1) {
+        addToCartBtn.disabled = true;
+        addToCartBtn.innerHTML = '<i class="fa fa-shopping-cart"></i> Out of Stock';
+      } else if (parseInt(qtyInput.value) > maxQty) {
+        addToCartBtn.disabled = true;
+        addToCartBtn.innerHTML = '<i class="fa fa-shopping-cart"></i> Not enough stock';
+      } else {
+        addToCartBtn.disabled = false;
+        addToCartBtn.innerHTML = '<i class="fa fa-shopping-cart"></i> Add to Cart';
+      }
+    }
+    function updateStockMsg() {
+      if (!selectedSize) {
+        stockMsg.textContent = 'Please select a size.';
+      } else if (maxQty < 1) {
+        stockMsg.textContent = 'Selected size is out of stock.';
+      } else {
+        stockMsg.textContent = maxQty + ' in stock for ' + sizeLabels[selectedSize] + '.';
+      }
+    }
+    updateStockMsg();
+    updateAddToCartBtn();
+
+    // Add to cart click
+    addToCartBtn.onclick = function() {
+      if (addToCartBtn.disabled) return;
+      // Submit via form or AJAX as needed
+      var form = document.createElement('form');
+      form.method = 'POST';
+      form.action = '/add-to-cart/' + product.id + '/';
+      var csrf = document.createElement('input');
+      csrf.type = 'hidden';
+      csrf.name = 'csrfmiddlewaretoken';
+      csrf.value = '{{ csrf_token }}';
+      form.appendChild(csrf);
+      var sizeInput = document.createElement('input');
+      sizeInput.type = 'hidden';
+      sizeInput.name = 'size';
+      sizeInput.value = selectedSize;
+      form.appendChild(sizeInput);
+      var qtyInputEl = document.createElement('input');
+      qtyInputEl.type = 'hidden';
+      qtyInputEl.name = 'quantity';
+      qtyInputEl.value = qtyInput.value;
+      form.appendChild(qtyInputEl);
+      document.body.appendChild(form);
+      form.submit();
+    };
   }
-  
+
   function closeProductDetail() {
-    const modal = document.getElementById('productDetailModal');
-    modal.classList.remove('active');
-    document.body.style.overflow = '';
+    document.getElementById('productDetailModal').classList.remove('active');
+    document.getElementById('productDetailContent').innerHTML = '';
   }
-  
+
   // Category tabs functionality
   document.addEventListener('DOMContentLoaded', function() {
     const categoryTabs = document.querySelectorAll('.category-tab');

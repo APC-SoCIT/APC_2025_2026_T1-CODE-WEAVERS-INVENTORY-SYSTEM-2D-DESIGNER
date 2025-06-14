@@ -75,6 +75,20 @@ class Product(models.Model):
     def __str__(self):
         return self.name
 
+    def get_size_stock(self):
+        stock = {size: 0 for size, _ in self.SIZE_CHOICES}
+        for size, _ in self.SIZE_CHOICES:
+            item = InventoryItem.objects.filter(name=f"{self.name} - {size}").first()
+            if item:
+                stock[size] = item.quantity
+            elif self.size == size:
+                stock[size] = self.quantity
+        return stock
+
+    def get_size_stock_json(self):
+        import json
+        return json.dumps(self.get_size_stock())
+
 class CartItem(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     size = models.CharField(max_length=5, choices=Product.SIZE_CHOICES)
