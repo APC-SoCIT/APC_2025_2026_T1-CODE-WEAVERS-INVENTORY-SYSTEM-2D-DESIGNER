@@ -211,6 +211,8 @@ def admin_dashboard_view(request):
     product_sales = {}
 
     for order in all_delivered_orders:
+        if not order.product:
+            continue  # Skip orders with missing product
         order_total = order.product.price * order.quantity
         total_sales += order_total
 
@@ -232,6 +234,8 @@ def admin_dashboard_view(request):
                 last_month_sales += order_total
 
     for order in delivered_orders:
+        if not order.product:
+            continue  # Skip orders with missing product
         order.total_price = order.product.price * order.quantity  # Add total_price attribute
         recent_orders_products.append(order.product)
         recent_orders_customers.append(order.customer)
@@ -782,6 +786,7 @@ def add_to_cart_view(request, pk):
     return response
 
 def cart_view(request):
+
     # For cart counter
     if 'product_ids' in request.COOKIES:
         product_ids = request.COOKIES['product_ids']
@@ -846,11 +851,16 @@ def cart_view(request):
                                 'quantity': quantity
                             })
 
-    grand_total = total + delivery_fee
+    # VAT calculation
+    vat_rate = 12
+    vat_amount = total * (vat_rate / 100)
+    grand_total = total + delivery_fee + vat_amount
     return render(request, 'ecom/cart.html', {
         'products': products,
         'total': total,
         'delivery_fee': delivery_fee,
+        'vat_rate': vat_rate,
+        'vat_amount': vat_amount,
         'grand_total': grand_total,
         'product_count_in_cart': product_count_in_cart
     })
@@ -1249,12 +1259,28 @@ def download_invoice_view(request, orderID):
     # Calculate item totals and order totals
     for item in order_items:
         item.unit_price = item.price  # Add unit price for display
-        item.total = item.price * item.quantity  # Both price and quantity are Decimal
+        item.total = item.price * item.quantity
 
     subtotal = sum(item.total for item in order_items)
+    
+    # --- Delivery Fee Logic ---
+    delivery_fee = 0
+    region = None
+    if order.customer and hasattr(order.customer, 'region'):
+        region = order.customer.region
+    if region == 'NCR':
+        delivery_fee = 49
+    elif region == 'CAR':
+        delivery_fee = 59
+    elif region:
+        delivery_fee = 69
+    else:
+        delivery_fee = 0
+    # --- End Delivery Fee Logic ---
+
     vat_rate = decimal.Decimal('12')  # Convert VAT rate to Decimal
     vat_amount = subtotal * (vat_rate / decimal.Decimal('100'))  # All calculations use Decimal
-    total_price = subtotal + vat_amount
+    total_price = subtotal + vat_amount + delivery_fee
 
     mydict = {
         'orderDate': order.order_date,
@@ -1267,6 +1293,7 @@ def download_invoice_view(request, orderID):
         'subtotal': subtotal,
         'vat_rate': vat_rate,
         'vat_amount': vat_amount,
+        'delivery_fee': delivery_fee,
         'totalPrice': total_price
     }
     return render_to_pdf('ecom/download_invoice.html', mydict)

@@ -331,6 +331,8 @@
         <strong>Total: ₱ {{ total|floatformat:2|intcomma }}</strong>
         <span>Delivery Fee:</span>
         <strong>₱ {{ delivery_fee|intcomma }}</strong>
+        <span>VAT ({{ vat_rate }}%):</span>
+        <strong>₱ {{ vat_amount|floatformat:2|intcomma }}</strong>
         <span>Grand Total:</span>
         <strong>₱ {{ grand_total|floatformat:2|intcomma }}</strong>
       </div>
