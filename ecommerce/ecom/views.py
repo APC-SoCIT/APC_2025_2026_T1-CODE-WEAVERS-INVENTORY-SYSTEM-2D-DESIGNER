@@ -103,7 +103,14 @@ def customer_signup_view(request):
             my_customer_group = Group.objects.get_or_create(name='CUSTOMER')
             my_customer_group[0].user_set.add(user)
             login(request, user)  # Log the user in after registration
-            return redirect('customer-home')  # Redirect to customer home page after signup
+            # Clear cart cookies after registration
+            response = redirect('customer-home')
+            response.delete_cookie('product_ids')
+            # Remove all product_*_details cookies
+            for key in request.COOKIES.keys():
+                if key.startswith('product_') and key.endswith('_details'):
+                    response.delete_cookie(key)
+            return response
         else:
             # Show errors in the template
             mydict = {'userForm': userForm, 'customerForm': customerForm}
@@ -118,7 +125,13 @@ def customer_login(request):
       user = authenticate(request, username=username, password=password)
       if user is not None:
         login(request, user)
-        return redirect('home')
+        # Clear cart cookies after login
+        response = redirect('home')
+        response.delete_cookie('product_ids')
+        for key in request.COOKIES.keys():
+            if key.startswith('product_') and key.endswith('_details'):
+                response.delete_cookie(key)
+        return response
       else:
         form.add_error(None, 'Account not found, please register')
   else:
@@ -815,6 +828,9 @@ def cart_view(request):
     else:
         delivery_fee = 0
 
+    vat_rate = 12
+    vat_multiplier = 1 + (vat_rate / 100)
+
     if 'product_ids' in request.COOKIES:
         product_ids = request.COOKIES['product_ids']
         product_keys = product_ids.split('|')
@@ -844,15 +860,16 @@ def cart_view(request):
                         if len(details) == 2:
                             size = details[0]
                             quantity = int(details[1])
-                            total += p.price * quantity
+                            # Calculate VAT-exclusive unit price
+                            unit_price_vat_ex = p.price / vat_multiplier
+                            total += unit_price_vat_ex * quantity
                             products.append({
                                 'product': p,
                                 'size': size,
-                                'quantity': quantity
+                                'quantity': quantity,
+                                'unit_price_vat_ex': unit_price_vat_ex
                             })
 
-    # VAT calculation
-    vat_rate = 12
     vat_amount = total * (vat_rate / 100)
     grand_total = total + delivery_fee + vat_amount
     return render(request, 'ecom/cart.html', {
