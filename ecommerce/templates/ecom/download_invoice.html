@@ -231,6 +231,31 @@
           <table>
             <tr>
               <td>
+                <strong>Product Details:</strong><br><br>
+                {% for item in orderItems %}
+                <div style="margin-bottom: 15px;">
+                  <img src="{% static item.product.product_image.url %}" alt="Product Image" height="40px" width="40px" style="vertical-align: middle;"/>
+                  <span style="margin-left: 10px;">{{ item.product.name }}</span><br>
+                  <span style="margin-left: 50px;">Unit Price: ₱{{ item.price|floatformat:2 }}</span><br>
+                  <span style="margin-left: 50px;">Quantity: {{ item.quantity }}</span><br>
+                  <span style="margin-left: 50px;">Subtotal: ₱{{ item.price|multiply:item.quantity|floatformat:2 }}</span>
+                </div>
+                {% endfor %}
+                <div style="margin-top: 20px; border-top: 2px solid #eee; padding-top: 10px;">
+                  <strong>Total Price: ₱{{ totalPrice|floatformat:2 }}</strong>
+                </div>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+
+
+      <tr class="information">
+        <td colspan="2">
+          <table>
+            <tr>
+              <td>
                 Order Status :<br><br>
                   {{orderStatus}}
               </td>
