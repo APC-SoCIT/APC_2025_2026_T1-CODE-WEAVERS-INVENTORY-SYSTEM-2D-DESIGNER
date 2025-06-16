@@ -1,5 +1,7 @@
+
 {% extends 'ecom/customer_base.html' %}
 {% load static %}
+{% load humanize %}
 {% block content %}
 
 <style media="screen">
@@ -1107,14 +1109,32 @@
     {% for product in products %}
     <div class="product-card" data-product-id="{{ product.id }}">
       <div class="product-image-container">
+<<<<<<< HEAD
         <img src="{{ product.product_image.url }}" alt="{{ product.name }}" class="product-image">
         <button class="quick-view-btn" onclick="openProductDetail('{{ product.id }}')">Quick View</button>
+=======
+        {% if p.product_image %}
+          <img class="product-image" src="{{ p.product_image.url }}" alt="{{ p.name }}">
+        {% else %}
+          <img class="product-image" src="{% static 'images/placeholder.jpg' %}" alt="{{ p.name }}">
+        {% endif %}
+        <div class="product-overlay"></div>
+        <div class="quick-view-btn" onclick="openProductDetail('{{ p.id }}')">Quick View</div>
+>>>>>>> origin/ADMIN-DASHBOARD
       </div>
       <div class="product-details">
         <div class="product-name">{{ product.name }}</div>
         <div class="product-description">{{ product.description }}</div>
         <div class="product-price">₱{{ product.price }}</div>
       </div>
+<<<<<<< HEAD
+=======
+      
+      <div class="product-price">₱{{ p.price|intcomma }}</div>
+      {% if p.quantity == 0 %}
+        <div style="color: red; font-weight: bold; margin-top: 10px;">Out of Stock</div>
+      {% endif %}
+>>>>>>> origin/ADMIN-DASHBOARD
     </div>
     {% endfor %}
   </div>

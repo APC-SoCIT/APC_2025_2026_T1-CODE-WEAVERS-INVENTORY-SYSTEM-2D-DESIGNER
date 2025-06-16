@@ -24,6 +24,81 @@ from django.core.files.base import ContentFile
 from django.http import HttpResponse
 from django.http import JsonResponse
 from django.shortcuts import redirect
+from django.views.decorators.http import require_GET
+from django.core.serializers.json import DjangoJSONEncoder
+from datetime import datetime
+
+@login_required(login_url='adminlogin')
+def user_profile_page(request, user_id):
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info(f"User profile page requested for user_id: {user_id}")
+
+    try:
+        customer = Customer.objects.get(user_id=user_id)
+        logger.info(f"Customer found: {customer.get_name} with user_id: {user_id}")
+    except Customer.DoesNotExist:
+        logger.error(f"Customer not found for user_id: {user_id}")
+        from django.contrib import messages
+        messages.error(request, 'User profile not found.')
+        return redirect('admin-view-users')
+
+    orders = Orders.objects.filter(customer=customer).order_by('-order_date')[:20]
+
+    transactions = []
+    for order in orders:
+        order_items = order.orderitem_set.all()
+        total_price = sum([item.price * item.quantity for item in order_items])
+        transactions.append({
+            'product_name': order.product.name if order.product else '',
+            'order_date': order.order_date.strftime('%Y-%m-%d %H:%M') if order.order_date else '',
+            'order_ref': order.order_ref or '',
+            'amount': total_price,
+            'status': order.status,
+        })
+
+    context = {
+        'customer': customer,
+        'transactions': transactions,
+    }
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        return render(request, 'ecom/user_profile_page_partial.html', context)
+    else:
+        return render(request, 'ecom/user_profile_page.html', context)
+
+
+@login_required(login_url='adminlogin')
+def get_transactions_by_month(request):
+    month = request.GET.get('month')
+    year = request.GET.get('year')
+    if not month or not year:
+        return JsonResponse({'error': 'Month and year parameters are required'}, status=400)
+    try:
+        month = int(month)
+        year = int(year)
+    except ValueError:
+        return JsonResponse({'error': 'Invalid month or year'}, status=400)
+
+    # Filter orders by delivered status and month/year
+    orders = models.Orders.objects.filter(
+        status='Delivered',
+        created_at__year=year,
+        created_at__month=month
+    ).order_by('-created_at')
+
+    transactions = []
+    for order in orders:
+        if order.product is None:
+            continue
+        transactions.append({
+            'user_name': order.customer.user.username if order.customer and order.customer.user else 'Unknown',
+            'order_id': order.order_ref or '',
+            'date': order.created_at.strftime('%Y-%m-%d'),
+            'amount': float(order.product.price) * order.quantity if order.product.price else 0,
+            'type': 'credit' if order.status == 'Delivered' else 'debit',
+        })
+
+    return JsonResponse({'transactions': transactions})
 
 def order_counts(request):
     if request.user.is_authenticated and is_customer(request.user):
@@ -94,14 +169,20 @@ def customer_signup_view(request):
         userForm = forms.CustomerUserForm(request.POST)
         customerForm = forms.CustomerSignupForm(request.POST, request.FILES)
         if userForm.is_valid() and customerForm.is_valid():
+<<<<<<< HEAD
             user = userForm.save(commit=False)
             user.set_password(userForm.cleaned_data['password'])
+=======
+            user=userForm.save(commit=False)
+            user.set_password(user.password)
+>>>>>>> origin/ADMIN-DASHBOARD
             user.save()
             customer = customerForm.save(commit=False)
             customer.user = user
             customer.save()
             my_customer_group = Group.objects.get_or_create(name='CUSTOMER')
             my_customer_group[0].user_set.add(user)
+<<<<<<< HEAD
             login(request, user)  # Log the user in after registration
             # Clear cart cookies after registration
             response = redirect('customer-home')
@@ -115,6 +196,10 @@ def customer_signup_view(request):
             # Show errors in the template
             mydict = {'userForm': userForm, 'customerForm': customerForm}
     return render(request, 'ecom/customersignup.html', context=mydict)
+=======
+            return HttpResponseRedirect('customerlogin')
+    return render(request,'ecom/customersignup.html',context=mydict)
+>>>>>>> origin/ADMIN-DASHBOARD
 
 def customer_login(request):
   if request.method == 'POST':
@@ -202,6 +287,18 @@ def admin_dashboard_view(request):
     productcount = models.Product.objects.all().count()
     pending_ordercount = models.Orders.objects.filter(status='Pending').count()
 
+    # Prepare users data for Users section
+    customers = models.Customer.objects.select_related('user').all()
+    users = []
+    for c in customers:
+        users.append({
+            'id': c.get_id,
+            'name': c.get_name,
+            'address': c.get_full_address,
+            'phone': c.mobile,
+            'status': c.status,
+        })
+
     # Calculate sales analytics
     from django.utils import timezone
     from datetime import timedelta
@@ -210,9 +307,7 @@ def admin_dashboard_view(request):
     last_month_start = current_date - timedelta(days=30)
 
     delivered_orders = models.Orders.objects.filter(status='Delivered').order_by('-created_at')[:10]
-    recent_orders_products = []
-    recent_orders_customers = []
-    recent_orders_orders = []
+    recent_orders = models.Orders.objects.all().order_by('-created_at')[:10]
 
     # Calculate total sales and period-specific sales
     all_delivered_orders = models.Orders.objects.filter(status='Delivered')
@@ -224,8 +319,13 @@ def admin_dashboard_view(request):
     product_sales = {}
 
     for order in all_delivered_orders:
+<<<<<<< HEAD
         if not order.product:
             continue  # Skip orders with missing product
+=======
+        if order.product is None:
+            continue
+>>>>>>> origin/ADMIN-DASHBOARD
         order_total = order.product.price * order.quantity
         total_sales += order_total
 
@@ -246,6 +346,7 @@ def admin_dashboard_view(request):
             if order_date >= last_month_start:
                 last_month_sales += order_total
 
+<<<<<<< HEAD
     for order in delivered_orders:
         if not order.product:
             continue  # Skip orders with missing product
@@ -255,6 +356,14 @@ def admin_dashboard_view(request):
         recent_orders_orders.append(order)
         # Debug print product image info
         print(f"Product: {order.product.name}, Image: {order.product.product_image}, Size: {order.size}")
+=======
+    # Add total_price attribute to recent_orders
+    for order in recent_orders:
+        if order.product:
+            order.total_price = order.product.price * order.quantity
+        else:
+            order.total_price = 0
+>>>>>>> origin/ADMIN-DASHBOARD
 
     # Sort products by sales performance
     sorted_products = sorted(product_sales.values(), key=lambda x: x['quantity_sold'], reverse=True)
@@ -266,6 +375,26 @@ def admin_dashboard_view(request):
     formatted_last_quarter_sales = '{:,.2f}'.format(last_quarter_sales)
     formatted_last_month_sales = '{:,.2f}'.format(last_month_sales)
 
+    # Calculate monthly sales for current year
+    from django.db.models.functions import ExtractMonth, ExtractYear
+    from django.db.models import Sum, F
+
+    current_year = current_date.year
+    monthly_sales_qs = models.Orders.objects.filter(
+        status='Delivered',
+        created_at__year=current_year
+    ).annotate(
+        month=ExtractMonth('created_at')
+    ).values('month').annotate(
+        total=Sum(F('product__price') * F('quantity'))
+    ).order_by('month')
+
+    # Initialize list with 12 zeros for each month
+    monthly_sales = [0] * 12
+    for entry in monthly_sales_qs:
+        month_index = entry['month'] - 1
+        monthly_sales[month_index] = float(entry['total']) if entry['total'] else 0
+
     mydict = {
         'customercount': customercount,
         'productcount': productcount,
@@ -275,30 +404,88 @@ def admin_dashboard_view(request):
         'last_month_sales': formatted_last_month_sales,
         'fast_moving_products': fast_moving_products,
         'slow_moving_products': slow_moving_products,
-        'data': zip(recent_orders_products, recent_orders_customers, recent_orders_orders),
-        'current_date': current_date.strftime('%Y-%m-%d')
+        'recent_orders': recent_orders,
+        'current_date': current_date.strftime('%Y-%m-%d'),
+        'monthly_sales': monthly_sales,
+        'users': users,
     }
     return render(request, 'ecom/admin_dashboard.html', context=mydict)
 
 
 # admin view customer table
 @login_required(login_url='adminlogin')
-def view_customer_view(request):
-    customers = Customer.objects.all()
-    
-    # Prepare customer data with profile_pic_url
-    customer_data = []
-    for customer in customers:
-        profile_pic_url = customer.profile_pic.url if customer.profile_pic else None
-        customer_data.append({
-            'customer': customer,
-            'profile_pic_url': profile_pic_url,
+def admin_view_users(request):
+    import csv
+    from django.http import HttpResponse
+
+    customers = models.Customer.objects.select_related('user').all()
+    users = []
+    for c in customers:
+        print(f"DEBUG: Customer ID: {c.id}, User ID: {c.user.id if c.user else 'None'}, Name: {c.user.first_name if c.user else 'N/A'} {c.user.last_name if c.user else ''}")
+        users.append({
+            'id': c.id,
+            'user_id': c.user.id if c.user else None,
+            'name': f"{c.user.first_name} {c.user.last_name}" if c.user else '',
+            'surname': '',
+            'customer_id': c.customer_code,
+            'email': c.user.email if c.user else '',
+            'contact': c.mobile,
+            'address': c.get_full_address,
+            'balance': getattr(c, 'balance', 0),
+            'status': c.status,
+            'is_active': c.status == 'Active',
+            'wallet_status': getattr(c, 'wallet_status', 'Active'),
+            'created_date': c.created_at.strftime('%Y-%m-%d') if hasattr(c, 'created_at') else '',
         })
-    
+
+    if request.GET.get('export') == 'csv':
+        # Create the HttpResponse object with CSV header.
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="users.csv"'
+
+        writer = csv.writer(response)
+        # Write CSV header
+        writer.writerow(['Customer ID', 'Name', 'Email', 'Contact', 'Address', 'Balance', 'Status', 'Wallet Status', 'Created Date'])
+
+        # Write user data rows
+        for user in users:
+            writer.writerow([
+                user['customer_id'],
+                user['name'],
+                user['email'],
+                user['contact'],
+                user['address'],
+                user['balance'],
+                user['status'],
+                user['wallet_status'],
+                user['created_date'],
+            ])
+
+        return response
+
     context = {
-        'customers': customer_data,
+        'users': users,
+        'active_count': sum(1 for u in users if u['status'] == 'Active'),
+        'pending_count': sum(1 for u in users if u['status'] == 'Pending'),
+        'suspended_count': sum(1 for u in users if u['status'] == 'Suspended'),
+        'total_count': len(users),
     }
-    return render(request, 'ecom/view_customer.html', context)
+    return render(request, 'ecom/admin_view_users.html', context)
+
+@login_required(login_url='adminlogin')
+def bulk_update_users(request):
+    if request.method == 'POST':
+        user_ids = request.POST.getlist('user_ids')
+        new_status = request.POST.get('bulk_status')
+
+        if user_ids and new_status:
+            customers = models.Customer.objects.filter(id__in=user_ids)
+            customers.update(status=new_status)
+            messages.success(request, f'Successfully updated {len(user_ids)} users to {new_status}')
+        else:
+            messages.error(request, 'Please select users and status to update')
+
+    return redirect('view-customer')
 
 # admin delete customer
 @login_required(login_url='adminlogin')
@@ -331,8 +518,8 @@ def update_customer_view(request,pk):
 # admin view the product
 @login_required(login_url='adminlogin')
 def admin_products_view(request):
-    # Get all products and order them by size
-    products = models.Product.objects.all().order_by('size')
+    # Get all products and order them by id descending (newest first)
+    products = models.Product.objects.all().order_by('-id')
     return render(request, 'ecom/admin_products.html', {'products': products})
 
 
@@ -343,61 +530,189 @@ def admin_add_product_view(request):
     if request.method=='POST':
         productForm=forms.ProductForm(request.POST, request.FILES)
         if productForm.is_valid():
-            productForm.save()
-        return HttpResponseRedirect('admin-products')
+            new_product = productForm.save()
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                # Return JSON response with new product data
+                data = {
+                    'id': new_product.id,
+                    'name': new_product.name,
+                    'description': new_product.description,
+                    'price': new_product.price,
+                    'quantity': new_product.quantity,
+                    'size': new_product.size,
+                    'product_image_url': new_product.product_image.url if new_product.product_image else '',
+                }
+                return JsonResponse({'success': True, 'product': data})
+            else:
+                # After saving, redirect to admin-products page to show updated list including new image
+                return HttpResponseRedirect(f'/admin-products?new=1&new_product_id={new_product.id}')
+        else:
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                # Return form errors as JSON
+                errors = productForm.errors.as_json()
+                return JsonResponse({'success': False, 'errors': errors})
+            else:
+                # If form is invalid, render the form with errors
+                return render(request,'ecom/admin_add_products.html',{'productForm':productForm})
     return render(request,'ecom/admin_add_products.html',{'productForm':productForm})
 
 
-@login_required(login_url='adminlogin')
-def delete_product_view(request,pk):
-    product=models.Product.objects.get(id=pk)
-    product.delete()
-    return redirect('admin-products')
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+from django.http import JsonResponse
 
+import logging
+
+logger = logging.getLogger(__name__)
 
 @login_required(login_url='adminlogin')
-def update_product_view(request,pk):
-    product=models.Product.objects.get(id=pk)
-    productForm=forms.ProductForm(instance=product)
-    if request.method=='POST':
-        productForm=forms.ProductForm(request.POST,request.FILES,instance=product)
-        if productForm.is_valid():
-            productForm.save()
+@require_POST
+@csrf_exempt
+def delete_product_view(request, pk):
+    try:
+        product = models.Product.objects.get(id=pk)
+        product.delete()
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({'success': True})
+        else:
             return redirect('admin-products')
-    return render(request,'ecom/admin_update_product.html',{'productForm':productForm})
+    except models.Product.DoesNotExist:
+        logger.error(f"Product with id {pk} not found for deletion.")
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({'success': False, 'error': 'Product not found'}, status=404)
+        else:
+            return redirect('admin-products')
+    except Exception as e:
+        logger.error(f"Error deleting product with id {pk}: {str(e)}")
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({'success': False, 'error': 'Error deleting product: ' + str(e)}, status=500)
+        else:
+            return redirect('admin-products')
+
+
+@login_required(login_url='adminlogin')
+def update_product_view(request, pk):
+    product = models.Product.objects.get(id=pk)
+    if request.method == 'POST':
+        productForm = forms.ProductForm(request.POST, request.FILES, instance=product)
+        if productForm.is_valid():
+            new_size = productForm.cleaned_data.get('size')
+            product_name = productForm.cleaned_data.get('name')
+            # Check if size changed
+            if new_size != product.size:
+                # Check if product with same name and new size exists
+                try:
+                    existing_product = models.Product.objects.get(name=product_name, size=new_size)
+                    # Update existing product
+                    existing_product.description = productForm.cleaned_data.get('description')
+                    existing_product.price = productForm.cleaned_data.get('price')
+                    existing_product.quantity = productForm.cleaned_data.get('quantity')
+                    if 'product_image' in request.FILES:
+                        existing_product.product_image = request.FILES['product_image']
+                    existing_product.save()
+                except models.Product.DoesNotExist:
+                    # Create new product with new size
+                    new_product = productForm.save(commit=False)
+                    new_product.id = None  # Ensure new object
+                    new_product.save()
+            else:
+                # Size same, update current product
+                productForm.save()
+            return redirect('admin-products')
+    else:
+        productForm = forms.ProductForm(instance=product)
+    return render(request, 'ecom/admin_update_product.html', {'productForm': productForm})
 
 
 @login_required(login_url='adminlogin')
 def admin_view_booking_view(request):
     return redirect('admin-view-processing-orders')
 
+def get_order_status_counts():
+    counts = {
+        'processing': models.Orders.objects.filter(status__in=['Pending', 'Processing']).count(),
+        'confirmed': models.Orders.objects.filter(status='Order Confirmed').count(),
+        'shipping': models.Orders.objects.filter(status='Out for Delivery').count(),
+        'delivered': models.Orders.objects.filter(status='Delivered').count(),
+        'cancelled': models.Orders.objects.filter(status='Cancelled').count(),
+    }
+    return counts
+
 @login_required(login_url='adminlogin')
 def admin_view_processing_orders(request):
     orders = models.Orders.objects.filter(status__in=['Pending', 'Processing'])
-    return prepare_admin_order_view(request, orders, 'Processing', 'ecom/admin_view_orders.html')
+    counts = get_order_status_counts()
+    context = {
+        'processing_count': counts.get('processing', 0),
+        'confirmed_count': counts.get('confirmed', 0),
+        'shipping_count': counts.get('shipping', 0),
+        'delivered_count': counts.get('delivered', 0),
+        'cancelled_count': counts.get('cancelled', 0),
+    }
+    return prepare_admin_order_view(request, orders, 'Processing', 'ecom/admin_view_orders.html', extra_context=context)
 
 @login_required(login_url='adminlogin')
 def admin_view_confirmed_orders(request):
     orders = models.Orders.objects.filter(status='Order Confirmed')
-    return prepare_admin_order_view(request, orders, 'Order Confirmed', 'ecom/admin_view_orders.html')
+    counts = get_order_status_counts()
+    context = {
+        'processing_count': counts.get('processing', 0),
+        'confirmed_count': counts.get('confirmed', 0),
+        'shipping_count': counts.get('shipping', 0),
+        'delivered_count': counts.get('delivered', 0),
+        'cancelled_count': counts.get('cancelled', 0),
+    }
+    return prepare_admin_order_view(request, orders, 'Order Confirmed', 'ecom/admin_view_orders.html', extra_context=context)
 
 @login_required(login_url='adminlogin')
 def admin_view_shipping_orders(request):
     orders = models.Orders.objects.filter(status='Out for Delivery')
-    return prepare_admin_order_view(request, orders, 'Out for Delivery', 'ecom/admin_view_orders.html')
+    counts = get_order_status_counts()
+    context = {
+        'processing_count': counts.get('processing', 0),
+        'confirmed_count': counts.get('confirmed', 0),
+        'shipping_count': counts.get('shipping', 0),
+        'delivered_count': counts.get('delivered', 0),
+        'cancelled_count': counts.get('cancelled', 0),
+    }
+    return prepare_admin_order_view(request, orders, 'Out for Delivery', 'ecom/admin_view_orders.html', extra_context=context)
 
 @login_required(login_url='adminlogin')
 def admin_view_delivered_orders(request):
     orders = models.Orders.objects.filter(status='Delivered')
-    return prepare_admin_order_view(request, orders, 'Delivered', 'ecom/admin_view_orders.html')
+    counts = get_order_status_counts()
+    context = {
+        'processing_count': counts.get('processing', 0),
+        'confirmed_count': counts.get('confirmed', 0),
+        'shipping_count': counts.get('shipping', 0),
+        'delivered_count': counts.get('delivered', 0),
+        'cancelled_count': counts.get('cancelled', 0),
+    }
+    return prepare_admin_order_view(request, orders, 'Delivered', 'ecom/admin_view_orders.html', extra_context=context)
 
-def prepare_admin_order_view(request, orders, status, template):
+@login_required(login_url='adminlogin')
+def admin_view_cancelled_orders(request):
+    orders = models.Orders.objects.filter(status='Cancelled').prefetch_related('orderitem_set').order_by('-created_at')
+    counts = get_order_status_counts()
+    context = {
+        'cancelled_count': counts.get('cancelled', 0),
+        'processing_count': counts.get('processing', 0),
+        'confirmed_count': counts.get('confirmed', 0),
+        'shipping_count': counts.get('shipping', 0),
+        'delivered_count': counts.get('delivered', 0),
+    }
+    return prepare_admin_order_view(request, orders, 'Cancelled', 'ecom/admin_view_orders.html', extra_context=context)
+
+
+def prepare_admin_order_view(request, orders, status, template, extra_context=None):
     # Order the orders by created_at descending to show new orders first
     orders = orders.order_by('-created_at')
     
     # Prepare a list of orders with their customer, shipping address, and order items
     orders_data = []
+    
     for order in orders:
+        total_price = 0
         order_items = models.OrderItem.objects.filter(order=order)
         items = []
         for item in order_items:
@@ -408,6 +723,8 @@ def prepare_admin_order_view(request, orders, status, template):
                 'price': item.price,
                 'product_image': item.product.product_image.url if item.product.product_image else None,
             })
+            total_price += item.price * item.quantity
+        
         # Use order.address if available, else fallback to customer's full address
         shipping_address = order.address if order.address else (order.customer.get_full_address if order.customer else '')
         orders_data.append({
@@ -418,23 +735,54 @@ def prepare_admin_order_view(request, orders, status, template):
             'status': order.status,
             'order_id': order.order_ref,
             'order_date': order.order_date,
+            'total_price': total_price,
         })
-    return render(request, template, {
+    
+    context = {
         'orders_data': orders_data,
         'status': status
-    })
+    }
+    if extra_context:
+        context.update(extra_context)
+    
+    return render(request, template, context)
 
 @login_required(login_url='adminlogin')
 def admin_view_cancelled_orders(request):
-    orders = models.Orders.objects.filter(status='Cancelled')
-    ordered_products = []
-    ordered_bys = []
+    orders = models.Orders.objects.filter(status='Cancelled').prefetch_related('orderitem_set').order_by('-created_at')
+    # Prepare orders_data with order_id fallback and total price calculation
+    orders_data = []
     for order in orders:
-        ordered_product = models.Product.objects.all().filter(id=order.product.id)
-        ordered_by = models.Customer.objects.all().filter(id=order.customer.id)
-        ordered_products.append(ordered_product)
-        ordered_bys.append(ordered_by)
-    return render(request, 'ecom/admin_view_cancelled_orders.html', {'data': zip(ordered_products, ordered_bys, orders)})
+        order_id = order.order_ref if order.order_ref else f"ORD-{order.id}"
+        order_items_qs = order.orderitem_set.all()
+        order_items = []
+        total_price = 0
+        for item in order_items_qs:
+            price = item.price if item.price else 0
+            quantity = item.quantity if item.quantity else 0
+            total_price += price * quantity
+            order_items.append({
+                'product': item.product,
+                'quantity': quantity,
+                'size': item.size,
+                'price': price,
+                'product_image': item.product.product_image.url if item.product and item.product.product_image else None,
+            })
+        orders_data.append({
+            'order': order,
+            'customer': order.customer,
+            'order_items': order_items,
+            'order_id': order_id,
+            'order_date': order.order_date.strftime('%B %d, %Y') if order.order_date else order.created_at.strftime('%B %d, %Y'),
+            'total_price': total_price,
+        })
+    # Pass orders_data to template
+    context = {
+        'orders_data': orders_data,
+        'status': 'Cancelled',
+        'cancelled_count': orders.count(),
+    }
+    return render(request, 'ecom/admin_view_orders.html', context)
 
 
 @login_required(login_url='adminlogin')
@@ -526,6 +874,8 @@ def bulk_update_orders(request):
                 # First pass: Calculate total quantities needed for each product
                 for order in orders:
                     product = order.product
+                    if product is None:
+                        continue
                     if product.id in inventory_updates:
                         inventory_updates[product.id]['quantity_needed'] += order.quantity
                     else:
@@ -1503,9 +1853,47 @@ def create_gcash_payment(request):
     except KeyError:
         return JsonResponse({"error": "Payment creation failed", "details": data}, status=400)
 
+from django.views.decorators.http import require_GET
+from django.core.serializers.json import DjangoJSONEncoder
+import datetime
+
+@require_GET
+@login_required(login_url='adminlogin')
+def get_transactions_by_month(request):
+    month = request.GET.get('month')
+    year = request.GET.get('year')
+    if not month or not year:
+        return JsonResponse({'error': 'Month and year parameters are required'}, status=400)
+    try:
+        month = int(month)
+        year = int(year)
+    except ValueError:
+        return JsonResponse({'error': 'Invalid month or year parameter'}, status=400)
+
+    # Filter delivered orders by month and year, and only those with a customer
+    orders = models.Orders.objects.filter(
+        status='Delivered',
+        order_date__year=year,
+        order_date__month=month,
+        customer__isnull=False
+    ).select_related('customer').order_by('-order_date')[:20]
+
+    transactions = []
+    for order in orders:
+        transactions.append({
+            'user_name': f"{order.customer.user.first_name} {order.customer.user.last_name}" if order.customer and order.customer.user else 'Unknown',
+            'order_id': order.order_ref,
+            'date': order.order_date.strftime('%Y-%m-%d'),
+            'amount': float(order.product.price) * order.quantity if order.product and order.product.price else 0.0,
+            'type': 'credit',  # Assuming all delivered orders are credits
+        })
+
+    return JsonResponse({'transactions': transactions}, encoder=DjangoJSONEncoder)
+
 def payment_cancel(request):
     return HttpResponse("❌ Payment canceled.")
 
+<<<<<<< HEAD
 @login_required
 def update_address(request):
     if request.method == 'POST':
@@ -1519,3 +1907,44 @@ def update_address(request):
         customer.save()
         return redirect('cart')
     return redirect('cart')
+=======
+
+from django.http import JsonResponse
+from django.core.serializers.json import DjangoJSONEncoder
+from django.shortcuts import get_object_or_404
+from .models import Customer, Orders
+from django.contrib.auth.decorators import login_required
+
+@login_required(login_url='adminlogin')
+def api_user_profile(request, user_id):
+    # Fetch customer by user_id
+    customer = get_object_or_404(Customer, user_id=user_id)
+    user = customer.user
+
+    # Fetch orders for the customer
+    orders = Orders.objects.filter(customer=customer).order_by('-order_date')[:20]
+
+    transactions = []
+    for order in orders:
+        transactions.append({
+            'product_name': order.product.name if order.product else '',
+            'order_date': order.order_date.strftime('%Y-%m-%d') if order.order_date else '',
+            'order_ref': order.order_ref or '',
+            'amount': float(order.product.price) * order.quantity if order.product and order.product.price else 0.0,
+            'status': order.status,
+        })
+
+    data = {
+        'id': user.id,
+        'name': f"{user.first_name} {user.last_name}",
+        'address': customer.get_full_address,
+        'phone': customer.mobile,
+        'status': getattr(customer, 'status', 'Active'),  # Default to Active if no status field
+        'transactions': transactions,
+    }
+    return JsonResponse(data, encoder=DjangoJSONEncoder)
+
+
+    
+
+>>>>>>> origin/ADMIN-DASHBOARD

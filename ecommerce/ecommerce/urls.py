@@ -23,14 +23,28 @@ urlpatterns = [
     path('search', views.search_view,name='search'),
     path('send-feedback', views.send_feedback_view,name='send-feedback'),
     path('view-feedback', views.view_feedback_view,name='view-feedback'),
+    path('api/user-profile/<int:user_id>/', views.api_user_profile, name='api_user_profile'),
+    path('user-profile/<int:user_id>/', views.user_profile_page, name='user_profile_page'),
 
     path('adminclick', views.adminclick_view),
     path('adminlogin', LoginView.as_view(template_name='ecom/adminlogin.html'),name='adminlogin'),
     path('admin-dashboard', views.admin_dashboard_view,name='admin-dashboard'),
 
-    path('view-customer', views.view_customer_view,name='view-customer'),
+    path('view-customer', views.admin_view_users,name='view-customer'),
+
+    # Added URL pattern for update-user to fix NoReverseMatch
+    path('update-user/<int:pk>/', views.update_customer_view, name='update-user'),
+
+    # Added URL pattern for bulk-update-users to fix NoReverseMatch
+    path('bulk-update-users/', views.bulk_update_users, name='bulk-update-users'),
+
+    # Added URL pattern for create-user to fix NoReverseMatch
+    # Removed the create-user URL pattern as create_user_view does not exist
     path('delete-customer/<int:pk>', views.delete_customer_view,name='delete-customer'),
     path('update-customer/<int:pk>', views.update_customer_view,name='update-customer'),
+
+    # New URL for admin_view_users.html
+    path('admin-view-users', views.admin_view_users, name='admin-view-users'),
 
     path('admin-products', views.admin_products_view,name='admin-products'),
     path('admin-add-product', views.admin_add_product_view,name='admin-add-product'),
@@ -69,13 +83,14 @@ urlpatterns = [
     path('customizer/', views.jersey_customizer, name='customizer'),
     path('pre-order', views.pre_order, name='pre_order'),
     path('home', views.home,name='home'),
-    path('view_customer', views.view_customer_view, name='view_customer'),
+    # Removed the view_customer URL pattern as view_customer_view no longer exists
+    # path('view_customer', views.view_customer_view, name='view_customer'),
     path('update-order/<int:pk>', views.update_order_view,name='update-order'),
     path('delete-order/<int:pk>', views.delete_order_view,name='delete-order'),
     path('facebook/', RedirectView.as_view(url='https://www.facebook.com/worksteamwear'), name='facebook'),
     path('instagram/', RedirectView.as_view(url='https://www.instagram.com/worksteamwear/'), name='instagram'),
     path('create/', views.create, name='create'),
-    path('jersey-customizer/advanced/', views.jersey_customizer_advanced, name='jersey_customizer_advanced'),
+    path('jersey-customizer/advanced', views.jersey_customizer_advanced, name='jersey_customizer_advanced'),
     path('jersey-customizer/', views.jersey_customizer, name='jersey_customizer'),
     path('jersey-template/', views.jersey_template, name='jersey_template'),
     path('interactive-jersey/', views.interactive_jersey, name='interactive_jersey'),

@@ -47,6 +47,15 @@ class Customer(models.Model):
     def __str__(self):
         return self.user.first_name
 
+    @property
+    def customer_code(self):
+        # Format user id with prefix and zero padding, e.g. CUST000123
+        return f"CUST{self.user.id:06d}"
+
+    @property
+    def status(self):
+        return "Active" if self.user.is_active else "Inactive"
+
 
 class InventoryItem(models.Model):
     name = models.CharField(max_length=50)
