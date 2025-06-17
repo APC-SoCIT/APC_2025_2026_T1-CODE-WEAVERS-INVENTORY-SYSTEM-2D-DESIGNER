@@ -1273,6 +1273,33 @@ def remove_from_cart_view(request, pk):
     # Get next_page from GET with a fallback
     next_page = request.GET.get('next_page', '/')
 
+    # Get customer and region choices
+    region_choices = models.Customer.REGION_CHOICES
+    customer = None
+    region = None
+    if request.user.is_authenticated:
+        try:
+            customer = models.Customer.objects.get(user=request.user)
+            region = customer.region
+        except models.Customer.DoesNotExist:
+            customer = None
+            region = None
+
+    # Set delivery fee based on region
+    if region == 'NCR':
+        delivery_fee = 49
+    elif region == 'CAR':
+        delivery_fee = 59
+    elif region:
+        delivery_fee = 69
+    else:
+        delivery_fee = 0
+
+    vat_rate = 12
+    vat_multiplier = 1 + (vat_rate / 100)
+    vat_amount = total * (vat_rate / 100)
+    grand_total = total + delivery_fee + vat_amount
+
     response = render(request, 'ecom/cart.html', {
         'products': products,
         'total': total,
@@ -1282,7 +1309,7 @@ def remove_from_cart_view(request, pk):
         'grand_total': grand_total,
         'product_count_in_cart': product_count_in_cart,
         'user_address': customer,  # Make sure this is passed!
-        'region_choices': region_choices,  # <-- Add this line
+        'region_choices': region_choices,
     })
 
     # Remove cookie for the specific product-size combination

@@ -49,8 +49,8 @@
       margin-left: auto;
       margin-right: 180px;
     
-      position: relative; /* <<< Add positioning */
-      top: 50px; /* <<< Move it lower without changing margin */
+      position: relative;
+      top: 50px;
     }
     
     .cta span {
@@ -158,6 +158,158 @@
       line-height: 24px;
       font-size: 12px;
       font-weight: bold;
+    }
+
+    /* Delivery Address Display */
+    .delivery-address-display {
+      background: #ffffff;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .delivery-address-display .header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 15px;
+    }
+
+    .delivery-address-display .header .icon {
+      color: #ff6b6b;
+      font-size: 16px;
+    }
+
+    .delivery-address-display .header .title {
+      color: #ff6b6b;
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .delivery-address-display .content {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 20px;
+    }
+
+    .delivery-address-display .customer-info {
+      flex: 0 0 auto;
+    }
+
+    .delivery-address-display .customer-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 2px;
+    }
+
+    .delivery-address-display .customer-phone {
+      font-size: 14px;
+      color: #666;
+    }
+
+    .delivery-address-display .address-info {
+      flex: 1;
+      margin: 0 20px;
+    }
+
+    .delivery-address-display .address-text {
+      font-size: 14px;
+      color: #666;
+      line-height: 1.4;
+    }
+
+    .delivery-address-display .actions {
+      flex: 0 0 auto;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .delivery-address-display .default-btn {
+      padding: 6px 12px;
+      border: 1px solid #ddd;
+      background: white;
+      color: #666;
+      font-size: 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .delivery-address-display .default-btn:hover {
+      border-color: #999;
+      color: #333;
+    }
+
+    .delivery-address-display .change-btn {
+      color: #007bff;
+      font-size: 14px;
+      text-decoration: none;
+      font-weight: 500;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+
+    .delivery-address-display .change-btn:hover {
+      color: #0056b3;
+      text-decoration: underline;
+    }
+
+    /* Address Form Styles */
+    .address-form {
+      background: #f8f9fa;
+      border: 1px solid #e9ecef;
+      border-radius: 8px;
+      padding: 20px;
+      margin-top: 15px;
+      display: none;
+    }
+
+    .address-form .form-group {
+      margin-bottom: 15px;
+    }
+
+    .address-form label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #555;
+      margin-bottom: 5px;
+      display: block;
+    }
+
+    .address-form .form-control {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+
+    .address-form .form-control:focus {
+      outline: none;
+      border-color: #007bff;
+      box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+    }
+
+    .address-form .form-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    @media (max-width: 768px) {
+      .delivery-address-display .content {
+        flex-direction: column;
+        gap: 15px;
+      }
+
+      .delivery-address-display .actions {
+        align-self: flex-end;
+      }
     }
 
     /* Checkout */
@@ -292,58 +444,6 @@
 
 <br><br><br><br>
 
-<!-- Place this just above your cart table (after <br><br><br><br> or at the top of your cart content) -->
-<div class="address-card" style="max-width: 420px; margin: 0 auto 30px auto; background: #f8fafc; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.07); padding: 24px 28px 20px 28px; position: relative;">
-  <div style="display: flex; align-items: center; justify-content: space-between;">
-    <div>
-      <div style="font-size: 17px; font-weight: 700; color: #222;">Shipping Address</div>
-      <div style="font-size: 13px; color: #888;">Current delivery address</div>
-    </div>
-    <button type="button" onclick="showAddressForm()" class="btn btn-outline-primary btn-sm" style="font-size: 13px; font-weight: 600; border-radius: 6px;">Change</button>
-  </div>
-  <div id="cart-address-display" style="margin-top: 18px;">
-    <div style="font-size: 15px; font-weight: 600; color: #333; margin-bottom: 2px;">{{ user_address.full_name }}</div>
-    <div style="font-size: 14px; color: #444;">{{ user_address.street }}, Brgy. {{ user_address.brgy }}</div>
-    <div style="font-size: 14px; color: #444;">{{ user_address.city }}, {{ user_address.postal_code }}</div>
-  </div>
-  <!-- Modal-style address form -->
-<form id="cart-address-form" method="post" action="{% url 'update-address' %}" style="display:none; margin-top:18px; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); padding: 18px;">
-  {% csrf_token %}
-  <div class="form-group" style="margin-bottom: 10px;">
-    <label style="font-size: 13px;">Full Name</label>
-    <input type="text" name="full_name" value="{{ user_address.full_name }}" class="form-control" required>
-  </div>
-  <div class="form-group" style="margin-bottom: 10px;">
-  <label style="font-size: 13px;">Region</label>
-  <select name="region" id="region-select" class="form-control" required onchange="updateDeliveryFee()">
-    {% for code, name in region_choices %}
-      <option value="{{ code }}" {% if user_address.region == code %}selected{% endif %}>{{ name }}</option>
-    {% endfor %}
-    </select>
-  </div>
-  <div class="form-group" style="margin-bottom: 10px;">
-    <label style="font-size: 13px;">City</label>
-    <input type="text" name="city" value="{{ user_address.city }}" class="form-control" required>
-  </div>
-  <div class="form-group" style="margin-bottom: 10px;">
-    <label style="font-size: 13px;">Barangay</label>
-    <input type="text" name="brgy" value="{{ user_address.barangay }}" class="form-control" required>
-  </div>
-  <div class="form-group" style="margin-bottom: 10px;">
-    <label style="font-size: 13px;">Street</label>
-    <input type="text" name="street" value="{{ user_address.street_address }}" class="form-control" required>
-  </div>
-  <div class="form-group" style="margin-bottom: 16px;">
-    <label style="font-size: 13px;">Postal Code</label>
-    <input type="text" name="postal_code" value="{{ user_address.postal_code }}" class="form-control" required>
-  </div>
-  <div style="display: flex; gap: 10px;">
-    <button type="submit" class="btn btn-primary btn-sm" style="font-weight: 600;">Save</button>
-    <button type="button" onclick="hideAddressForm()" class="btn btn-link btn-sm" style="color: #888;">Cancel</button>
-  </div>
-</form>
-</div>
-
 <div class="container">
   <div class="panel panel-success">
     <div class="panel-heading">
@@ -376,19 +476,104 @@
       {% endfor %}
     </table>
 
+    <!-- Delivery Address Display -->
+    <div class="delivery-address-display">
+      <div class="header">
+        <span class="icon">📍</span>
+        <span class="title">Delivery Address</span>
+      </div>
+      <div class="content">
+        <div class="customer-info">
+          <div class="customer-name">{{ user.first_name }} {{ user.last_name }}</div>
+          <div class="customer-phone">(+63) {{ user.customer.mobile|default:"9195331625" }}</div>
+        </div>
+        <div class="address-info">
+          <div class="address-text">
+            {% if user.customer.street_address %}
+              {{ user.customer.street_address }}, {{ user.customer.barangay }}, {{ user.customer.city }}, {{ user.customer.postal_code }}
+            {% else %}
+              2565 Pasigline Street, Sta. Ana, Barangay 778, Santa Ana, Metro Manila, Metro Manila 1009
+            {% endif %}
+          </div>
+        </div>
+        <div class="actions">
+          <button class="default-btn">Default</button>
+          <a href="#" class="change-btn" onclick="showAddressForm()">Change</a>
+        </div>
+      </div>
+      
+      <!-- Address Edit Form -->
+      <div class="address-form" id="address-form">
+        <form method="post" action="{% url 'update-address' %}">
+          {% csrf_token %}
+          <div class="form-group">
+            <label>Full Name</label>
+            <input type="text" name="full_name" value="{{ user.first_name }} {{ user.last_name }}" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label>Phone Number</label>
+            <input type="text" name="phone" value="{{ user.customer.mobile }}" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label>Region</label>
+            <select name="region" id="region-select" class="form-control" required onchange="updateDeliveryFee()">
+              <option value="NCR" data-fee="50">National Capital Region (NCR) - ₱50</option>
+              <option value="CAR" data-fee="80">Cordillera Administrative Region (CAR) - ₱80</option>
+              <option value="Region1" data-fee="100">Region I - Ilocos Region - ₱100</option>
+              <option value="Region2" data-fee="120">Region II - Cagayan Valley - ₱120</option>
+              <option value="Region3" data-fee="70">Region III - Central Luzon - ₱70</option>
+              <option value="Region4A" data-fee="60">Region IV-A - CALABARZON - ₱60</option>
+              <option value="Region4B" data-fee="150">Region IV-B - MIMAROPA - ₱150</option>
+              <option value="Region5" data-fee="130">Region V - Bicol Region - ₱130</option>
+              <option value="Region6" data-fee="140">Region VI - Western Visayas - ₱140</option>
+              <option value="Region7" data-fee="120">Region VII - Central Visayas - ₱120</option>
+              <option value="Region8" data-fee="160">Region VIII - Eastern Visayas - ₱160</option>
+              <option value="Region9" data-fee="180">Region IX - Zamboanga Peninsula - ₱180</option>
+              <option value="Region10" data-fee="170">Region X - Northern Mindanao - ₱170</option>
+              <option value="Region11" data-fee="160">Region XI - Davao Region - ₱160</option>
+              <option value="Region12" data-fee="180">Region XII - SOCCSKSARGEN - ₱180</option>
+              <option value="Region13" data-fee="190">Region XIII - Caraga - ₱190</option>
+              <option value="BARMM" data-fee="200">BARMM - ₱200</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>City</label>
+            <input type="text" name="city" value="{{ user.customer.city }}" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label>Barangay</label>
+            <input type="text" name="barangay" value="{{ user.customer.barangay }}" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label>Street Address</label>
+            <input type="text" name="street_address" value="{{ user.customer.street_address }}" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label>Postal Code</label>
+            <input type="text" name="postal_code" value="{{ user.customer.postal_code }}" class="form-control" required>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary btn-sm">Save Address</button>
+            <button type="button" onclick="hideAddressForm()" class="btn btn-secondary btn-sm">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <div class="card checkout">
       <label class="title">Checkout</label>
       <div class="details">
         <span>Your cart subtotal:</span>
-        <strong>Total: ₱ {{ total|floatformat:2|intcomma }}</strong>
+        <span id="subtotal">₱ {{ total|floatformat:2|intcomma }}</span>
         <span>Delivery Fee:</span>
-        <strong>₱ {{ delivery_fee|intcomma }}</strong>
-        <span>VAT ({{ vat_rate }}%):</span>
-        <strong>₱ {{ vat_amount|floatformat:2|intcomma }}</strong>
-        <span>Grand Total:</span>
-        <strong>₱ {{ grand_total|floatformat:2|intcomma }}</strong>
+        <span id="delivery-fee">₱ <span id="delivery-amount">{{ delivery_fee|default:50|intcomma }}</span></span>
+        <span>VAT (12%):</span>
+        <span id="vat-amount">₱ <span id="vat-value">{{ vat_amount|default_if_none:0|floatformat:2|intcomma }}</span></span>
+        <span style="border-top: 1px solid #ddd; padding-top: 5px; margin-top: 5px;">Grand Total:</span>
+        <strong id="grand-total">₱ <span id="grand-total-value">{{ grand_total|default_if_none:total|floatformat:2|intcomma }}</span></strong>
       </div>
       <div class="checkout--footer">
+        <strong>Total: ₱ <span id="footer-total">{{ grand_total|default_if_none:total|floatformat:2|intcomma }}</span></strong>
         <button class="pay-btn" id="openModalBtn"> 
           Checkout
           <svg class="pay-svgIcon" viewBox="0 0 576 512">
@@ -444,6 +629,42 @@
     </div>
     
     <script>
+      // Global variables for calculations
+      let subtotal = {{ total|floatformat:2 }};
+      let deliveryFee = {{ delivery_fee|default:50 }};
+      let vatRate = 0.12;
+
+      // Calculate totals
+      function calculateTotals() {
+        let vatAmount = (subtotal + deliveryFee) * vatRate;
+        let grandTotal = subtotal + deliveryFee + vatAmount;
+        
+        // Update display
+        document.getElementById('delivery-amount').textContent = deliveryFee.toLocaleString();
+        document.getElementById('vat-value').textContent = vatAmount.toFixed(2);
+        document.getElementById('grand-total-value').textContent = grandTotal.toFixed(2);
+        document.getElementById('footer-total').textContent = grandTotal.toFixed(2);
+        
+        return grandTotal;
+      }
+
+      // Update delivery fee based on region selection
+      function updateDeliveryFee() {
+        const regionSelect = document.getElementById('region-select');
+        const selectedOption = regionSelect.options[regionSelect.selectedIndex];
+        deliveryFee = parseInt(selectedOption.dataset.fee) || 50;
+        calculateTotals();
+      }
+
+      // Address form functions
+      function showAddressForm() {
+        document.getElementById('address-form').style.display = 'block';
+      }
+
+      function hideAddressForm() {
+        document.getElementById('address-form').style.display = 'none';
+      }
+
       // Modal open/close
       const openModalBtn = document.getElementById('openModalBtn');
       const closeModalBtn = document.getElementById('closeModalBtn');
@@ -454,7 +675,7 @@
       const paymentButtons = document.querySelectorAll('.payment-method-btn');
 
       // Check if cart is empty
-      const cartIsEmpty = Number('{{ products|length|default:0 }}') === 0;
+      const cartIsEmpty = {{ products|length|default:0 }} === 0;
 
       openModalBtn.addEventListener('click', (e) => {
         if (cartIsEmpty) {
@@ -498,7 +719,6 @@
       // COD Form Submission
       document.getElementById('cod-checkout-form').addEventListener('submit', (e) => {
         e.preventDefault();
-        // Redirect to payment success page for COD
         window.location.href = '/payment-success?method=cod';
       });
 
@@ -510,11 +730,12 @@
       // PayPal Button
       paypal.Buttons({
         createOrder: function (data, actions) {
+          const grandTotal = calculateTotals();
           return actions.order.create({
             purchase_units: [{
               amount: {
                 currency_code: "PHP",
-                value: '{{ total|floatformat:2 }}'
+                value: grandTotal.toFixed(2)
               }
             }]
           });
@@ -526,24 +747,13 @@
         }
       }).render('#paypal-button-container');
 
-      ;
+      // Initialize calculations on page load
+      document.addEventListener('DOMContentLoaded', function() {
+        calculateTotals();
+      });
     </script>
-  
-
-    </script>
-    
 </div>
 
 <br><br><br><br><br>
 
-<script>
-function showAddressForm() {
-  document.getElementById('cart-address-display').style.display = 'none';
-  document.getElementById('cart-address-form').style.display = 'block';
-}
-function hideAddressForm() {
-  document.getElementById('cart-address-form').style.display = 'none';
-  document.getElementById('cart-address-display').style.display = 'block';
-}
-</script>
 {% endblock content %}

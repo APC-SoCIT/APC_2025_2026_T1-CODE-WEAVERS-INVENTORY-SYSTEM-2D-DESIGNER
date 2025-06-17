@@ -7,92 +7,290 @@
     <title>WorksTeamWear</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda+SC:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Bodoni+Moda+SC:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&display=swap" rel="stylesheet">
     <style media="screen">
-      body {
+      * {
         margin: 0;
         padding: 0;
-        font-family: 'Crimson Text', serif; /* Apply Crimson Text font */
-        background: url('{% static "images/background.jpg" %}') no-repeat center center fixed; /* Use the specified image as background */
-        background-size: cover; /* Ensure the background image covers the entire page */
+        box-sizing: border-box;
       }
 
-      .box {
+      body {
+        font-family: 'Inter', sans-serif;
+        background: url('{% static "images/background.jpg" %}') no-repeat center center fixed;
+        background-size: cover;
+        min-height: 100vh;
+      }
+
+      .container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: calc(100vh - 800px); /* Account for navbar and footer spacing */
+        padding: 20px;
+      }
+
+      .row {
         width: 100%;
-        max-width: 400px;
-        padding: 40px;
-        position: absolute;
-        top: 35000%;
-        left: 100%;
-        transform: translate(-50%, -50%);
-        background: rgba(255, 255, 255, 0.1); /* More transparent background */
-        backdrop-filter: blur(15px); /* Increased blur effect */
-        -webkit-backdrop-filter: blur(15px); /* Increased blur effect for Safari */
-        text-align: center;
-        transition: 0.25s;
+        display: flex;
+        justify-content: center;
+      }
+
+      .signup-card {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
         border-radius: 20px;
-        border: 1px solid rgba(255, 255, 255, 0.3); /* Border to enhance glass effect */
-        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
-      }
-
-      .box:hover {
-        box-shadow: 1px 1px 25px 1px rgba(255, 255, 255, 0.75); /* Enhanced shadow on hover */
-        -webkit-box-shadow: 1px 1px 25px 1px rgba(255, 255, 255, 0.75); /* Enhanced shadow for WebKit browsers on hover */
-        -moz-box-shadow: 1px 1px 25px 1px rgba(255, 255, 255, 0.75); /* Enhanced shadow for Mozilla browsers on hover */
-      }
-
-      .box input[type="text"],
-      .box input[type="password"] {
-        border: 0;
-        background: none;
-        display: block;
-        margin: 20px auto;
-        text-align: center;
-        border: 2px solid #ffffff;
-        padding: 10px 10px;
-        width: 250px;
-        outline: none;
-        color: white;
-        border-radius: 24px;
+        padding: 40px;
+        width: 100%;
+        max-width: 480px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
         transition: 0.25s;
       }
 
-      .box input[type="text"]::placeholder,
-      .box input[type="password"]::placeholder {
-        color: #ffffff; /* Change this color to your desired placeholder color */
+      .signup-card:hover {
+        box-shadow: 1px 1px 25px 1px rgba(255, 255, 255, 0.75);
+        -webkit-box-shadow: 1px 1px 25px 1px rgba(255, 255, 255, 0.75);
+        -moz-box-shadow: 1px 1px 25px 1px rgba(255, 255, 255, 0.75);
       }
 
-      .box h1 {
+      .header {
+        text-align: center;
+        margin-bottom: 30px;
+      }
+
+      .header h1 {
         color: white;
-        font-family: 'Bodoni Moda SC', serif; /* Apply Bodoni Moda SC font */
-        font-weight: 600; /* Adjust the font weight as needed */
+        font-family: 'Bodoni Moda SC', serif;
+        font-size: 28px;
+        font-weight: 600;
+        margin-bottom: 8px;
       }
 
-      .box input[type="text"]:focus,
-      .box input[type="password"]:focus {
-        width: 300px;
+      .header p {
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 16px;
+        font-weight: 400;
+      }
+
+      .form-group {
+        margin-bottom: 20px;
+      }
+
+      .form-row {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 20px;
+      }
+
+      .form-group label {
+        display: block;
+        color: white;
+        font-size: 14px;
+        font-weight: 500;
+        margin-bottom: 8px;
+      }
+
+      .form-control {
+        width: 100%;
+        padding: 12px 16px;
+        background: rgba(255, 255, 255, 0.1);
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-radius: 24px;
+        color: white;
+        font-size: 14px;
+        transition: all 0.3s ease;
+        outline: none;
+        text-align: center;
+      }
+
+      .form-control::placeholder {
+        color: rgba(255, 255, 255, 0.7);
+      }
+
+      .form-control:focus {
         border-color: #d3d3d3;
+        background: rgba(255, 255, 255, 0.15);
+        transform: translateY(-1px);
       }
 
-      .box input[type="submit"] {
-        border: 0;
-        background: none;
-        display: block;
-        margin: 20px auto;
+      select.form-control {
+        cursor: pointer;
         text-align: center;
-        border: 2px solid #2ecc71;
-        padding: 14px 40px;
-        outline: none;
+      }
+
+      select.form-control option {
+        background: #4a5568;
         color: white;
-        border-radius: 24px;
-        transition: 0.25s;
+      }
+
+      .terms-container {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        margin: 25px 0;
+        padding: 15px;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 15px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .terms-container input[type="checkbox"] {
+        margin-top: 2px;
+        width: 18px;
+        height: 18px;
+        accent-color: #2ecc71;
         cursor: pointer;
       }
 
-      .box input[type="submit"]:hover {
-        background: #2ecc71;
+      .terms-text {
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 13px;
+        line-height: 1.5;
       }
 
+      .terms-text a {
+        color: #64b5f6;
+        text-decoration: underline;
+        cursor: pointer;
+        transition: color 0.3s;
+      }
+
+      .terms-text a:hover {
+        color: #90caf9;
+      }
+
+      .submit-btn {
+        width: 100%;
+        padding: 14px;
+        background: none;
+        border: 2px solid #2ecc71;
+        border-radius: 24px;
+        color: white;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin-bottom: 20px;
+      }
+
+      .submit-btn:hover:not(:disabled) {
+        background: #2ecc71;
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(46, 204, 113, 0.3);
+      }
+
+      .submit-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+        border-color: #666;
+      }
+
+      .login-link {
+        text-align: center;
+      }
+
+      .login-link a {
+        color: rgba(255, 255, 255, 0.8);
+        text-decoration: underline;
+        font-size: 14px;
+        transition: color 0.3s;
+      }
+
+      .login-link a:hover {
+        color: white;
+      }
+
+      /* Modal Styles */
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(5px);
+      }
+
+      .modal-content {
+        background: rgba(255, 255, 255, 0.95);
+        margin: 5% auto;
+        padding: 30px;
+        border-radius: 15px;
+        width: 90%;
+        max-width: 700px;
+        max-height: 80vh;
+        overflow-y: auto;
+        position: relative;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      }
+
+      .close {
+        color: #aaa;
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+        position: absolute;
+        right: 20px;
+        top: 15px;
+        cursor: pointer;
+      }
+
+      .close:hover,
+      .close:focus {
+        color: #000;
+      }
+
+      .modal h2 {
+        color: #333;
+        border-bottom: 2px solid #2ecc71;
+        padding-bottom: 10px;
+        margin-top: 0;
+      }
+
+      .modal h3 {
+        color: #555;
+        margin-top: 25px;
+      }
+
+      .modal p {
+        color: #666;
+        line-height: 1.6;
+        margin-bottom: 15px;
+      }
+
+      /* Error Messages */
+      .error-messages {
+        background: rgba(245, 101, 101, 0.1);
+        border: 1px solid rgba(245, 101, 101, 0.3);
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 20px;
+        text-align: left;
+      }
+
+      .error-messages ul {
+        margin: 0;
+        padding-left: 20px;
+        color: #fed7d7;
+        font-size: 14px;
+      }
+
+      .success-message {
+        background: rgba(72, 187, 120, 0.1);
+        border: 1px solid rgba(72, 187, 120, 0.3);
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 20px;
+        color: #c6f6d5;
+        text-align: center;
+      }
+
+      /* Social Network Styles (from login page) */
       .forgot {
         text-decoration: underline;
       }
@@ -158,31 +356,47 @@
       .social-circle i {
         color: #fff;
         transition: all 0.8s;
-        transition: all 0.8s;
+      }
+
+      /* Responsive Design */
+      @media (max-width: 768px) {
+        .signup-card {
+          padding: 30px 20px;
+          margin: 10px;
+        }
+        
+        .form-row {
+          grid-template-columns: 1fr;
+          gap: 0;
+        }
+        
+        .header h1 {
+          font-size: 24px;
+        }
+        
+        .modal-content {
+          margin: 10% auto;
+          padding: 20px;
+          width: 95%;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .signup-card {
+          padding: 25px 15px;
+        }
+        
+        .header h1 {
+          font-size: 22px;
+        }
       }
     </style>
     <script>
-      // Use only the region/city/barangay logic
-      document.addEventListener('DOMContentLoaded', function() {
-          updateRegions();
-          // Restore previous values if present (for validation errors)
-          const prevRegion = '{{ customerForm.region.value|escapejs }}';
-          const prevCity = '{{ customerForm.city.value|escapejs }}';
-          const prevBarangay = '{{ customerForm.barangay.value|escapejs }}';
-          if (prevRegion) {
-              document.getElementById('region').value = prevRegion;
-              updateCities();
-              if (prevCity) {
-                  document.getElementById('city').value = prevCity;
-                  updateBarangays();
-                  if (prevBarangay) {
-                      document.getElementById('barangay').value = prevBarangay;
-                  }
-              }
-          }
-      });
+      const countries = {
+        'PH': 'Philippines',
+        'US': 'United States'
+      };
 
-      // Use region codes for values, but show full names
       const philippineRegions = [
         { code: 'NCR', name: 'National Capital Region (NCR)' },
         { code: 'CAR', name: 'Cordillera Administrative Region (CAR)' },
@@ -292,181 +506,345 @@
           // Add more cities and their barangays as needed
       };
 
-      function updateRegions() {
+      document.addEventListener('DOMContentLoaded', function() {
+        const countrySelect = document.getElementById('country');
         const regionSelect = document.getElementById('region');
-        regionSelect.innerHTML = '<option value="">Select Region</option>';
-        philippineRegions.forEach(region => {
-          const option = document.createElement('option');
-          option.value = region.code;
-          option.textContent = region.name;
-          regionSelect.appendChild(option);
-        });
-        // If a value is already set (edit form), select it
-        if (regionSelect.dataset.value) {
-          regionSelect.value = regionSelect.dataset.value;
+        const citySelect = document.getElementById('city');
+        const barangaySelect = document.getElementById('barangay');
+        const termsCheckbox = document.getElementById('terms');
+        const submitButton = document.querySelector('.submit-btn');
+        const modal = document.getElementById('termsModal');
+        const termsLink = document.getElementById('termsLink');
+        const privacyLink = document.getElementById('privacyLink');
+        const closeBtn = document.getElementsByClassName('close')[0];
+
+        // Populate regions based on country selection
+        function populateRegions(countryCode) {
+            regionSelect.innerHTML = '<option value="" disabled selected>Select Region</option>';
+            if (countryCode === 'PH') {
+                philippineRegions.forEach(region => {
+                    const option = document.createElement('option');
+                    option.value = region.code;
+                    option.textContent = region.name;
+                    regionSelect.appendChild(option);
+                });
+            } else {
+                // For other countries, clear regions
+                regionSelect.innerHTML = '<option value="" disabled selected>No regions available</option>';
+            }
+            // Clear cities and barangays
+            citySelect.innerHTML = '<option value="" disabled selected>Select City</option>';
+            barangaySelect.innerHTML = '<option value="" disabled selected>Select Barangay</option>';
         }
-        updateCities();
-      }
 
-      function updateCities() {
-          const regionSelect = document.getElementById('region');
-          const citySelect = document.getElementById('city');
-          const selectedRegion = regionSelect.value;
-          citySelect.innerHTML = '<option value="">Select City</option>';
-          const cities = philippineCities[selectedRegion] || [];
-          cities.forEach(city => {
-              const option = document.createElement('option');
-              option.value = city;
-              option.textContent = city;
-              citySelect.appendChild(option);
-          });
-          // If a value is already set (edit form), select it
-          if (citySelect.dataset.value) {
-            citySelect.value = citySelect.dataset.value;
-          }
-          updateBarangays();
-      }
+        // Event listener for country change
+        countrySelect.addEventListener('change', function() {
+            populateRegions(this.value);
+        });
 
-      function updateBarangays() {
-          const citySelect = document.getElementById('city');
-          const barangaySelect = document.getElementById('barangay');
-          const selectedCity = citySelect.value;
-          barangaySelect.innerHTML = '<option value="">Select Barangay</option>';
-          const cityBarangays = barangays[selectedCity] || [];
-          cityBarangays.forEach(barangay => {
-              const option = document.createElement('option');
-              option.value = barangay;
-              option.textContent = barangay;
-              barangaySelect.appendChild(option);
+        // Event listener for region change to populate cities
+        regionSelect.addEventListener('change', function() {
+            const selectedRegion = this.value;
+            citySelect.innerHTML = '<option value="" disabled selected>Select City</option>';
+            const cities = philippineCities[selectedRegion] || [];
+            cities.forEach(city => {
+                const option = document.createElement('option');
+                option.value = city;
+                option.textContent = city;
+                citySelect.appendChild(option);
+            });
+            // Clear barangays
+            barangaySelect.innerHTML = '<option value="" disabled selected>Select Barangay</option>';
+        });
+
+        // Event listener for city change to populate barangays
+        citySelect.addEventListener('change', function() {
+            const selectedCity = this.value;
+            barangaySelect.innerHTML = '<option value="" disabled selected>Select Barangay</option>';
+            const cityBarangays = barangays[selectedCity] || [];
+            cityBarangays.forEach(barangay => {
+                const option = document.createElement('option');
+                option.value = barangay;
+                option.textContent = barangay;
+                barangaySelect.appendChild(option);
+            });
+        });
+
+        // If a country is preselected, populate regions on page load
+        if (countrySelect.value) {
+            populateRegions(countrySelect.value);
+        }
+
+        // Restore previous values if present (for validation errors)
+        const prevRegion = '{{ customerForm.region.value|escapejs }}';
+        const prevCity = '{{ customerForm.city.value|escapejs }}';
+        const prevBarangay = '{{ customerForm.barangay.value|escapejs }}';
+        if (prevRegion) {
+            regionSelect.value = prevRegion;
+            regionSelect.dispatchEvent(new Event('change'));
+            if (prevCity) {
+                citySelect.value = prevCity;
+                citySelect.dispatchEvent(new Event('change'));
+                if (prevBarangay) {
+                    barangaySelect.value = prevBarangay;
+                }
+            }
+        }
+
+        // Handle terms checkbox
+        if (termsCheckbox) {
+          // Initially disable submit button if checkbox not checked
+          submitButton.disabled = !termsCheckbox.checked;
+          termsCheckbox.addEventListener('change', function() {
+            submitButton.disabled = !this.checked;
           });
-          // If a value is already set (edit form), select it
-          if (barangaySelect.dataset.value) {
-            barangaySelect.value = barangaySelect.dataset.value;
+        }
+
+        // Modal functionality
+        if (termsLink) {
+          termsLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            modal.style.display = 'block';
+          });
+        }
+
+        if (privacyLink) {
+          privacyLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            modal.style.display = 'block';
+          });
+        }
+
+        if (closeBtn) {
+          closeBtn.addEventListener('click', function() {
+            modal.style.display = 'none';
+          });
+        }
+
+        window.addEventListener('click', function(event) {
+          if (event.target == modal) {
+            modal.style.display = 'none';
           }
-      }
+        });
+
+        // Form validation
+        document.querySelector('form').addEventListener('submit', function(e) {
+          if (termsCheckbox && !termsCheckbox.checked) {
+            e.preventDefault();
+            alert('Please accept the Terms and Conditions to continue.');
+          }
+        });
+      });
     </script>
-    <style media="screen">
-      /* Add these new styles for the modal */
-      .modal {
-          display: none;
-          position: fixed;
-          z-index: 1000;
-          left: 0;
-          top: 0;
-          width: 100%;
-          height: 100%;
-          background-color: rgba(0,0,0,0.4);
-      }
-      
-      .modal-content {
-          background: rgba(255, 255, 255, 0.95);
-          margin: 5% auto;
-          padding: 20px;
-          width: 80%;
-          max-width: 800px;
-          max-height: 80vh;
-          overflow-y: auto;
-          border-radius: 10px;
-          position: relative;
-      }
-      
-      .close-modal {
-          position: absolute;
-          right: 20px;
-          top: 10px;
-          font-size: 28px;
-          cursor: pointer;
-      }
-      
-      .modal-content h1 {
-          color: #333;
-          margin-bottom: 20px;
-      }
-      
-      .modal-content h2 {
-          color: #444;
-          margin-top: 20px;
-      }
-      
-      .modal-content p, .modal-content ul {
-          color: #666;
-          line-height: 1.6;
-      }
-      
-      .modal-content ul {
-          margin-left: 20px;
-      }
-      </style>
-    </head>
-    <body>
-      {% include "ecom/navbar.html" %}
-      <div class="container">
-        <div class="row">
-          <div class="col-md-6">
-            <div class="card">
-              <form class="box" method="post" enctype="multipart/form-data">
+  </head>
+  <body>
+    {% include "ecom/navbar.html" %}
+    <div class="container">
+      <div class="row">
+        <div class="col-md-6">
+          <div class="card">
+            <div class="signup-card">
+              <div class="header">
+                <h1>WorksTeamWear</h1>
+                <p>Create your account to get started</p>
+              </div>
+
+              <!-- Display form errors -->
+              {% if form.errors or userForm.errors or customerForm.errors %}
+                <div class="error-messages">
+                  <ul>
+                    {% for field, errors in userForm.errors.items %}
+                      {% for error in errors %}
+                        <li>{{ field|title }}: {{ error }}</li>
+                      {% endfor %}
+                    {% endfor %}
+                    {% for field, errors in customerForm.errors.items %}
+                      {% for error in errors %}
+                        <li>{{ field|title }}: {{ error }}</li>
+                      {% endfor %}
+                    {% endfor %}
+                  </ul>
+                </div>
+              {% endif %}
+
+              <!-- Success message -->
+              {% if messages %}
+                {% for message in messages %}
+                  <div class="success-message">
+                    {{ message }}
+                  </div>
+                {% endfor %}
+              {% endif %}
+
+              <form method="post" enctype="multipart/form-data">
                 {% csrf_token %}
-                <h1>Sign Up</h1>
-                {% render_field userForm.first_name class="form-control" placeholder="First Name" %}
-                {% render_field userForm.last_name class="form-control" placeholder="Last Name" %}
-                {% render_field userForm.username class="form-control" placeholder="Username" %}
-                {% render_field userForm.password class="form-control" placeholder="Password" %}
-                {% render_field userForm.confirm_password class="form-control" placeholder="Confirm Password" %}
-                {% render_field customerForm.street_address class="form-control" placeholder="Street Address" %}
-                {% render_field customerForm.mobile class="form-control" placeholder="Phone Number" %}
-                {% render_field customerForm.postal_code class="form-control" placeholder="Postal Code" %}
-                {% render_field customerForm.region class="form-control" id="region" style="background: none; border: 2px solid #ffffff; color: white; border-radius: 24px; margin: 20px auto; width: 250px; text-align: center;" onchange="updateCities()" %}
-                {% render_field customerForm.city class="form-control" id="city" style="background: none; border: 2px solid #ffffff; color: white; border-radius: 24px; margin: 20px auto; width: 250px; text-align: center;" onchange="updateBarangays()" %}
-                {% render_field customerForm.barangay class="form-control" id="barangay" style="background: none; border: 2px solid #ffffff; color: white; border-radius: 24px; margin: 20px auto; width: 250px; text-align: center;" %}
                 
-                {% if userForm.errors or customerForm.errors %}
-                <div style="color: #ffb3b3; background: #2c2c2c; border-radius: 10px; padding: 10px; margin-bottom: 10px;">
-                  {% for field in userForm %}
-                    {% for error in field.errors %}
-                      <div>{{ field.label }}: {{ error }}</div>
-                    {% endfor %}
-                  {% endfor %}
-                  {% for error in userForm.non_field_errors %}
-                    <div>{{ error }}</div>
-                  {% endfor %}
-                  {% for field in customerForm %}
-                    {% for error in field.errors %}
-                      <div>{{ field.label }}: {{ error }}</div>
-                    {% endfor %}
-                  {% endfor %}
-                  {% for error in customerForm.non_field_errors %}
-                    <div>{{ error }}</div>
-                  {% endfor %}
-                </div>
-                {% endif %}
-
-                <div class="form-check" style="text-align: left; margin: 20px auto; width: 250px;">
-                    <input type="checkbox" class="form-check-input" id="privacy_policy" name="privacy_policy" required>
-                    <label class="form-check-label" for="privacy_policy" style="color: white;">
-                        I agree to the <a href="#" onclick="showPrivacyPolicy()" style="color: #2ecc71;">Privacy Policy</a>
-                    </label>
+                <!-- Name fields -->
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="{{ userForm.first_name.id_for_label }}">First Name</label>
+                    {% render_field userForm.first_name class="form-control" placeholder="First Name" %}
+                  </div>
+                  <div class="form-group">
+                    <label for="{{ userForm.last_name.id_for_label }}">Last Name</label>
+                    {% render_field userForm.last_name class="form-control" placeholder="Last Name" %}
+                  </div>
                 </div>
 
-                <input type="submit" name="" value="Sign Up">
-
-                <!-- Privacy Policy Modal -->
-                <div id="privacyPolicyModal" class="modal">
-                    <div class="modal-content">
-                        <span class="close-modal" onclick="closePrivacyPolicy()">&times;</span>
-                        <h1>Privacy Policy</h1>
-                        <p>This Privacy Policy describes how your personal information is collected, used, and shared when you visit or make a purchase from our site.</p>
-                        <!-- Add more privacy policy content here -->
-                    </div>
+                <!-- Username -->
+                <div class="form-group">
+                  <label for="{{ userForm.username.id_for_label }}">Username</label>
+                  {% render_field userForm.username class="form-control" placeholder="Username" %}
                 </div>
 
-                <script>
-                    function showPrivacyPolicy() {
-                        document.getElementById('privacyPolicyModal').style.display = 'block';
-                    }
+                <!-- Password -->
+                <div class="form-group">
+                  <label for="{{ userForm.password.id_for_label }}">Password</label>
+                  {% render_field userForm.password class="form-control" placeholder="Password" %}
+                </div>
+                <!-- Confirm Password -->
+                <div class="form-group">
+                  <label for="{{ userForm.confirm_password.id_for_label }}">Confirm Password</label>
+                  {% render_field userForm.confirm_password class="form-control" placeholder="Confirm Password" %}
+                </div>
 
-                    function closePrivacyPolicy() {
-                        document.getElementById('privacyPolicyModal').style.display = 'none';
-                    }
-                </script>
-    </body>
+                <!-- Country and Region in one row -->
+                <div class="form-row">
+                  <div class="form-group" style="flex: 1; margin-right: 10px;">
+                    <label for="country">Country</label>
+                    <select name="country" id="country" class="form-control" required>
+                      <option value="" disabled selected>Select Country</option>
+                      <option value="PH" {% if request.POST.country == 'PH' %}selected{% endif %}>Philippines</option>
+                      <option value="US" {% if request.POST.country == 'US' %}selected{% endif %}>United States</option>
+                    </select>
+                  </div>
+                  <div class="form-group" style="flex: 1;">
+                    <label for="{{ customerForm.region.id_for_label }}">Region</label>
+                    <select name="region" id="region" class="form-control" required>
+                      <option value="" disabled selected>Select Region</option>
+                    </select>
+                  </div>
+                </div>
+                <!-- City and Barangay in one row -->
+                <div class="form-row">
+                  <div class="form-group" style="flex: 1; margin-right: 10px;">
+                    <label for="city">City</label>
+                    <select name="city" id="city" class="form-control" required>
+                      <option value="" disabled selected>Select City</option>
+                    </select>
+                  </div>
+                  <div class="form-group" style="flex: 1;">
+                    <label for="{{ customerForm.barangay.id_for_label }}">Barangay</label>
+                    {% render_field customerForm.barangay class="form-control" placeholder="Barangay" id="barangay" %}
+                  </div>
+                </div>
+
+                <!-- Street Address -->
+                <div class="form-group">
+                  <label for="{{ customerForm.street_address.id_for_label }}">Street Address</label>
+                  {% render_field customerForm.street_address class="form-control" placeholder="Street Address" %}
+                </div>
+
+                <!-- Postal Code and Contact -->
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="{{ customerForm.postal_code.id_for_label }}">Postal Code</label>
+                    {% render_field customerForm.postal_code class="form-control" placeholder="Postal Code" %}
+                  </div>
+                  <div class="form-group">
+                    <label for="{{ customerForm.mobile.id_for_label }}">Contact</label>
+                    {% render_field customerForm.mobile class="form-control" placeholder="Mobile Number" %}
+                  </div>
+                </div>
+
+                <!-- Terms and Conditions -->
+                <div class="terms-container">
+                  {% render_field customerForm.privacy_policy class="form-check-input" id="terms" %}
+                  <label for="terms" class="terms-text">
+                    I agree to the 
+                    <a href="#" id="termsLink">Terms and Conditions</a> 
+                    and 
+                    <a href="#" id="privacyLink">Privacy Policy</a>
+                  </label>
+                </div>
+
+                <button type="submit" class="submit-btn" disabled>Create Account</button>
+                
+                <div class="login-link">
+                  <a href="/customerlogin">Already have an account? Login Here!</a>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Terms and Conditions Modal -->
+    <div id="termsModal" class="modal">
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>Terms and Conditions & Privacy Policy</h2>
+        <p><strong>Last updated:</strong> December 2024</p>
+        
+        <h3>1. Acceptance of Terms</h3>
+        <p>By creating an account with WorksTeamWear, you agree to be bound by these Terms and Conditions. If you do not agree to these terms, please do not use our service.</p>
+        
+        <h3>2. Account Registration</h3>
+        <p>You must provide accurate, current, and complete information during the registration process. You are responsible for maintaining the confidentiality of your account credentials and for all activities that occur under your account.</p>
+        
+        <h3>3. Use of Service</h3>
+        <p>You agree to use our service only for lawful purposes and in accordance with these terms. You may not:</p>
+        <p>• Use the service for any illegal or unauthorized purpose<br>
+        • Violate any laws in your jurisdiction<br>
+        • Transmit any harmful or malicious code<br>
+        • Interfere with or disrupt the service</p>
+        
+        <h3>4. Privacy Policy</h3>
+        <p><strong>Information We Collect:</strong></p>
+        <p>• Personal information (name, email, address, phone number)<br>
+        • Account credentials<br>
+        • Usage data and preferences</p>
+        
+        <p><strong>How We Use Your Information:</strong></p>
+        <p>• To provide and maintain our service<br>
+        • To process your orders and transactions<br>
+        • To communicate with you about your account<br>
+        • To improve our service and user experience</p>
+        
+        <p><strong>Information Sharing:</strong></p>
+        <p>We do not sell, trade, or rent your personal information to third parties. We may share your information only in the following circumstances:</p>
+        <p>• With your explicit consent<br>
+        • To comply with legal obligations<br>
+        • To protect our rights and safety</p>
+        
+        <h3>5. Data Security</h3>
+        <p>We implement appropriate security measures to protect your personal information against unauthorized access, alteration, disclosure, or destruction. However, no method of transmission over the internet is 100% secure.</p>
+        
+        <h3>6. Order Processing</h3>
+        <p>All orders are subject to acceptance and availability. We reserve the right to refuse or cancel any order for any reason. Prices and availability are subject to change without notice.</p>
+        
+        <h3>7. Limitation of Liability</h3>
+        <p>WorksTeamWear shall not be liable for any indirect, incidental, special, consequential, or punitive damages, including without limitation, loss of profits, data, use, goodwill, or other intangible losses.</p>
+        
+        <h3>8. Changes to Terms</h3>
+        <p>We reserve the right to modify these terms at any time. Changes will be effective immediately upon posting on our website. Your continued use of the service constitutes acceptance of the modified terms.</p>
+        
+        <h3>9. Termination</h3>
+        <p>We may terminate or suspend your account immediately, without prior notice, for conduct that we believe violates these terms or is harmful to other users, us, or third parties.</p>
+        
+        <h3>10. Contact Information</h3>
+        <p>If you have any questions about these Terms and Conditions or our Privacy Policy, please contact us at:</p>
+        <p><strong>Email:</strong> support@worksteamwear.com<br>
+        <strong>Phone:</strong> +1 (555) 123-4567<br>
+        <strong>Address:</strong> 123 Business Street, City, State 12345</p>
+        
+        <p style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 12px; color: #888;">
+          By clicking "I agree" and creating an account, you acknowledge that you have read, understood, and agree to be bound by these Terms and Conditions and Privacy Policy.
+        </p>
+      </div>
+    </div>
+
+    {% include "ecom/footer.html" %}
+  </body>
 </html>

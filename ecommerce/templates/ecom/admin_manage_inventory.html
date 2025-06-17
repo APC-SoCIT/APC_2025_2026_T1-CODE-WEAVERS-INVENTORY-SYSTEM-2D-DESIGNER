@@ -1,0 +1,176 @@
+{% extends 'ecom/admin_base.html' %}
+{% load static %}
+{% block content %}
+
+<div class="mb-6">
+    <h1 class="text-2xl md:text-3xl font-bold text-gray-900 mb-2">Manage Inventory</h1>
+    <p class="text-gray-600">Add, edit, and track your inventory items</p>
+</div>
+
+<!-- Add Item Form -->
+<div class="bg-white rounded-lg shadow-sm border mb-6">
+    <div class="p-6 border-b border-gray-200">
+        <h2 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
+            <i data-lucide="box" class="h-5 w-5"></i>
+            Add New Item
+        </h2>
+    </div>
+    <div class="p-6">
+        <form method="post" action="{% url 'admin-manage-inventory' %}" class="space-y-4">
+            {% csrf_token %}
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="space-y-2">
+                    {{ form.name.label_tag }}
+                    {{ form.name }}
+                    {% if form.name.errors %}
+                        <p class="text-red-600 text-sm">{{ form.name.errors }}</p>
+                    {% endif %}
+                </div>
+                <div class="space-y-2">
+                    {{ form.quantity.label_tag }}
+                    {{ form.quantity }}
+                    {% if form.quantity.errors %}
+                        <p class="text-red-600 text-sm">{{ form.quantity.errors }}</p>
+                    {% endif %}
+                </div>
+                <div class="space-y-2">
+                    <label for="id_low_stock_threshold" class="block text-sm font-medium text-gray-700">Low Stock Threshold</label>
+                    <input 
+                        type="number" 
+                        id="id_low_stock_threshold" 
+                        name="low_stock_threshold"
+                        min="0"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                        placeholder="Default: 10"
+                        value="10"
+                    >
+                </div>
+            </div>
+            <div class="flex gap-2">
+                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center gap-2">
+                    <i data-lucide="plus" class="h-4 w-4"></i>
+                    Add Item
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Inventory Summary Cards -->
+<div class="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 mb-6">
+    <div class="bg-white rounded-lg shadow-sm border p-4">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm font-medium text-gray-500">Total Items</p>
+                <p class="text-2xl font-bold text-gray-900" id="totalItems">{{ total_items }}</p>
+            </div>
+            <i data-lucide="box" class="h-8 w-8 text-blue-500"></i>
+        </div>
+    </div>
+    <div class="bg-white rounded-lg shadow-sm border p-4">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm font-medium text-gray-500">Low Stock</p>
+                <p class="text-2xl font-bold text-yellow-600" id="lowStockItems">{{ low_stock_items }}</p>
+            </div>
+            <i data-lucide="box" class="h-8 w-8 text-yellow-500"></i>
+        </div>
+    </div>
+    <div class="bg-white rounded-lg shadow-sm border p-4">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm font-medium text-gray-500">Out of Stock</p>
+                <p class="text-2xl font-bold text-red-600" id="outOfStockItems">{{ out_of_stock_items }}</p>
+            </div>
+            <i data-lucide="box" class="h-8 w-8 text-red-500"></i>
+        </div>
+    </div>
+    <div class="bg-white rounded-lg shadow-sm border p-4">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm font-medium text-gray-500">Total Stock</p>
+                <p class="text-2xl font-bold text-gray-900" id="totalStock">{{ total_stock }}</p>
+            </div>
+            <i data-lucide="box" class="h-8 w-8 text-green-500"></i>
+        </div>
+    </div>
+</div>
+
+<!-- Inventory List -->
+<div class="bg-white rounded-lg shadow-sm border">
+    <div class="p-6 border-b border-gray-200">
+        <h2 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
+            <i data-lucide="box" class="h-5 w-5"></i>
+            Inventory List
+        </h2>
+    </div>
+    <div class="p-6">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Item Name</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Low Stock Threshold</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="inventoryTableBody" class="bg-white divide-y divide-gray-200">
+                    {% for item in inventory_items %}
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap font-medium text-gray-900">{{ item.name }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-gray-900">{{ item.quantity }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-gray-900">
+                            {% if item.low_stock_threshold %}
+                                {{ item.low_stock_threshold }}
+                            {% else %}
+                                10
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            {% if item.quantity == 0 %}
+                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Out of Stock</span>
+                            {% elif item.low_stock_threshold and item.quantity <= item.low_stock_threshold %}
+                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Low Stock</span>
+                            {% elif not item.low_stock_threshold and item.quantity <= 10 %}
+                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Low Stock</span>
+                            {% else %}
+                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">In Stock</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right">
+                            <div class="flex items-center justify-end gap-2">
+                                <a href="{% url 'edit_inventory' item.id %}" class="text-blue-600 hover:text-blue-900 p-1" title="Edit">
+                                    <i data-lucide="edit" class="h-4 w-4"></i>
+                                </a>
+                                <a href="{% url 'delete_inventory' item.id %}" class="text-red-600 hover:text-red-900 p-1" title="Delete" onclick="return confirm('Are you sure you want to delete this item?');">
+                                    <i data-lucide="trash-2" class="h-4 w-4"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center py-4 text-gray-500">No inventory items found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Empty State (hidden by default) -->
+        <div id="emptyState" class="text-center py-12 hidden">
+            <i data-lucide="box" class="h-12 w-12 mx-auto mb-4 text-gray-400"></i>
+            <h3 class="text-lg font-medium text-gray-500 mb-2">No inventory items found</h3>
+            <p class="text-sm text-gray-400">Add your first inventory item using the form above.</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+</script>
+
+{% endblock content %}
