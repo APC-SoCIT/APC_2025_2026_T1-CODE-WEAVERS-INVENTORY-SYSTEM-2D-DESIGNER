@@ -362,7 +362,7 @@
       {% for product in products %}
         <tr>
           <td>{{ product.product.name }}</td>
-          <td><img src="{% static product.product.product_image.url %}" alt="Product Image" height="50px" width="50px"></td>
+          <td><img src="{{ product.product.product_image.url }}" alt="Product Image" height="50px" width="50px"></td>
           <td>₱ {{ product.product.price|floatformat:2 }}</td>
           <td><span class="size-badge">{{ product.size }}</span></td>
           <td><span class="quantity-badge">{{ product.quantity }}</span></td>

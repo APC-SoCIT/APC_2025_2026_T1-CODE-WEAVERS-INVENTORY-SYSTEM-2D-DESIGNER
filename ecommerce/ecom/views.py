@@ -282,8 +282,8 @@ def admin_dashboard_view(request):
     users = []
     for c in customers:
         users.append({
-            'id': c.get_id,
-            'name': c.get_name,
+            'id': c.id,  # changed from c.get_id
+            'name': c.get_name if hasattr(c, 'get_name') else str(c),
             'address': c.get_full_address,
             'phone': c.mobile,
             'status': c.status,
@@ -335,9 +335,7 @@ def admin_dashboard_view(request):
         if not order.product:
             continue  # Skip orders with missing product
         order.total_price = order.product.price * order.quantity  # Add total_price attribute
-        recent_orders_products.append(order.product)
-        recent_orders_customers.append(order.customer)
-        recent_orders_orders.append(order)
+        # Removed recent_orders_products, recent_orders_customers, recent_orders_orders appends
         # Debug print product image info
         print(f"Product: {order.product.name}, Image: {order.product.product_image}, Size: {order.size}")
 
@@ -918,20 +916,35 @@ def view_feedback_view(request):
 
 @login_required(login_url='customerlogin')
 def pending_orders_view(request):
+    from decimal import Decimal
     customer = models.Customer.objects.get(user_id=request.user.id)
     orders = models.Orders.objects.filter(customer=customer, status='Pending').order_by('-order_date', '-created_at')
     orders_with_items = []
+    VAT_RATE = Decimal('0.12')  # 12% VAT
+    DELIVERY_FEE = Decimal('100')  # Example delivery fee, adjust as needed
     for order in orders:
         order_items = models.OrderItem.objects.filter(order=order)
-        total_price = 0
+        subtotal = Decimal('0.00')
         for item in order_items:
-            total_price += item.price * item.quantity
+            subtotal += Decimal(item.price) * item.quantity
+        vat_amount = subtotal * VAT_RATE
+        delivery_fee = DELIVERY_FEE if subtotal > 0 else Decimal('0.00')
+        total_price = subtotal + vat_amount + delivery_fee
         order.total = total_price
         orders_with_items.append({
             'order': order,
-            'items': order_items
+            'items': order_items,
+            'subtotal': subtotal,
+            'vat_amount': vat_amount,
+            'vat_rate': int(VAT_RATE * 100),
+            'delivery_fee': delivery_fee,
+            'total_price': total_price,
         })
-    return render(request, 'ecom/order_status_page.html', {'orders_with_items': orders_with_items, 'status': 'Pending', 'title': 'Pending Orders'})
+    return render(request, 'ecom/order_status_page.html', {
+        'orders_with_items': orders_with_items,
+        'status': 'Pending',
+        'title': 'Pending Orders'
+    })
 
 @login_required(login_url='customerlogin')
 def to_ship_orders_view(request):
@@ -1530,8 +1543,13 @@ def cancel_order_view(request, order_id):
     try:
         customer = models.Customer.objects.get(user_id=request.user.id)
         order = models.Orders.objects.get(id=order_id, customer=customer)
-        
         if order.status == 'Pending':
+            # Restore stock for each item in the order
+            order_items = models.OrderItem.objects.filter(order=order)
+            for item in order_items:
+                product = item.product
+                product.quantity += item.quantity
+                product.save()
             order.status = 'Cancelled'
             order.status_updated_at = timezone.now()
             order.save()
@@ -1542,7 +1560,6 @@ def cancel_order_view(request, order_id):
         messages.error(request, 'Order not found.')
     except models.Customer.DoesNotExist:
         messages.error(request, 'Customer not found.')
-    
     return redirect('cancelled-orders')
 
 
@@ -1861,7 +1878,7 @@ def get_transactions_by_month(request):
             'order_id': order.order_ref,
             'date': order.order_date.strftime('%Y-%m-%d'),
             'amount': float(order.product.price) * order.quantity if order.product and order.product.price else 0.0,
-            'type': 'credit',  # Assuming all delivered orders are credits
+            'type': 'credit'  # Assuming all delivered orders are credits
         })
 
     return JsonResponse({'transactions': transactions}, encoder=DjangoJSONEncoder)
