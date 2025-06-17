@@ -23,7 +23,6 @@ urlpatterns = [
     path('search', views.search_view,name='search'),
     path('send-feedback', views.send_feedback_view,name='send-feedback'),
     path('view-feedback', views.view_feedback_view,name='view-feedback'),
-    path('api/user-profile/<int:user_id>/', views.api_user_profile, name='api_user_profile'),
     path('user-profile/<int:user_id>/', views.user_profile_page, name='user_profile_page'),
 
     path('adminclick', views.adminclick_view),
@@ -107,4 +106,4 @@ urlpatterns = [
 
 
 if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.STATIC_ROOT)

@@ -169,20 +169,14 @@ def customer_signup_view(request):
         userForm = forms.CustomerUserForm(request.POST)
         customerForm = forms.CustomerSignupForm(request.POST, request.FILES)
         if userForm.is_valid() and customerForm.is_valid():
-<<<<<<< HEAD
             user = userForm.save(commit=False)
             user.set_password(userForm.cleaned_data['password'])
-=======
-            user=userForm.save(commit=False)
-            user.set_password(user.password)
->>>>>>> origin/ADMIN-DASHBOARD
             user.save()
             customer = customerForm.save(commit=False)
             customer.user = user
             customer.save()
             my_customer_group = Group.objects.get_or_create(name='CUSTOMER')
             my_customer_group[0].user_set.add(user)
-<<<<<<< HEAD
             login(request, user)  # Log the user in after registration
             # Clear cart cookies after registration
             response = redirect('customer-home')
@@ -196,10 +190,6 @@ def customer_signup_view(request):
             # Show errors in the template
             mydict = {'userForm': userForm, 'customerForm': customerForm}
     return render(request, 'ecom/customersignup.html', context=mydict)
-=======
-            return HttpResponseRedirect('customerlogin')
-    return render(request,'ecom/customersignup.html',context=mydict)
->>>>>>> origin/ADMIN-DASHBOARD
 
 def customer_login(request):
   if request.method == 'POST':
@@ -319,13 +309,8 @@ def admin_dashboard_view(request):
     product_sales = {}
 
     for order in all_delivered_orders:
-<<<<<<< HEAD
         if not order.product:
             continue  # Skip orders with missing product
-=======
-        if order.product is None:
-            continue
->>>>>>> origin/ADMIN-DASHBOARD
         order_total = order.product.price * order.quantity
         total_sales += order_total
 
@@ -346,7 +331,6 @@ def admin_dashboard_view(request):
             if order_date >= last_month_start:
                 last_month_sales += order_total
 
-<<<<<<< HEAD
     for order in delivered_orders:
         if not order.product:
             continue  # Skip orders with missing product
@@ -356,14 +340,6 @@ def admin_dashboard_view(request):
         recent_orders_orders.append(order)
         # Debug print product image info
         print(f"Product: {order.product.name}, Image: {order.product.product_image}, Size: {order.size}")
-=======
-    # Add total_price attribute to recent_orders
-    for order in recent_orders:
-        if order.product:
-            order.total_price = order.product.price * order.quantity
-        else:
-            order.total_price = 0
->>>>>>> origin/ADMIN-DASHBOARD
 
     # Sort products by sales performance
     sorted_products = sorted(product_sales.values(), key=lambda x: x['quantity_sold'], reverse=True)
@@ -1893,7 +1869,6 @@ def get_transactions_by_month(request):
 def payment_cancel(request):
     return HttpResponse("❌ Payment canceled.")
 
-<<<<<<< HEAD
 @login_required
 def update_address(request):
     if request.method == 'POST':
@@ -1907,44 +1882,3 @@ def update_address(request):
         customer.save()
         return redirect('cart')
     return redirect('cart')
-=======
-
-from django.http import JsonResponse
-from django.core.serializers.json import DjangoJSONEncoder
-from django.shortcuts import get_object_or_404
-from .models import Customer, Orders
-from django.contrib.auth.decorators import login_required
-
-@login_required(login_url='adminlogin')
-def api_user_profile(request, user_id):
-    # Fetch customer by user_id
-    customer = get_object_or_404(Customer, user_id=user_id)
-    user = customer.user
-
-    # Fetch orders for the customer
-    orders = Orders.objects.filter(customer=customer).order_by('-order_date')[:20]
-
-    transactions = []
-    for order in orders:
-        transactions.append({
-            'product_name': order.product.name if order.product else '',
-            'order_date': order.order_date.strftime('%Y-%m-%d') if order.order_date else '',
-            'order_ref': order.order_ref or '',
-            'amount': float(order.product.price) * order.quantity if order.product and order.product.price else 0.0,
-            'status': order.status,
-        })
-
-    data = {
-        'id': user.id,
-        'name': f"{user.first_name} {user.last_name}",
-        'address': customer.get_full_address,
-        'phone': customer.mobile,
-        'status': getattr(customer, 'status', 'Active'),  # Default to Active if no status field
-        'transactions': transactions,
-    }
-    return JsonResponse(data, encoder=DjangoJSONEncoder)
-
-
-    
-
->>>>>>> origin/ADMIN-DASHBOARD
