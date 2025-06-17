@@ -42,6 +42,68 @@
         .menu {
             top: 50px;
         }
+
+        .edit-profile-card {
+            max-width: 700px;
+            margin: 40px auto 60px auto;
+            background: #fff;
+            border-radius: 18px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+            padding: 36px 32px 28px 32px;
+        }
+        .edit-profile-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #005d94;
+            margin-bottom: 18px;
+            text-align: center;
+            letter-spacing: 1px;
+        }
+        .edit-profile-form .form-group {
+            margin-bottom: 18px;
+            position: relative;
+        }
+        .edit-profile-form .form-control {
+            border-radius: 1.2rem;
+            padding-left: 45px; /* reduced from 38px to 32px */
+            font-size: 1rem;
+            box-shadow: none;
+            border: 1px solid #d1d5db;
+            background: #f8fafc;
+            transition: border 0.2s;
+        }
+        .edit-profile-form .form-control:focus {
+            border: 1.5px solid #005d94;
+            background: #fff;
+        }
+        .edit-profile-form .input-icon {
+            position: absolute;
+            left: 6px; /* moved from 12px to 6px */
+            top: 50%;
+            transform: translateY(-50%);
+            color: #b0b0b0;
+            font-size: 1.1rem;
+            pointer-events: none;
+            z-index: 2;
+        }
+        .edit-profile-form .btnSubmit {
+            border: none;
+            border-radius: 1.5rem;
+            padding: 10px 36px;
+            background: linear-gradient(90deg, #0072ff 0%, #005d94 100%);
+            color: #fff;
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-top: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: background 0.2s;
+        }
+        .edit-profile-form .btnSubmit:hover {
+            background: linear-gradient(90deg, #005d94 0%, #0072ff 100%);
+        }
+        @media (max-width: 600px) {
+            .edit-profile-card { padding: 18px 6px; }
+        }
     </style>
 
 
@@ -89,29 +151,93 @@ const philippineRegions = [
 ];
 
 const philippineCities = {
-    'National Capital Region (NCR)': ['Manila', 'Quezon City', 'Makati', 'Taguig', 'Pasig'],
-    'CALABARZON (Region IV-A)': ['Calamba', 'Antipolo', 'Lipa', 'Lucena', 'Dasmariñas'],
-    'Central Luzon (Region III)': ['San Fernando', 'Angeles', 'Tarlac City', 'Balanga'],
-    'Central Visayas (Region VII)': ['Cebu City', 'Lapu-Lapu', 'Mandaue', 'Dumaguete'],
-    'Davao Region (Region XI)': ['Davao City', 'Tagum', 'Panabo', 'Digos'],
-    'Western Visayas (Region VI)': ['Iloilo City', 'Bacolod', 'Roxas City'],
-    'Ilocos Region (Region I)': ['Laoag City', 'San Fernando City', 'Vigan'],
-    'Bangsamoro (BARMM)': ['Cotabato City', 'Marawi City'],
-    'Cordillera Administrative Region (CAR)': ['Baguio City', 'Tabuk', 'La Trinidad']
-};
+    'NCR': [
+      'Caloocan', 'Las Piñas', 'Makati', 'Malabon', 'Mandaluyong', 'Manila',
+      'Marikina', 'Muntinlupa', 'Navotas', 'Parañaque', 'Pasay', 'Pasig',
+      'Pateros', 'Quezon City', 'San Juan', 'Taguig', 'Valenzuela'
+    ],
+    'CAR': [
+      'Baguio City', 'Tabuk City', 'Bangued', 'La Trinidad', 'Lagawe', 'Bontoc',
+      'Bauko', 'Sagada', 'Tadian'
+    ],
+    'R1': [
+      'Laoag City', 'San Fernando City', 'Vigan City', 'Candon City', 'Batac City',
+      'Alaminos', 'Dagupan', 'Urdaneta', 'San Carlos'
+    ],
+    'R2': [
+      'Tuguegarao City', 'Cauayan City', 'Ilagan City', 'Santiago City', 'Bayombong',
+      'Solano', 'Aparri', 'Roxas'
+    ],
+    'R3': [
+      'Angeles City', 'Balanga City', 'Cabanatuan City', 'Gapan City', 'Malolos City',
+      'Meycauayan', 'Olongapo City', 'San Fernando', 'San Jose del Monte'
+    ],
+    'R4A': [
+      'Antipolo', 'Bacoor', 'Batangas City', 'Biñan', 'Cabuyao', 'Calamba',
+      'Dasmariñas', 'Imus', 'San Pablo', 'Santa Rosa', 'Trece Martires'
+    ],
+    'R4B': [
+      'Calapan', 'Puerto Princesa', 'Roxas', 'San Jose', 'Mamburao'
+    ],
+    'R5': [
+      'Legazpi', 'Ligao', 'Tabaco', 'Iriga', 'Naga', 'Sorsogon'
+    ],
+    'R6': [
+      'Bacolod', 'Bago', 'Cadiz', 'Himamaylan', 'Iloilo City', 'Kabankalan',
+      'La Carlota', 'Passi', 'Roxas City', 'San Carlos', 'Silay', 'Sipalay', 'Talisay', 'Victorias'
+    ],
+    'R7': [
+      'Bais', 'Bayawan', 'Bogo', 'Cebu City', 'Danao', 'Dumaguete', 'Lapu-Lapu',
+      'Mandaue', 'Tagbilaran', 'Talisay', 'Toledo'
+    ],
+    'R8': [
+      'Borongan', 'Calbayog', 'Catbalogan', 'Maasin', 'Ormoc', 'Tacloban'
+    ],
+    'R9': [
+      'Dapitan', 'Dipolog', 'Isabela', 'Pagadian', 'Zamboanga City'
+    ],
+    'R10': [
+      'Cagayan de Oro', 'El Salvador', 'Gingoog', 'Iligan', 'Malaybalay', 'Oroquieta', 'Ozamiz', 'Tangub', 'Valencia'
+    ],
+    'R11': [
+      'Davao City', 'Digos', 'Island Garden City of Samal', 'Mati', 'Panabo', 'Tagum'
+    ],
+    'R12': [
+      'Cotabato City', 'General Santos', 'Kidapawan', 'Koronadal', 'Tacurong'
+    ],
+    'R13': [
+      'Bayugan', 'Bislig', 'Butuan', 'Cabadbaran', 'Surigao City', 'Tandag'
+    ],
+    'BARMM': [
+      'Cotabato City', 'Lamitan', 'Marawi', 'Bongao', 'Jolo', 'Siasi'
+    ]
+  };
 
-const barangays = {
-    'Manila': ['Tondo', 'Binondo', 'Ermita', 'San Andres', 'Santa Mesa'],
-    'Quezon City': ['Commonwealth', 'Batasan Hills', 'Bagong Silangan', 'Pinyahan', 'Tandang Sora'],
-    'Makati': ['Bel-Air', 'Poblacion', 'Bangkal', 'San Antonio', 'Guadalupe Viejo'],
-    'Cebu City': ['Banilad', 'Lahug', 'Guadalupe', 'Pardo', 'Talamban'],
-    'Davao City': ['Agdao', 'Bangkal', 'Bunawan', 'Talomo', 'Toril'],
-    'Iloilo City': ['Jaro', 'Mandurriao', 'Lapuz', 'La Paz', 'Molo'],
-    'Baguio City': ['Asin Road', 'Aurora Hill', 'Burnham-Legarda', 'Camp 7', 'Loakan Proper'],
-    'Calamba': ['Canlubang', 'Halang', 'Paciano Rizal', 'Parian', 'Lecheria'],
-    'Antipolo': ['San Jose', 'Dela Paz', 'Cupang', 'Dalig', 'Bagong Nayon'],
-    'San Fernando': ['Sindalan', 'San Agustin', 'Sto. Rosario', 'Maimpis', 'Del Pilar']
-};
+  const barangays = {
+      'Manila': [
+          'Binondo', 'Ermita', 'Intramuros', 'Malate', 'Paco', 'Pandacan', 'Port Area',
+          'Quiapo', 'Sampaloc', 'San Andres', 'San Miguel', 'San Nicolas', 'Santa Ana',
+          'Santa Cruz', 'Santa Mesa', 'Tondo', 'Quiapo', 'Pandacan', 'Paco', 'San Andres Bukid'
+      ],
+      'Quezon City': [
+          'Alicia', 'Bagbag', 'Bagong Lipunan ng Crame', 'Bagong Pag-asa',
+          'Bagong Silangan', 'Bagumbayan', 'Bahay Toro', 'Balingasa', 'Balong Bato',
+          'Batasan Hills', 'Commonwealth', 'Culiat', 'Diliman', 'Fairview', 'Holy Spirit',
+          'Kamuning', 'Krystal', 'Laging Handa', 'Mariana', 'Masagana', 'Masambong', 'Matandang Balara'
+      ],
+      'Makati': [
+          'Bangkal', 'Bel-Air', 'Carmona', 'Cembo', 'Comembo', 'Dasmariñas',
+          'East Rembo', 'Forbes Park', 'Guadalupe Nuevo', 'Guadalupe Viejo',
+          'Kasilawan', 'La Paz', 'Magallanes', 'Olympia', 'Palanan', 'Pembo', 'Pinagkaisahan', 'Pio del Pilar', 'Pitogo', 'Poblacion', 'Post Proper Northside', 'Post Proper Southside', 'Rizal', 'San Antonio', 'San Isidro', 'San Lorenzo', 'Santa Cruz', 'Singkamas', 'South Cembo', 'Tejeros', 'Urdaneta', 'Valenzuela', 'West Rembo'
+      ],
+      'Cebu City': [
+          'Apas', 'Bacayan', 'Banilad', 'Basak San Nicolas', 'Basak Pardo', 'Binaliw', 'Bonbon', 'Budlaan', 'Busay', 'Calamba', 'Cambinocot', 'Capitol Site', 'Carreta', 'Cogon Pardo', 'Day-as', 'Duljo-Fatima', 'Ermita', 'Guadalupe', 'Hipodromo', 'Inayawan', 'Kalubihan', 'Kamagayan', 'Kasambagan', 'Kinasang-an Pardo', 'Labangon', 'Lahug', 'Lorega San Miguel', 'Luz', 'Mabolo', 'Malubog', 'Mambaling', 'Pahina Central', 'Pahina San Nicolas', 'Pahina Tres', 'Pamutan', 'Pari-an', 'Paril', 'Pasil', 'Pit-os', 'Poblacion Pardo', 'Pulangbato', 'Punta Princesa', 'Quiot', 'Sambag I', 'Sambag II', 'San Antonio', 'San Jose', 'San Nicolas Proper', 'San Roque', 'Santa Cruz', 'Santo Niño', 'Sawang Calero', 'Sinsin', 'Sirao', 'Suba', 'Sudlon I', 'Sudlon II', 'Tabunan', 'Tagbao', 'Talamban', 'Taptap', 'Tejero', 'Tinago', 'Tisa', 'To-ong', 'Zapatera'
+      ],
+      'Davao City': [
+          'Agdao', 'Baguio', 'Buhangin', 'Bunawan', 'Calinan', 'Davao', 'Marilog', 'Paquibato', 'Poblacion', 'Talomo', 'Toril', 'Tugbok'
+      ]
+      // Add more cities and their barangays as needed
+  };
 
 
         function updateRegions() {
@@ -130,11 +256,8 @@ const barangays = {
             const regionSelect = document.getElementById('region');
             const citySelect = document.getElementById('city');
             const selectedRegionCode = regionSelect.value;
-            // Find the region name from the code
-            const regionObj = philippineRegions.find(r => r.code === selectedRegionCode);
-            const regionName = regionObj ? regionObj.name : '';
             citySelect.innerHTML = '<option value="">Select City</option>';
-            const cities = philippineCities[regionName] || [];
+            const cities = philippineCities[selectedRegionCode] || [];
             cities.forEach(city => {
                 const option = document.createElement('option');
                 option.value = city;
@@ -163,70 +286,71 @@ const barangays = {
 </head>
 <br><br><br><br><br><br>
 
-{% if messages %}
-    {% for message in messages %}
-        <div class="alert alert-success" style="margin: 0 auto; width: 50%;">
-            {{ message }}
-        </div>
-    {% endfor %}
-{% endif %}
-
-<form method="post" enctype="multipart/form-data">
-    {% csrf_token %}
-    <div class="container register-form">
-        <div class="form">
-            <div class="note">
-                <p>EDIT PROFILE</p>
+<div class="edit-profile-card">
+    <div class="edit-profile-title">Edit Profile</div>
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-success" style="margin: 0 auto; width: 80%;">
+                {{ message }}
             </div>
-            <div class="form-content">
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            {% render_field userForm.first_name class="form-control" placeholder="First Name" %}
-                        </div>
-                        <div class="form-group">
-                            {% render_field userForm.last_name class="form-control" placeholder="Last Name" %}
-                        </div>
-                        <div class="form-group">
-                            {% render_field userForm.username class="form-control" placeholder="Username" %}
-                        </div>
-                        <div class="form-group">
-                            {% render_field userForm.password class="form-control" placeholder="Password" %}
-                        </div>
-                        <div class="form-group">
-                            {% render_field userForm.confirm_password class="form-control" placeholder="Confirm Password" %}
-                        </div>
-                        <div class="form-group">
-                            {% render_field customerForm.street_address class="form-control" placeholder="Street Address" %}
-                        </div>
-                        <div class="form-group">
-                            {% render_field customerForm.postal_code class="form-control" placeholder="Postal Code" %}
-                        </div>
-                        <div class="form-group">
-                            {% render_field customerForm.mobile class="form-control" placeholder="Mobile" %}
-                        </div>
-                        <div class="form-group">
-                            <!-- Replace the country select with region select -->
-                            <div class="form-group">
-                                {% render_field customerForm.region class="form-control" id="region" onchange="updateCities()" %}
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            {% render_field customerForm.city class="form-control" id="city" onchange="updateBarangays()" %}
-                        </div>
-                        <div class="form-group">
-                            {% render_field customerForm.barangay class="form-control" id="barangay" %}
-                        </div>
-                    </div>
-
-                    </div>
+        {% endfor %}
+    {% endif %}
+    <form method="post" enctype="multipart/form-data" class="edit-profile-form">
+        {% csrf_token %}
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <span class="input-icon"><i class="fa fa-user"></i></span>
+                    {% render_field userForm.first_name class="form-control" placeholder="First Name" %}
                 </div>
-                <div>
-                    <center><button type="submit" class="btnSubmit">Save</button></center>
+                <div class="form-group">
+                    <span class="input-icon"><i class="fa fa-user"></i></span>
+                    {% render_field userForm.last_name class="form-control" placeholder="Last Name" %}
+                </div>
+                <div class="form-group">
+                    <span class="input-icon"><i class="fa fa-user-circle"></i></span>
+                    {% render_field userForm.username class="form-control" placeholder="Username" %}
+                </div>
+                <div class="form-group">
+                    <span class="input-icon"><i class="fa fa-lock"></i></span>
+                    {% render_field userForm.password class="form-control" placeholder="Password" %}
+                </div>
+                <div class="form-group">
+                    <span class="input-icon"><i class="fa fa-lock"></i></span>
+                    {% render_field userForm.confirm_password class="form-control" placeholder="Confirm Password" %}
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <span class="input-icon"><i class="fa fa-home"></i></span>
+                    {% render_field customerForm.street_address class="form-control" placeholder="Street Address" %}
+                </div>
+                <div class="form-group">
+                    <span class="input-icon"><i class="fa fa-hashtag"></i></span>
+                    {% render_field customerForm.postal_code class="form-control" placeholder="Postal Code" %}
+                </div>
+                <div class="form-group">
+                    <span class="input-icon"><i class="fa fa-phone"></i></span>
+                    {% render_field customerForm.mobile class="form-control" placeholder="Mobile" %}
+                </div>
+                <div class="form-group">
+                    <span class="input-icon"><i class="fa fa-map-marker"></i></span>
+                    {% render_field customerForm.region class="form-control" id="region" onchange="updateCities()" %}
+                </div>
+                <div class="form-group">
+                    <span class="input-icon"><i class="fa fa-building"></i></span>
+                    {% render_field customerForm.city class="form-control" id="city" onchange="updateBarangays()" %}
+                </div>
+                <div class="form-group">
+                    <span class="input-icon"><i class="fa fa-location-arrow"></i></span>
+                    {% render_field customerForm.barangay class="form-control" id="barangay" %}
                 </div>
             </div>
         </div>
-    </div>
-</form>
+        <div style="text-align:center;">
+            <button type="submit" class="btnSubmit">Save</button>
+        </div>
+    </form>
+</div>
 
 {% endblock content %}
