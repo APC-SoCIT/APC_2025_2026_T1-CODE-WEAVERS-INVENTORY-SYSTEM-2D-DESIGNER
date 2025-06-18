@@ -105,184 +105,6 @@
             .edit-profile-card { padding: 18px 6px; }
         }
     </style>
-
-
-    <script>
-        window.onload = function() {
-            updateRegions();
-            // Restore previous values if present (for validation errors or editing)
-            const prevRegion = '{{ customerForm.region.value|escapejs }}';
-            const prevCity = '{{ customerForm.city.value|escapejs }}';
-            const prevBarangay = '{{ customerForm.barangay.value|escapejs }}';
-            if (prevRegion) {
-                document.getElementById('region').value = prevRegion;
-                updateCities();
-                if (prevCity) {
-                    document.getElementById('city').value = prevCity;
-                    updateBarangays();
-                    if (prevBarangay) {
-                        document.getElementById('barangay').value = prevBarangay;
-                    }
-                }
-            } else {
-                updateCities();
-                updateBarangays();
-            }
-        };
-
-const philippineRegions = [
-    { code: 'NCR', name: 'National Capital Region (NCR)' },
-    { code: 'CAR', name: 'Cordillera Administrative Region (CAR)' },
-    { code: 'R1', name: 'Ilocos Region (Region I)' },
-    { code: 'R2', name: 'Cagayan Valley (Region II)' },
-    { code: 'R3', name: 'Central Luzon (Region III)' },
-    { code: 'R4A', name: 'CALABARZON (Region IV-A)' },
-    { code: 'R4B', name: 'MIMAROPA (Region IV-B)' },
-    { code: 'R5', name: 'Bicol Region (Region V)' },
-    { code: 'R6', name: 'Western Visayas (Region VI)' },
-    { code: 'R7', name: 'Central Visayas (Region VII)' },
-    { code: 'R8', name: 'Eastern Visayas (Region VIII)' },
-    { code: 'R9', name: 'Zamboanga Peninsula (Region IX)' },
-    { code: 'R10', name: 'Northern Mindanao (Region X)' },
-    { code: 'R11', name: 'Davao Region (Region XI)' },
-    { code: 'R12', name: 'SOCCSKSARGEN (Region XII)' },
-    { code: 'R13', name: 'Caraga (Region XIII)' },
-    { code: 'BARMM', name: 'Bangsamoro (BARMM)' }
-];
-
-const philippineCities = {
-    'NCR': [
-      'Caloocan', 'Las Piñas', 'Makati', 'Malabon', 'Mandaluyong', 'Manila',
-      'Marikina', 'Muntinlupa', 'Navotas', 'Parañaque', 'Pasay', 'Pasig',
-      'Pateros', 'Quezon City', 'San Juan', 'Taguig', 'Valenzuela'
-    ],
-    'CAR': [
-      'Baguio City', 'Tabuk City', 'Bangued', 'La Trinidad', 'Lagawe', 'Bontoc',
-      'Bauko', 'Sagada', 'Tadian'
-    ],
-    'R1': [
-      'Laoag City', 'San Fernando City', 'Vigan City', 'Candon City', 'Batac City',
-      'Alaminos', 'Dagupan', 'Urdaneta', 'San Carlos'
-    ],
-    'R2': [
-      'Tuguegarao City', 'Cauayan City', 'Ilagan City', 'Santiago City', 'Bayombong',
-      'Solano', 'Aparri', 'Roxas'
-    ],
-    'R3': [
-      'Angeles City', 'Balanga City', 'Cabanatuan City', 'Gapan City', 'Malolos City',
-      'Meycauayan', 'Olongapo City', 'San Fernando', 'San Jose del Monte'
-    ],
-    'R4A': [
-      'Antipolo', 'Bacoor', 'Batangas City', 'Biñan', 'Cabuyao', 'Calamba',
-      'Dasmariñas', 'Imus', 'San Pablo', 'Santa Rosa', 'Trece Martires'
-    ],
-    'R4B': [
-      'Calapan', 'Puerto Princesa', 'Roxas', 'San Jose', 'Mamburao'
-    ],
-    'R5': [
-      'Legazpi', 'Ligao', 'Tabaco', 'Iriga', 'Naga', 'Sorsogon'
-    ],
-    'R6': [
-      'Bacolod', 'Bago', 'Cadiz', 'Himamaylan', 'Iloilo City', 'Kabankalan',
-      'La Carlota', 'Passi', 'Roxas City', 'San Carlos', 'Silay', 'Sipalay', 'Talisay', 'Victorias'
-    ],
-    'R7': [
-      'Bais', 'Bayawan', 'Bogo', 'Cebu City', 'Danao', 'Dumaguete', 'Lapu-Lapu',
-      'Mandaue', 'Tagbilaran', 'Talisay', 'Toledo'
-    ],
-    'R8': [
-      'Borongan', 'Calbayog', 'Catbalogan', 'Maasin', 'Ormoc', 'Tacloban'
-    ],
-    'R9': [
-      'Dapitan', 'Dipolog', 'Isabela', 'Pagadian', 'Zamboanga City'
-    ],
-    'R10': [
-      'Cagayan de Oro', 'El Salvador', 'Gingoog', 'Iligan', 'Malaybalay', 'Oroquieta', 'Ozamiz', 'Tangub', 'Valencia'
-    ],
-    'R11': [
-      'Davao City', 'Digos', 'Island Garden City of Samal', 'Mati', 'Panabo', 'Tagum'
-    ],
-    'R12': [
-      'Cotabato City', 'General Santos', 'Kidapawan', 'Koronadal', 'Tacurong'
-    ],
-    'R13': [
-      'Bayugan', 'Bislig', 'Butuan', 'Cabadbaran', 'Surigao City', 'Tandag'
-    ],
-    'BARMM': [
-      'Cotabato City', 'Lamitan', 'Marawi', 'Bongao', 'Jolo', 'Siasi'
-    ]
-  };
-
-  const barangays = {
-      'Manila': [
-          'Binondo', 'Ermita', 'Intramuros', 'Malate', 'Paco', 'Pandacan', 'Port Area',
-          'Quiapo', 'Sampaloc', 'San Andres', 'San Miguel', 'San Nicolas', 'Santa Ana',
-          'Santa Cruz', 'Santa Mesa', 'Tondo', 'Quiapo', 'Pandacan', 'Paco', 'San Andres Bukid'
-      ],
-      'Quezon City': [
-          'Alicia', 'Bagbag', 'Bagong Lipunan ng Crame', 'Bagong Pag-asa',
-          'Bagong Silangan', 'Bagumbayan', 'Bahay Toro', 'Balingasa', 'Balong Bato',
-          'Batasan Hills', 'Commonwealth', 'Culiat', 'Diliman', 'Fairview', 'Holy Spirit',
-          'Kamuning', 'Krystal', 'Laging Handa', 'Mariana', 'Masagana', 'Masambong', 'Matandang Balara'
-      ],
-      'Makati': [
-          'Bangkal', 'Bel-Air', 'Carmona', 'Cembo', 'Comembo', 'Dasmariñas',
-          'East Rembo', 'Forbes Park', 'Guadalupe Nuevo', 'Guadalupe Viejo',
-          'Kasilawan', 'La Paz', 'Magallanes', 'Olympia', 'Palanan', 'Pembo', 'Pinagkaisahan', 'Pio del Pilar', 'Pitogo', 'Poblacion', 'Post Proper Northside', 'Post Proper Southside', 'Rizal', 'San Antonio', 'San Isidro', 'San Lorenzo', 'Santa Cruz', 'Singkamas', 'South Cembo', 'Tejeros', 'Urdaneta', 'Valenzuela', 'West Rembo'
-      ],
-      'Cebu City': [
-          'Apas', 'Bacayan', 'Banilad', 'Basak San Nicolas', 'Basak Pardo', 'Binaliw', 'Bonbon', 'Budlaan', 'Busay', 'Calamba', 'Cambinocot', 'Capitol Site', 'Carreta', 'Cogon Pardo', 'Day-as', 'Duljo-Fatima', 'Ermita', 'Guadalupe', 'Hipodromo', 'Inayawan', 'Kalubihan', 'Kamagayan', 'Kasambagan', 'Kinasang-an Pardo', 'Labangon', 'Lahug', 'Lorega San Miguel', 'Luz', 'Mabolo', 'Malubog', 'Mambaling', 'Pahina Central', 'Pahina San Nicolas', 'Pahina Tres', 'Pamutan', 'Pari-an', 'Paril', 'Pasil', 'Pit-os', 'Poblacion Pardo', 'Pulangbato', 'Punta Princesa', 'Quiot', 'Sambag I', 'Sambag II', 'San Antonio', 'San Jose', 'San Nicolas Proper', 'San Roque', 'Santa Cruz', 'Santo Niño', 'Sawang Calero', 'Sinsin', 'Sirao', 'Suba', 'Sudlon I', 'Sudlon II', 'Tabunan', 'Tagbao', 'Talamban', 'Taptap', 'Tejero', 'Tinago', 'Tisa', 'To-ong', 'Zapatera'
-      ],
-      'Davao City': [
-          'Agdao', 'Baguio', 'Buhangin', 'Bunawan', 'Calinan', 'Davao', 'Marilog', 'Paquibato', 'Poblacion', 'Talomo', 'Toril', 'Tugbok'
-      ]
-      // Add more cities and their barangays as needed
-  };
-
-
-        function updateRegions() {
-            const regionSelect = document.getElementById('region');
-            regionSelect.innerHTML = '<option value="">Select Region</option>';
-            philippineRegions.forEach(region => {
-                const option = document.createElement('option');
-                option.value = region.code;
-                option.textContent = region.name;
-                regionSelect.appendChild(option);
-            });
-            updateCities();
-        }
-
-        function updateCities() {
-            const regionSelect = document.getElementById('region');
-            const citySelect = document.getElementById('city');
-            const selectedRegionCode = regionSelect.value;
-            citySelect.innerHTML = '<option value="">Select City</option>';
-            const cities = philippineCities[selectedRegionCode] || [];
-            cities.forEach(city => {
-                const option = document.createElement('option');
-                option.value = city;
-                option.textContent = city;
-                citySelect.appendChild(option);
-            });
-            updateBarangays();
-        }
-
-        function updateBarangays() {
-            const citySelect = document.getElementById('city');
-            const barangaySelect = document.getElementById('barangay');
-            const selectedCity = citySelect.value;
-            
-            barangaySelect.innerHTML = '<option value="">Select Barangay</option>';
-            
-            const cityBarangays = barangays[selectedCity] || [];
-            cityBarangays.forEach(barangay => {
-                const option = document.createElement('option');
-                option.value = barangay;
-                option.textContent = barangay;
-                barangaySelect.appendChild(option);
-            });
-        }
-    </script>
 </head>
 <br><br><br><br><br><br>
 
@@ -321,6 +143,7 @@ const philippineCities = {
                 </div>
             </div>
             <div class="col-md-6">
+                <!-- Address Section: Region, Province, City/Municipality, Barangay -->
                 <div class="form-group">
                     <span class="input-icon"><i class="fa fa-home"></i></span>
                     {% render_field customerForm.street_address class="form-control" placeholder="Street Address" %}
@@ -332,18 +155,6 @@ const philippineCities = {
                 <div class="form-group">
                     <span class="input-icon"><i class="fa fa-phone"></i></span>
                     {% render_field customerForm.mobile class="form-control" placeholder="Mobile" %}
-                </div>
-                <div class="form-group">
-                    <span class="input-icon"><i class="fa fa-map-marker"></i></span>
-                    {% render_field customerForm.region class="form-control" id="region" onchange="updateCities()" %}
-                </div>
-                <div class="form-group">
-                    <span class="input-icon"><i class="fa fa-building"></i></span>
-                    {% render_field customerForm.city class="form-control" id="city" onchange="updateBarangays()" %}
-                </div>
-                <div class="form-group">
-                    <span class="input-icon"><i class="fa fa-location-arrow"></i></span>
-                    {% render_field customerForm.barangay class="form-control" id="barangay" %}
                 </div>
             </div>
         </div>

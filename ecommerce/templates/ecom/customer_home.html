@@ -1,4 +1,3 @@
-
 {% extends 'ecom/customer_base.html' %}
 {% load static %}
 {% load humanize %}
@@ -1109,7 +1108,11 @@
     {% for product in products %}
     <div class="product-card" data-product-id="{{ product.id }}">
       <div class="product-image-container">
-        <img src="{{ product.product_image.url }}" alt="{{ product.name }}" class="product-image">
+        {% if product.product_image %}
+          <img src="{{ product.product_image.url }}" alt="{{ product.name }}" class="product-image">
+        {% else %}
+          <img src="/static/images/default.jpg" alt="No Image" class="product-image">
+        {% endif %}
         <button class="quick-view-btn" onclick="openProductDetail('{{ product.id }}')">Quick View</button>
       </div>
       <div class="product-details">

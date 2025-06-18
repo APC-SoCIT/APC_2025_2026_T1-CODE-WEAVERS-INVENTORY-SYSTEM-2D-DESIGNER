@@ -21,6 +21,7 @@
 <body>
   <div class="invoice-box">
     <h2>Order Invoice</h2>
+
        <strong>Order Date:</strong> {{ order.order_date|date:"F d, Y" }}</p>
     <div class="address-box">
       <strong>Customer:</strong> {{ customer.get_full_name }}<br>
@@ -48,28 +49,24 @@
           <td>{{ p.item.product.name }}</td>
           <td>{{ p.size }}</td>
           <td class="right">{{ p.quantity }}</td>
-          <td class="right">₱{{ p.unit_price|floatformat:2 }}</td>
-          <td class="right">₱{{ p.line_total|floatformat:2 }}</td>
+             <td class="right">&#8369;{{ p.unit_price|floatformat:2|intcomma }}</td>
+              <td class="right">&#8369;{{ p.line_total|floatformat:2|intcomma }}</td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
     <table class="summary-table" style="width: 100%;">
       <tr>
-        <td class="right">Subtotal (VAT-ex):</td>
-        <td class="right">₱{{ total|floatformat:2 }}</td>
-      </tr>
-      <tr>
         <td class="right">VAT (12%):</td>
-        <td class="right">₱{{ vat_amount|floatformat:2 }}</td>
+        <td class="right">&#8369;{{ vat_amount|floatformat:2|intcomma }}</td>
       </tr>
       <tr>
         <td class="right">Delivery Fee:</td>
-        <td class="right">₱{{ delivery_fee|floatformat:2 }}</td>
+        <td class="right">&#8369;{{ delivery_fee|floatformat:2|intcomma }}</td>
       </tr>
       <tr class="total-row">
         <td class="right">Grand Total:</td>
-        <td class="right">₱{{ grand_total|floatformat:2 }}</td>
+                <td class="right">&#8369;{{ grand_total|floatformat:2|intcomma }}</td>
       </tr>
     </table>
   </div>

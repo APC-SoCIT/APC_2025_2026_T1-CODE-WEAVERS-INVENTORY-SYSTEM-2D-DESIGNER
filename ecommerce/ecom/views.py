@@ -1179,7 +1179,7 @@ def cart_view(request):
             region = customer.region
         except models.Customer.DoesNotExist:
             region = None
-    # Set delivery fee based on region
+    # Set delivery fee based on region (Unified logic)
     if region == 'NCR':
         delivery_fee = 100
     elif region == 'CAR':
@@ -1187,7 +1187,7 @@ def cart_view(request):
     elif region:
         delivery_fee = 200
     else:
-        delivery_fee = 200
+        delivery_fee = 0
 
     vat_rate = 12
     vat_multiplier = 1 + (vat_rate / 100)
@@ -1233,7 +1233,7 @@ def cart_view(request):
 
     vat_amount = total * (vat_rate / 100)
     grand_total = total + delivery_fee + vat_amount
-    return render(request, 'ecom/cart.html', {
+    response = render(request, 'ecom/cart.html', {
         'products': products,
         'total': total,
         'delivery_fee': delivery_fee,
@@ -1242,6 +1242,9 @@ def cart_view(request):
         'grand_total': grand_total,
         'product_count_in_cart': product_count_in_cart
     })
+
+    return response
+
 
 def remove_from_cart_view(request, pk):
     size = request.GET.get('size', 'M')  # Get size from request, default to M
@@ -1936,8 +1939,15 @@ def payment_cancel(request):
 
 @login_required
 def update_address(request):
+    if not request.user.is_authenticated:
+        return redirect('login')
     if request.method == 'POST':
-        customer = Customer.objects.get(user=request.user)
+        try:
+            customer = Customer.objects.get(user=request.user)
+        except Customer.DoesNotExist:
+            from django.contrib import messages
+            messages.error(request, 'Customer profile not found.')
+            return redirect('cart')
         customer.full_name = request.POST.get('full_name')
         customer.region = request.POST.get('region')
         customer.city = request.POST.get('city')
@@ -1947,3 +1957,36 @@ def update_address(request):
         customer.save()
         return redirect('cart')
     return redirect('cart')
+
+
+@login_required(login_url='adminlogin')
+def admin_manage_inventory_view(request):
+    if request.method == "POST":
+        form = InventoryForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('admin-manage-inventory')
+    else:
+        form = InventoryForm()
+
+    inventory_items = models.InventoryItem.objects.all()
+
+    total_items = inventory_items.count()
+    from django.db.models import F
+    # The field is named 'low_stock_threshold' in the form, but in the model it seems to be 'description' or missing
+    # From error, low_stock_threshold is not a field in InventoryItem model
+    # So we will treat low_stock_threshold as a constant threshold, e.g., 10
+    LOW_STOCK_THRESHOLD = 10
+    low_stock_items = inventory_items.filter(quantity__lte=LOW_STOCK_THRESHOLD, quantity__gt=0).count()
+    out_of_stock_items = inventory_items.filter(quantity=0).count()
+    from django.db.models import Sum
+    total_stock = inventory_items.aggregate(total=Sum('quantity'))['total'] or 0
+
+    return render(request, 'ecom/admin_manage_inventory.html', {
+        'inventory_items': inventory_items,
+        'form': form,
+        'total_items': total_items,
+        'low_stock_items': low_stock_items,
+        'out_of_stock_items': out_of_stock_items,
+        'total_stock': total_stock,
+    })

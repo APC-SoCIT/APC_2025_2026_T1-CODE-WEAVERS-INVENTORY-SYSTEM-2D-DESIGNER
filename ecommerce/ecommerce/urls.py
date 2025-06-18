@@ -7,7 +7,7 @@ from ecom.views import manage_inventory, update_stock
 from ecom.views import delete_inventory, edit_inventory, bulk_update_orders
 from django.conf import settings
 from django.conf.urls.static import static
-
+from ecom.views import admin_manage_inventory_view
 
 
 
@@ -102,6 +102,7 @@ urlpatterns = [
     path('payment-success/', views.payment_success_view, name='payment_success'),
     path('payment-cancel/', views.payment_cancel, name='payment_cancel'),
     path('update-address/', views.update_address, name='update-address'),
+    path('admin-manage-inventory/', admin_manage_inventory_view, name='admin-manage-inventory'),
 ] + static(settings.MEDIA_URL, document_root=settings.STATIC_ROOT) if settings.DEBUG else []
 
 

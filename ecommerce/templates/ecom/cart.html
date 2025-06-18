@@ -503,8 +503,8 @@
       </div>
       
       <!-- Address Edit Form -->
-      <div class="address-form" id="address-form">
-        <form method="post" action="{% url 'update-address' %}">
+      <div class="address-form" id="address-form" style="display: none;">
+        <form method="post" action="{% url 'update-address' %}" onsubmit="setTimeout(function(){ window.location.reload(); }, 100);">
           {% csrf_token %}
           <div class="form-group">
             <label>Full Name</label>
@@ -516,24 +516,24 @@
           </div>
           <div class="form-group">
             <label>Region</label>
-            <select name="region" id="region-select" class="form-control" required onchange="updateDeliveryFee()">
-              <option value="NCR" data-fee="50">National Capital Region (NCR) - ₱100</option>
-              <option value="CAR" data-fee="80">Cordillera Administrative Region (CAR) - ₱159</option>
-              <option value="Region1" data-fee="100">Region I - Ilocos Region - ₱200</option>
-              <option value="Region2" data-fee="120">Region II - Cagayan Valley - ₱200</option>
-              <option value="Region3" data-fee="70">Region III - Central Luzon - ₱200</option>
-              <option value="Region4A" data-fee="60">Region IV-A - CALABARZON - ₱200</option>
-              <option value="Region4B" data-fee="150">Region IV-B - MIMAROPA - ₱200</option>
-              <option value="Region5" data-fee="130">Region V - Bicol Region - ₱200</option>
-              <option value="Region6" data-fee="140">Region VI - Western Visayas - ₱200</option>
-              <option value="Region7" data-fee="120">Region VII - Central Visayas - ₱200</option>
-              <option value="Region8" data-fee="160">Region VIII - Eastern Visayas - ₱200</option>
-              <option value="Region9" data-fee="180">Region IX - Zamboanga Peninsula - ₱200</option>
-              <option value="Region10" data-fee="170">Region X - Northern Mindanao - ₱200</option>
-              <option value="Region11" data-fee="160">Region XI - Davao Region - ₱200</option>
-              <option value="Region12" data-fee="180">Region XII - SOCCSKSARGEN - ₱200</option>
-              <option value="Region13" data-fee="190">Region XIII - Caraga - ₱200</option>
-              <option value="BARMM" data-fee="200">BARMM - ₱200</option>
+            <select name="region" id="region-select" class="form-control" required>
+              <option value="NCR" {% if user.customer.region == 'NCR' %}selected{% endif %}>National Capital Region (NCR) - ₱100</option>
+              <option value="CAR" {% if user.customer.region == 'CAR' %}selected{% endif %}>Cordillera Administrative Region (CAR) - ₱159</option>
+              <option value="R1" {% if user.customer.region == 'R1' %}selected{% endif %}>Region I - Ilocos Region - ₱200</option>
+              <option value="R2" {% if user.customer.region == 'R2' %}selected{% endif %}>Region II - Cagayan Valley - ₱200</option>
+              <option value="R3" {% if user.customer.region == 'R3' %}selected{% endif %}>Region III - Central Luzon - ₱200</option>
+              <option value="R4A" {% if user.customer.region == 'R4A' %}selected{% endif %}>Region IV-A - CALABARZON - ₱200</option>
+              <option value="R4B" {% if user.customer.region == 'R4B' %}selected{% endif %}>Region IV-B - MIMAROPA - ₱200</option>
+              <option value="R5" {% if user.customer.region == 'R5' %}selected{% endif %}>Region V - Bicol Region - ₱200</option>
+              <option value="R6" {% if user.customer.region == 'R6' %}selected{% endif %}>Region VI - Western Visayas - ₱200</option>
+              <option value="R7" {% if user.customer.region == 'R7' %}selected{% endif %}>Region VII - Central Visayas - ₱200</option>
+              <option value="R8" {% if user.customer.region == 'R8' %}selected{% endif %}>Region VIII - Eastern Visayas - ₱200</option>
+              <option value="R9" {% if user.customer.region == 'R9' %}selected{% endif %}>Region IX - Zamboanga Peninsula - ₱200</option>
+              <option value="R10" {% if user.customer.region == 'R10' %}selected{% endif %}>Region X - Northern Mindanao - ₱200</option>
+              <option value="R11" {% if user.customer.region == 'R11' %}selected{% endif %}>Region XI - Davao Region - ₱200</option>
+              <option value="R12" {% if user.customer.region == 'R12' %}selected{% endif %}>Region XII - SOCCSKSARGEN - ₱200</option>
+              <option value="R13" {% if user.customer.region == 'R13' %}selected{% endif %}>Region XIII - Caraga - ₱200</option>
+              <option value="BARMM" {% if user.customer.region == 'BARMM' %}selected{% endif %}>BARMM - ₱200</option>
             </select>
           </div>
           <div class="form-group">
@@ -558,6 +558,12 @@
           </div>
         </form>
       </div>
+      <!-- Show a message if address was updated -->
+      {% if messages %}
+        <div class="alert alert-success" role="alert">
+          {% for message in messages %}{{ message }}{% endfor %}
+        </div>
+      {% endif %}
     </div>
 
     <div class="card checkout">
@@ -629,8 +635,8 @@
     
     <script>
       // Global variables for calculations
-      let subtotal = {{ total|floatformat:2 }};
-      let deliveryFee = {{ delivery_fee|default:50 }};
+      let subtotal = parseFloat("{{ total|floatformat:'2'|default:'0.00' }}");
+      let deliveryFee = parseFloat("{{ delivery_fee|default:'50' }}");
       let vatRate = 0.12;
 
       // Calculate totals
