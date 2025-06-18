@@ -36,7 +36,7 @@ def user_profile_page(request, user_id):
 
     try:
         customer = Customer.objects.get(user_id=user_id)
-        logger.info(f"Customer found: {customer.get_name} with user_id: {user_id}")
+        logger.info(f"Customer found: {customer.user.get_full_name()} with user_id: {user_id}")
     except Customer.DoesNotExist:
         logger.error(f"Customer not found for user_id: {user_id}")
         from django.contrib import messages

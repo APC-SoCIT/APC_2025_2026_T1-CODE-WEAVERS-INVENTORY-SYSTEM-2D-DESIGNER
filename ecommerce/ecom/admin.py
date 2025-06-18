@@ -3,8 +3,8 @@ from .models import Customer,Product,Orders,Feedback, OrderItem
 
 @admin.register(Customer)
 class CustomerAdmin(admin.ModelAdmin):
-    list_display = ['user', 'country', 'city', 'mobile']
-    list_filter = ['country', 'city']
+    list_display = ['user', 'city', 'mobile']
+    list_filter = ['city']
     search_fields = ['user__first_name', 'user__last_name', 'city', 'street_address']
     readonly_fields = ['get_full_address']
 

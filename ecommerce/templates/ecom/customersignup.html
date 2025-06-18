@@ -392,11 +392,6 @@
       }
     </style>
     <script>
-      const countries = {
-        'PH': 'Philippines',
-        'US': 'United States'
-      };
-
       const philippineRegions = [
         { code: 'NCR', name: 'National Capital Region (NCR)' },
         { code: 'CAR', name: 'Cordillera Administrative Region (CAR)' },
@@ -507,7 +502,6 @@
       };
 
       document.addEventListener('DOMContentLoaded', function() {
-        const countrySelect = document.getElementById('country');
         const regionSelect = document.getElementById('region');
         const citySelect = document.getElementById('city');
         const barangaySelect = document.getElementById('barangay');
@@ -518,77 +512,63 @@
         const privacyLink = document.getElementById('privacyLink');
         const closeBtn = document.getElementsByClassName('close')[0];
 
-        // Populate regions based on country selection
-        function populateRegions(countryCode) {
-            regionSelect.innerHTML = '<option value="" disabled selected>Select Region</option>';
-            if (countryCode === 'PH') {
-                philippineRegions.forEach(region => {
-                    const option = document.createElement('option');
-                    option.value = region.code;
-                    option.textContent = region.name;
-                    regionSelect.appendChild(option);
-                });
-            } else {
-                // For other countries, clear regions
-                regionSelect.innerHTML = '<option value="" disabled selected>No regions available</option>';
-            }
-            // Clear cities and barangays
-            citySelect.innerHTML = '<option value="" disabled selected>Select City</option>';
-            barangaySelect.innerHTML = '<option value="" disabled selected>Select Barangay</option>';
+        // Populate regions (Philippines only)
+        function populateRegions() {
+          regionSelect.innerHTML = '<option value="" disabled selected>Select Region</option>';
+          philippineRegions.forEach(region => {
+            const option = document.createElement('option');
+            option.value = region.code;
+            option.textContent = region.name;
+            regionSelect.appendChild(option);
+          });
+          citySelect.innerHTML = '<option value="" disabled selected>Select City</option>';
+          barangaySelect.innerHTML = '<option value="" disabled selected>Select Barangay</option>';
         }
 
-        // Event listener for country change
-        countrySelect.addEventListener('change', function() {
-            populateRegions(this.value);
-        });
+        // On page load, populate regions
+        populateRegions();
 
         // Event listener for region change to populate cities
         regionSelect.addEventListener('change', function() {
-            const selectedRegion = this.value;
-            citySelect.innerHTML = '<option value="" disabled selected>Select City</option>';
-            const cities = philippineCities[selectedRegion] || [];
-            cities.forEach(city => {
-                const option = document.createElement('option');
-                option.value = city;
-                option.textContent = city;
-                citySelect.appendChild(option);
-            });
-            // Clear barangays
-            barangaySelect.innerHTML = '<option value="" disabled selected>Select Barangay</option>';
+          const selectedRegion = this.value;
+          citySelect.innerHTML = '<option value="" disabled selected>Select City</option>';
+          const cities = philippineCities[selectedRegion] || [];
+          cities.forEach(city => {
+            const option = document.createElement('option');
+            option.value = city;
+            option.textContent = city;
+            citySelect.appendChild(option);
+          });
+          barangaySelect.innerHTML = '<option value="" disabled selected>Select Barangay</option>';
         });
 
         // Event listener for city change to populate barangays
         citySelect.addEventListener('change', function() {
-            const selectedCity = this.value;
-            barangaySelect.innerHTML = '<option value="" disabled selected>Select Barangay</option>';
-            const cityBarangays = barangays[selectedCity] || [];
-            cityBarangays.forEach(barangay => {
-                const option = document.createElement('option');
-                option.value = barangay;
-                option.textContent = barangay;
-                barangaySelect.appendChild(option);
-            });
+          const selectedCity = this.value;
+          barangaySelect.innerHTML = '<option value="" disabled selected>Select Barangay</option>';
+          const cityBarangays = barangays[selectedCity] || [];
+          cityBarangays.forEach(barangay => {
+            const option = document.createElement('option');
+            option.value = barangay;
+            option.textContent = barangay;
+            barangaySelect.appendChild(option);
+          });
         });
-
-        // If a country is preselected, populate regions on page load
-        if (countrySelect.value) {
-            populateRegions(countrySelect.value);
-        }
 
         // Restore previous values if present (for validation errors)
         const prevRegion = '{{ customerForm.region.value|escapejs }}';
         const prevCity = '{{ customerForm.city.value|escapejs }}';
         const prevBarangay = '{{ customerForm.barangay.value|escapejs }}';
         if (prevRegion) {
-            regionSelect.value = prevRegion;
-            regionSelect.dispatchEvent(new Event('change'));
-            if (prevCity) {
-                citySelect.value = prevCity;
-                citySelect.dispatchEvent(new Event('change'));
-                if (prevBarangay) {
-                    barangaySelect.value = prevBarangay;
-                }
+          regionSelect.value = prevRegion;
+          regionSelect.dispatchEvent(new Event('change'));
+          if (prevCity) {
+            citySelect.value = prevCity;
+            citySelect.dispatchEvent(new Event('change'));
+            if (prevBarangay) {
+              barangaySelect.value = prevBarangay;
             }
+          }
         }
 
         // Handle terms checkbox
@@ -708,25 +688,14 @@
                   {% render_field userForm.confirm_password class="form-control" placeholder="Confirm Password" %}
                 </div>
 
-                <!-- Country and Region in one row -->
+                <!-- Region, City, Barangay in one row (no country) -->
                 <div class="form-row">
                   <div class="form-group" style="flex: 1; margin-right: 10px;">
-                    <label for="country">Country</label>
-                    <select name="country" id="country" class="form-control" required>
-                      <option value="" disabled selected>Select Country</option>
-                      <option value="PH" {% if request.POST.country == 'PH' %}selected{% endif %}>Philippines</option>
-                      <option value="US" {% if request.POST.country == 'US' %}selected{% endif %}>United States</option>
-                    </select>
-                  </div>
-                  <div class="form-group" style="flex: 1;">
                     <label for="{{ customerForm.region.id_for_label }}">Region</label>
                     <select name="region" id="region" class="form-control" required>
                       <option value="" disabled selected>Select Region</option>
                     </select>
                   </div>
-                </div>
-                <!-- City and Barangay in one row -->
-                <div class="form-row">
                   <div class="form-group" style="flex: 1; margin-right: 10px;">
                     <label for="city">City</label>
                     <select name="city" id="city" class="form-control" required>

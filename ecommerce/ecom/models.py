@@ -2,10 +2,6 @@ from django.db import models
 from django.contrib.auth.models import User
 # Create your models here.
 class Customer(models.Model):
-    COUNTRY_CHOICES = [
-        ('PH', 'Philippines'),
-    ]
-    
     REGION_CHOICES = [
         ('NCR', 'National Capital Region'),
         ('CAR', 'Cordillera Administrative Region'),
@@ -28,7 +24,6 @@ class Customer(models.Model):
     
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     profile_pic = models.ImageField(upload_to='profile_pic/CustomerProfilePic/', null=True, blank=True)
-    country = models.CharField(max_length=2, choices=COUNTRY_CHOICES, default='PH')
     region = models.CharField(max_length=10, choices=REGION_CHOICES)
     city = models.CharField(max_length=50)
     barangay = models.CharField(max_length=50)
