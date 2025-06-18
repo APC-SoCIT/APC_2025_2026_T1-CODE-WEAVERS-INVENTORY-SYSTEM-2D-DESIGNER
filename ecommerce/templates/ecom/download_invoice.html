@@ -1,276 +1,77 @@
 <!DOCTYPE html>
-<html lang="en" dir="ltr">
+<html lang="en">
 {% load static %}
 {% load humanize %}
-{% load custom_filters %}
-
 <head>
   <meta charset="utf-8">
   <style>
-    @page {
-      size: A4;
-      margin: 1cm;
-
-      @frame footer {
-        -pdf-frame-content: footerContent;
-        bottom: 0cm;
-        margin-left: 9cm;
-        margin-right: 9cm;
-        height: 1cm;
-      }
-    }
-
-    .invoice-box {
-      max-width: 800px;
-      margin: auto;
-      padding: 30px;
-      border: 1px solid #eee;
-      box-shadow: 0 0 10px rgba(0, 0, 0, .15);
-      font-size: 16px;
-      line-height: 24px;
-      font-family: 'Helvetica Neue', 'Helvetica', Helvetica, Arial, sans-serif;
-      color: #555;
-    }
-
-    .invoice-box table {
-      width: 100%;
-      line-height: inherit;
-      text-align: left;
-    }
-
-    .invoice-box table td {
-      padding: 5px;
-      vertical-align: top;
-    }
-
-    .invoice-box table tr td:nth-child(2) {
-      text-align: right;
-    }
-
-    .invoice-box table tr.top table td {
-      padding-bottom: 20px;
-    }
-
-    .invoice-box table tr.top table td.title {
-      font-size: 26px;
-      line-height: 45px;
-      color: #333;
-    }
-
-    .invoice-box table tr.information table td {
-      padding-bottom: 40px;
-    }
-
-    .invoice-box table tr.heading td {
-      background: #eee;
-      border-bottom: 1px solid #ddd;
-      font-weight: bold;
-    }
-
-    .invoice-box table tr.details td {
-      padding-bottom: 20px;
-    }
-
-    .invoice-box table tr.item td {
-      border-bottom: 1px solid #eee;
-    }
-
-    .invoice-box table tr.item.last td {
-      border-bottom: none;
-    }
-
-    .invoice-box table tr.total td:nth-child(2) {
-      border-top: 2px solid #eee;
-      font-weight: bold;
-    }
-
-    @media only screen and (max-width: 600px) {
-      .invoice-box table tr.top table td {
-        width: 100%;
-        display: block;
-        text-align: center;
-      }
-
-      .invoice-box table tr.information table td {
-        width: 100%;
-        display: block;
-        text-align: center;
-      }
-    }
-
-    /** RTL **/
-    .rtl {
-      direction: rtl;
-      font-family: Tahoma, 'Helvetica Neue', 'Helvetica', Helvetica, Arial, sans-serif;
-    }
-
-    .rtl table {
-      text-align: right;
-    }
-
-    .rtl table tr td:nth-child(2) {
-      text-align: left;
-    }
+    body { font-family: Arial, sans-serif; margin: 40px; }
+    .invoice-box { max-width: 800px; margin: auto; border: 1px solid #eee; padding: 30px; }
+    h2 { text-align: center; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #ddd; padding: 8px; }
+    th { background: #f2f2f2; }
+    .right { text-align: right; }
+    .summary-table { margin-top: 30px; }
+    .summary-table td { border: none; }
+    .address-box { margin-top: 20px; padding: 15px; background: #f9f9f9; border-radius: 5px; }
+    .total-row { font-weight: bold; }
   </style>
 </head>
-
 <body>
-
-  <br><br><br>
   <div class="invoice-box">
-    <table cellpadding="0" cellspacing="0">
-      <tr class="top">
-        <td colspan="2">
-          <table class="table table-bordered table-striped">
-            <tr>
-              <td class="title">
-                <h5>WorksTeamWear - Invoice</h5>
-              </td>
-
-              <td>
-
-
-                Order Date: {{orderDate}}<br>
-
-              </td>
-            </tr>
-          </table>
-        </td>
+    <h2>Order Invoice</h2>
+       <strong>Order Date:</strong> {{ order.order_date|date:"F d, Y" }}</p>
+    <div class="address-box">
+      <strong>Customer:</strong> {{ customer.get_full_name }}<br>
+      <strong>Contact:</strong> {{ customer.mobile }}<br>
+      <strong>Address:</strong>
+      {{ customer.street_address }},
+      {% if customer.barangay %}{{ customer.barangay }}, {% endif %}
+      {{ customer.city }},
+      {{ customer.region }},
+      {{ customer.postal_code }}
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Product</th>
+          <th>Size</th>
+          <th>Quantity</th>
+          <th>Unit Price</th>
+          <th class="right">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in products %}
+        <tr>
+          <td>{{ p.item.product.name }}</td>
+          <td>{{ p.size }}</td>
+          <td class="right">{{ p.quantity }}</td>
+          <td class="right">₱{{ p.unit_price|floatformat:2 }}</td>
+          <td class="right">₱{{ p.line_total|floatformat:2 }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <table class="summary-table" style="width: 100%;">
+      <tr>
+        <td class="right">Subtotal (VAT-ex):</td>
+        <td class="right">₱{{ total|floatformat:2 }}</td>
       </tr>
-
-      <tr class="information">
-        <td colspan="2">
-          <table>
-            <tr>
-              <td>
-                Customer : <br>{{customerName}}<br><br>
-                Customer Email :<br> {{customerEmail}}
-
-              </td>
-
-              <td>
-                Contact Number :<br>
-                {{ order.mobile }}<br><br> 
-                Shipment Address :<br> {{ shipmentAddress }}
-              </td>
-            </tr>
-          </table>
-        </td>
+      <tr>
+        <td class="right">VAT (12%):</td>
+        <td class="right">₱{{ vat_amount|floatformat:2 }}</td>
       </tr>
-
-
-      <tr class="information">
-        <td colspan="2">
-          <table>
-            <tr>
-              <td>
-                Product Image :<br>
-                 <img src="{% static productImage.url %}" alt="Profile Pic" height="40px" width="40px" /><br><br>
-                <td>Product Price: ₱{{productPrice|floatformat:2|intcomma}}</td>
-                <td>Quantity: {{quantity}}</td>
-                <td>Total Price: ₱{{totalPrice|floatformat:2|intcomma}}</td>
-              </td>
-              <td>
-                Product: <br> {{productName}}<br><br>
-                Description: <br> {{productDescription}}
-              </td>
-
-            </tr>
-          </table>
-        </td>
+      <tr>
+        <td class="right">Delivery Fee:</td>
+        <td class="right">₱{{ delivery_fee|floatformat:2 }}</td>
       </tr>
-
-
-
-      <tr class="information">
-        <td colspan="2">
-          <table>
-            <tr>
-              <th>Product</th>
-              <th>Size</th>
-              <th>Quantity</th>
-              <th>Unit Price</th>
-              <th>Total</th>
-            </tr>
-            {% for item in orderItems %}
-            <tr>
-              <td>{{ item.product.name }}</td>
-              <td>{{ item.size }}</td>
-              <td>{{ item.quantity }}</td>
-              <td>₱{{ item.price|floatformat:2|intcomma }}</td>
-              <td>₱{{ item.total|floatformat:2|intcomma }}</td>
-            </tr>
-            {% endfor %}
-          </table>
-        </td>
+      <tr class="total-row">
+        <td class="right">Grand Total:</td>
+        <td class="right">₱{{ grand_total|floatformat:2 }}</td>
       </tr>
-
-      <tr class="total">
-        <td colspan="2">
-          <table>
-            <tr>
-              <td>Subtotal:</td>
-              <td>₱{{ subtotal|floatformat:2|intcomma }}</td>
-            </tr>
-            <tr>
-              <td>VAT ({{ vat_rate }}%):</td>
-              <td>₱{{ vat_amount|floatformat:2|intcomma }}</td>
-            </tr>
-            <tr>
-              <td>Delivery fee:</td>
-              <td>₱{{ delivery_fee|floatformat:2|intcomma }}</td>
-            </tr>
-            <tr>
-              <td><strong>Total:</strong></td>
-              <td><strong>₱{{ totalPrice|floatformat:2|intcomma }}</strong></td>
-            </tr>
-          </table>
-        </td>
-      </tr>
-      <tr class="information">
-        <td colspan="2">
-          <table>
-            <tr>
-              <td>
-                <strong>Product Details:</strong><br><br>
-                {% for item in orderItems %}
-                <div style="margin-bottom: 15px;">
-                  <img src="{% static item.product.product_image.url %}" alt="Product Image" height="40px" width="40px" style="vertical-align: middle;"/>
-                  <span style="margin-left: 10px;">{{ item.product.name }}</span><br>
-                  <span style="margin-left: 50px;">Unit Price: ₱{{ item.price|floatformat:2 }}</span><br>
-                  <span style="margin-left: 50px;">Quantity: {{ item.quantity }}</span><br>
-                  <span style="margin-left: 50px;">Subtotal: ₱{{ item.price|multiply:item.quantity|floatformat:2 }}</span>
-                </div>
-                {% endfor %}
-                <div style="margin-top: 20px; border-top: 2px solid #eee; padding-top: 10px;">
-                  <strong>Total Price: ₱{{ totalPrice|floatformat:2 }}</strong>
-                </div>
-              </td>
-            </tr>
-          </table>
-        </td>
-      </tr>
-
-
-      <tr class="information">
-        <td colspan="2">
-          <table>
-            <tr>
-              <td>
-                Order Status :<br><br>
-                  {{orderStatus}}
-              </td>
-            </tr>
-          </table>
-        </td>
-      </tr>
-
-
-      
-
-
     </table>
   </div>
 </body>
-
 </html>

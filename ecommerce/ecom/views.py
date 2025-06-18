@@ -1650,6 +1650,7 @@ from xhtml2pdf import pisa
 from django.template.loader import get_template
 from django.template import Context
 from django.http import HttpResponse
+from django.template.loader import render_to_string
 
 
 def render_to_pdf(template_src, context_dict):
@@ -1663,54 +1664,53 @@ def render_to_pdf(template_src, context_dict):
 
 
 
-def download_invoice_view(request, orderID):
-    order = models.Orders.objects.get(id=orderID)
+def download_invoice_view(request, order_id):
+    order = models.Orders.objects.get(id=order_id)
     order_items = models.OrderItem.objects.filter(order=order)
+    customer = order.customer
 
-    # Use the stored shipment address from the order
-    shipment_address = order.address if order.address else order.customer.address
-
-    # Calculate item totals and order totals
-    for item in order_items:
-        item.unit_price = item.price  # Add unit price for display
-        item.total = item.price * item.quantity
-
-    subtotal = sum(item.total for item in order_items)
-    
-    # --- Delivery Fee Logic ---
-    delivery_fee = 0
-    region = None
-    if order.customer and hasattr(order.customer, 'region'):
-        region = order.customer.region
+    # Delivery fee logic (same as pending_orders_view)
+    region = customer.region if hasattr(customer, 'region') else None
     if region == 'NCR':
-        delivery_fee = 49
+        delivery_fee = Decimal('100')
     elif region == 'CAR':
-        delivery_fee = 59
+        delivery_fee = Decimal('159')
     elif region:
-        delivery_fee = 69
+        delivery_fee = Decimal('200')
     else:
-        delivery_fee = 0
-    # --- End Delivery Fee Logic ---
+        delivery_fee = Decimal('0')
 
-    vat_rate = decimal.Decimal('12')  # Convert VAT rate to Decimal
-    vat_amount = subtotal * (vat_rate / decimal.Decimal('100'))  # All calculations use Decimal
-    total_price = subtotal + vat_amount + delivery_fee
+    subtotal = Decimal('0.00')
+    products = []
+    for item in order_items:
+        line_total = Decimal(item.price) * item.quantity
+        subtotal += line_total
+        products.append({
+            'item': item,
+            'size': item.size,
+            'quantity': item.quantity,
+            'unit_price': Decimal(item.price),
+            'line_total': line_total,
+        })
 
-    mydict = {
-        'orderDate': order.order_date,
-        'customerName': request.user,
-        'customerEmail': order.email,
-        'customerMobile': order.mobile,
-        'shipmentAddress': shipment_address,
-        'orderStatus': order.status,
-        'orderItems': order_items,
-        'subtotal': subtotal,
-        'vat_rate': vat_rate,
+    net_subtotal = subtotal / Decimal('1.12')
+    vat_amount = subtotal - net_subtotal
+    grand_total = subtotal + delivery_fee
+
+    context = {
+        'order': order,
+        'products': products,
+        'net_subtotal': net_subtotal,
         'vat_amount': vat_amount,
+        'subtotal': subtotal,
         'delivery_fee': delivery_fee,
-        'totalPrice': total_price
+        'grand_total': grand_total,
+        'customer': customer,
     }
-    return render_to_pdf('ecom/download_invoice.html', mydict)
+
+    html = render_to_string('ecom/download_invoice.html', context)
+    # ...PDF generation logic or return HttpResponse(html)...
+    return HttpResponse(html)
 
 def pre_order(request):
     return render(request, 'ecom/pre_order.html')
@@ -1800,7 +1800,7 @@ def manage_profile(request):
 def create(request):
     return render(request, 'ecom/create.html')
 
-def jersey_customizer_advanced(request):
+def jersey_customizer_advanced_view(request):
     return render(request, 'ecom/jersey_customizer_advanced.html')
 
 def jersey_customizer(request):
