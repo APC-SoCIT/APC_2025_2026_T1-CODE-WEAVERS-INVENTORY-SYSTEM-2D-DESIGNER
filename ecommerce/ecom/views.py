@@ -27,6 +27,7 @@ from django.shortcuts import redirect
 from django.views.decorators.http import require_GET
 from django.core.serializers.json import DjangoJSONEncoder
 from datetime import datetime
+from decimal import Decimal
 
 @login_required(login_url='adminlogin')
 def user_profile_page(request, user_id):
@@ -917,16 +918,15 @@ def view_feedback_view(request):
 def pending_orders_view(request):
     vat_rate = 12
     vat_multiplier = 1 + (vat_rate / 100)
-
     customer = models.Customer.objects.get(user=request.user)
     region = customer.region if hasattr(customer, 'region') else None
 
     if region == 'NCR':
-        delivery_fee = 49
+        delivery_fee = 100
     elif region == 'CAR':
-        delivery_fee = 59
+        delivery_fee = 159
     elif region:
-        delivery_fee = 69
+        delivery_fee = 200
     else:
         delivery_fee = 0
 
@@ -938,7 +938,6 @@ def pending_orders_view(request):
         products = []
         total = Decimal('0.00')
         for item in order_items:
-            # Calculate VAT-exclusive unit price
             unit_price_vat_ex = Decimal(item.price) / Decimal(vat_multiplier)
             line_total = unit_price_vat_ex * item.quantity
             total += line_total
@@ -957,9 +956,8 @@ def pending_orders_view(request):
             'order': order,
             'products': products,
             'total': total,
-            'delivery_fee': delivery_fee,
-            'vat_rate': vat_rate,
             'vat_amount': vat_amount,
+            'delivery_fee': delivery_fee,
             'grand_total': grand_total,
         })
 
@@ -1183,13 +1181,13 @@ def cart_view(request):
             region = None
     # Set delivery fee based on region
     if region == 'NCR':
-        delivery_fee = 49
+        delivery_fee = 100
     elif region == 'CAR':
-        delivery_fee = 59
+        delivery_fee = 159
     elif region:
-        delivery_fee = 69
+        delivery_fee = 200
     else:
-        delivery_fee = 0
+        delivery_fee = 200
 
     vat_rate = 12
     vat_multiplier = 1 + (vat_rate / 100)
@@ -1941,10 +1939,10 @@ def update_address(request):
     if request.method == 'POST':
         customer = Customer.objects.get(user=request.user)
         customer.full_name = request.POST.get('full_name')
-        customer.region = request.POST.get('region')  # <-- Add this line
+        customer.region = request.POST.get('region')
         customer.city = request.POST.get('city')
-        customer.barangay = request.POST.get('brgy')
-        customer.street_address = request.POST.get('street')
+        customer.barangay = request.POST.get('barangay') or request.POST.get('brgy')
+        customer.street_address = request.POST.get('street_address') or request.POST.get('street')
         customer.postal_code = request.POST.get('postal_code')
         customer.save()
         return redirect('cart')

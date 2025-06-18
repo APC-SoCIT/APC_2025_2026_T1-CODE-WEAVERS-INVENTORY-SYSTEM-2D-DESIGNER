@@ -106,13 +106,13 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {% for item in order_dict.items %}
+                                    {% for item in order_dict.products %}
                                     <tr>
-                                        <td>{{ item.product.name }}</td>
-                                        <td>{% if item.size %}{{ item.size }}{% else %}{{ item.product.size }}{% endif %}</td>
+                                        <td>{{ item.item.product.name }}</td>
+                                        <td>{% if item.size %}{{ item.size }}{% else %}{{ item.item.product.size }}{% endif %}</td>
                                         <td>{{ item.quantity }}</td>
-                                        <td>₱{{ item.price|floatformat:2|intcomma }}</td>
-                                        <td>₱{{ item.price|multiply:item.quantity|floatformat:2|intcomma }}</td>
+                                        <td>₱{{ item.unit_price|floatformat:2|intcomma }}</td>
+                                        <td>₱{{ item.line_total|floatformat:2|intcomma }}</td>
                                     </tr>
                                     {% endfor %}
                                 </tbody>
@@ -122,7 +122,7 @@
                                         <th>₱{{ order_dict.subtotal|floatformat:2|intcomma }}</th>
                                     </tr>
                                     <tr>
-                                        <th colspan="4" style="text-align: right;">VAT ({{ order_dict.vat_rate }}%)</th>
+                                        <th colspan="4" style="text-align: right;">VAT (12%)</th>
                                         <th>₱{{ order_dict.vat_amount|floatformat:2|intcomma }}</th>
                                     </tr>
                                     <tr>
@@ -131,7 +131,7 @@
                                     </tr>
                                     <tr>
                                         <th colspan="4" style="text-align: right;">Total</th>
-                                        <th><strong>₱{{ order_dict.total_price|floatformat:2|intcomma }}</strong></th>
+                                        <th><strong>₱{{ order_dict.grand_total|floatformat:2|intcomma }}</strong></th>
                                     </tr>
                                 </tfoot>
                             </table>
