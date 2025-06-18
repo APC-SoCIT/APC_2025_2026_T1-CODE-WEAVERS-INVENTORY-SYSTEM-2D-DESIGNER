@@ -913,33 +913,56 @@ def view_feedback_view(request):
 #---------------------------------------------------------------------------------
 #------------------------ PUBLIC CUSTOMER RELATED VIEWS START ---------------------
 #---------------------------------------------------------------------------------
-
 @login_required(login_url='customerlogin')
 def pending_orders_view(request):
-    from decimal import Decimal
-    customer = models.Customer.objects.get(user_id=request.user.id)
+    vat_rate = 12
+    vat_multiplier = 1 + (vat_rate / 100)
+
+    customer = models.Customer.objects.get(user=request.user)
+    region = customer.region if hasattr(customer, 'region') else None
+
+    if region == 'NCR':
+        delivery_fee = 49
+    elif region == 'CAR':
+        delivery_fee = 59
+    elif region:
+        delivery_fee = 69
+    else:
+        delivery_fee = 0
+
     orders = models.Orders.objects.filter(customer=customer, status='Pending').order_by('-order_date', '-created_at')
     orders_with_items = []
-    VAT_RATE = Decimal('0.12')  # 12% VAT
-    DELIVERY_FEE = Decimal('100')  # Example delivery fee, adjust as needed
+
     for order in orders:
         order_items = models.OrderItem.objects.filter(order=order)
-        subtotal = Decimal('0.00')
+        products = []
+        total = Decimal('0.00')
         for item in order_items:
-            subtotal += Decimal(item.price) * item.quantity
-        vat_amount = subtotal * VAT_RATE
-        delivery_fee = DELIVERY_FEE if subtotal > 0 else Decimal('0.00')
-        total_price = subtotal + vat_amount + delivery_fee
-        order.total = total_price
+            # Calculate VAT-exclusive unit price
+            unit_price_vat_ex = Decimal(item.price) / Decimal(vat_multiplier)
+            line_total = unit_price_vat_ex * item.quantity
+            total += line_total
+            products.append({
+                'item': item,
+                'size': item.size,
+                'quantity': item.quantity,
+                'unit_price_vat_ex': unit_price_vat_ex,
+                'line_total': line_total,
+            })
+
+        vat_amount = total * Decimal(vat_rate) / Decimal(100)
+        grand_total = total + Decimal(delivery_fee) + vat_amount
+
         orders_with_items.append({
             'order': order,
-            'items': order_items,
-            'subtotal': subtotal,
-            'vat_amount': vat_amount,
-            'vat_rate': int(VAT_RATE * 100),
+            'products': products,
+            'total': total,
             'delivery_fee': delivery_fee,
-            'total_price': total_price,
+            'vat_rate': vat_rate,
+            'vat_amount': vat_amount,
+            'grand_total': grand_total,
         })
+
     return render(request, 'ecom/order_status_page.html', {
         'orders_with_items': orders_with_items,
         'status': 'Pending',

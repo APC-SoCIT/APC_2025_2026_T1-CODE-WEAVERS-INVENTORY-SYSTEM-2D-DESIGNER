@@ -325,19 +325,19 @@
     }
     
     .checkout .details span {
-      font-size: 13px;
+      font-size: 18px;
       font-weight: 600;
     }
     
     .checkout .details span:nth-child(odd) {
-      font-size: 11px;
+      font-size: 16px;
       font-weight: 700;
       color: #707175;
       margin: auto auto auto 0;
     }
     
     .checkout .details span:nth-child(even) {
-      font-size: 13px;
+      font-size: 18px;
       font-weight: 600;
       color: #47484b;
       margin: auto 0 auto auto;
@@ -573,7 +573,6 @@
         <strong id="grand-total">₱ <span id="grand-total-value">{{ grand_total|default_if_none:total|floatformat:2|intcomma }}</span></strong>
       </div>
       <div class="checkout--footer">
-        <strong>Total: ₱ <span id="footer-total">{{ grand_total|default_if_none:total|floatformat:2|intcomma }}</span></strong>
         <button class="pay-btn" id="openModalBtn"> 
           Checkout
           <svg class="pay-svgIcon" viewBox="0 0 576 512">
