@@ -1943,8 +1943,15 @@ def update_address(request):
         customer.full_name = request.POST.get('full_name')
         customer.region = request.POST.get('region')  # <-- Add this line
         customer.city = request.POST.get('city')
-        customer.barangay = request.POST.get('brgy')
-        customer.street_address = request.POST.get('street')
+        # Fix: Use 'barangay' key instead of 'brgy' to match form field name
+        customer.barangay = request.POST.get('barangay')
+
+        street = request.POST.get('street')
+        if street is None or street.strip() == '':
+            messages.error(request, 'Street address is required.')
+            return redirect('cart')
+        customer.street_address = street
+
         customer.postal_code = request.POST.get('postal_code')
         customer.save()
         return redirect('cart')
