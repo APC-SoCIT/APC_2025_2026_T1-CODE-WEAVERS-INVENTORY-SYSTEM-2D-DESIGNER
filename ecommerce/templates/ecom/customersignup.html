@@ -444,6 +444,28 @@
           }
         });
       });
+
+      function validatePHMobile(input) {
+        const value = input.value;
+        const help = document.getElementById('mobileHelp');
+        // Only allow 10 digits, starts with 9, and not containing 666
+        const valid = (/^9\d{9}$/.test(value) && !/666/.test(value));
+        if (!valid && value.length > 0) {
+          help.style.display = 'block';
+          input.setCustomValidity('Invalid or disallowed number.');
+        } else {
+          help.style.display = 'none';
+          input.setCustomValidity('');
+        }
+      }
+      // On form submit, prepend +63 to the value
+      const form = document.querySelector('form');
+      form.addEventListener('submit', function(e) {
+        const input = document.getElementById('mobile_number');
+        if(input && !input.value.startsWith('+63')) {
+          input.value = '+63' + input.value;
+        }
+      });
     </script>
   </head>
   <body>
@@ -559,7 +581,11 @@
                   </div>
                   <div class="form-group">
                     <label for="{{ customerForm.mobile.id_for_label }}">Contact</label>
-                    {% render_field customerForm.mobile class="form-control" placeholder="Mobile Number" %}
+                    <div style="display:flex;align-items:center;">
+                      <span style="padding:8px 12px;background:#eee;border-radius:24px 0 0 24px;border:1px solid #ccc;border-right:0;">+63</span>
+                      <input type="text" id="mobile_number" name="mobile" class="form-control" placeholder="9123456789" maxlength="10" minlength="10" pattern="^9\d{9}$" style="border-radius:0 24px 24px 0;" oninput="validatePHMobile(this)" required />
+                    </div>
+                    <small id="mobileHelp" style="color:red;display:none;">Invalid or disallowed number.</small>
                   </div>
                 </div>
 
