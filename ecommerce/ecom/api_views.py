@@ -11,7 +11,7 @@ def get_regions(request):
         response.raise_for_status()
         data = response.json()
         return JsonResponse(data, safe=False)
-    except requests.RequestException as e:
+    except requests.RequestException:
         return JsonResponse({"error": "Failed to fetch regions"}, status=500)
 
 @require_GET
@@ -20,24 +20,38 @@ def get_provinces(request):
     if not region_id:
         return JsonResponse({"error": "region_id parameter is required"}, status=400)
     try:
-        response = requests.get(f"{PSGC_BASE_URL}/region", params={"id": region_id})
+        response = requests.get(f"{PSGC_BASE_URL}/province", params={"id": region_id})
         response.raise_for_status()
         data = response.json()
         return JsonResponse(data, safe=False)
-    except requests.RequestException as e:
+    except requests.RequestException:
         return JsonResponse({"error": "Failed to fetch provinces"}, status=500)
 
 @require_GET
 def get_cities(request):
     province_id = request.GET.get('province_id')
-    if not province_id:
-        return JsonResponse({"error": "province_id parameter is required"}, status=400)
+    region_id = request.GET.get('region_id')
     try:
-        response = requests.get(f"{PSGC_BASE_URL}/province", params={"id": province_id})
-        response.raise_for_status()
-        data = response.json()
-        return JsonResponse(data, safe=False)
-    except requests.RequestException as e:
+        if province_id:
+            response = requests.get(f"{PSGC_BASE_URL}/municipal-city", params={"id": province_id})
+            response.raise_for_status()
+            data = response.json()
+            return JsonResponse(data, safe=False)
+        elif region_id:
+            # Fetch provinces for the region (including NCR)
+            prov_response = requests.get(f"{PSGC_BASE_URL}/province", params={"id": region_id})
+            prov_response.raise_for_status()
+            provinces = prov_response.json()
+            all_cities = []
+            for prov in provinces:
+                city_response = requests.get(f"{PSGC_BASE_URL}/municipal-city", params={"id": prov.get('psgc_id') or prov.get('code')})
+                city_response.raise_for_status()
+                cities = city_response.json()
+                all_cities.extend(cities)
+            return JsonResponse(all_cities, safe=False)
+        else:
+            return JsonResponse({"error": "province_id or region_id parameter is required"}, status=400)
+    except requests.RequestException:
         return JsonResponse({"error": "Failed to fetch cities"}, status=500)
 
 @require_GET
@@ -46,9 +60,10 @@ def get_barangays(request):
     if not city_id:
         return JsonResponse({"error": "city_id parameter is required"}, status=400)
     try:
-        response = requests.get(f"{PSGC_BASE_URL}/municipal-city", params={"id": city_id})
+        response = requests.get(f"{PSGC_BASE_URL}/barangay", params={"id": city_id})
         response.raise_for_status()
         data = response.json()
         return JsonResponse(data, safe=False)
-    except requests.RequestException as e:
+    except requests.RequestException:
         return JsonResponse({"error": "Failed to fetch barangays"}, status=500)
+

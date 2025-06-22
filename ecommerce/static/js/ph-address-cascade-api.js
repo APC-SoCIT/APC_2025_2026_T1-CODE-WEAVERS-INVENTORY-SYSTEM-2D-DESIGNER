@@ -45,12 +45,27 @@ window.initPHAddressCascadeAPI = function(config) {
     if (!regionId) return;
     try {
       const provinces = await fetchJSON('/api/provinces/', {region_id: regionId});
-      provinces.forEach(province => {
-        const opt = document.createElement('option');
-        opt.value = province.psgc_id || province.id || province.code || province.provCode;
-        opt.textContent = province.name || province.provDesc;
-        provinceSel.appendChild(opt);
-      });
+      if (provinces.length === 0) {
+        // No provinces, fetch cities directly for the region
+        provinceSel.disabled = true;
+        const cities = await fetchJSON('/api/cities/', {region_id: regionId});
+        clearSelect(citymunSel);
+        citymunSel.innerHTML = '<option value="" disabled selected>Select City/Municipality</option>';
+        cities.forEach(city => {
+          const opt = document.createElement('option');
+          opt.value = city.psgc_id || city.id || city.code || city.citymunCode;
+          opt.textContent = city.name || city.citymunDesc;
+          citymunSel.appendChild(opt);
+        });
+      } else {
+        provinceSel.disabled = false;
+        provinces.forEach(province => {
+          const opt = document.createElement('option');
+          opt.value = province.psgc_id || province.id || province.code || province.provCode;
+          opt.textContent = province.name || province.provDesc;
+          provinceSel.appendChild(opt);
+        });
+      }
     } catch (e) {
       console.error(e);
     }
@@ -64,12 +79,27 @@ window.initPHAddressCascadeAPI = function(config) {
     if (!provinceId) return;
     try {
       const cities = await fetchJSON('/api/cities/', {province_id: provinceId});
-      cities.forEach(city => {
-        const opt = document.createElement('option');
-        opt.value = city.psgc_id || city.id || city.code || city.citymunCode;
-        opt.textContent = city.name || city.citymunDesc;
-        citymunSel.appendChild(opt);
-      });
+      if (cities.length === 0) {
+        // No cities, fetch barangays directly for the province
+        citymunSel.disabled = true;
+        const barangays = await fetchJSON('/api/barangays/', {province_id: provinceId});
+        clearSelect(barangaySel);
+        barangaySel.innerHTML = '<option value="" disabled selected>Select Barangay</option>';
+        barangays.forEach(brgy => {
+          const opt = document.createElement('option');
+          opt.value = brgy.psgc_id || brgy.id || brgy.code || brgy.brgyCode;
+          opt.textContent = brgy.name || brgy.brgyDesc;
+          barangaySel.appendChild(opt);
+        });
+      } else {
+        citymunSel.disabled = false;
+        cities.forEach(city => {
+          const opt = document.createElement('option');
+          opt.value = city.psgc_id || city.id || city.code || city.citymunCode;
+          opt.textContent = city.name || city.citymunDesc;
+          citymunSel.appendChild(opt);
+        });
+      }
     } catch (e) {
       console.error(e);
     }
@@ -99,4 +129,4 @@ window.initPHAddressCascadeAPI = function(config) {
 
   // Initialize by populating regions
   populateRegions();
-};
+}

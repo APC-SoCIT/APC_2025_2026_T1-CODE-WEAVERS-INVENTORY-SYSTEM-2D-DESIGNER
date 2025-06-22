@@ -80,7 +80,7 @@
 
       .form-row {
         display: flex;
-        gap: 15px;
+        gap: 10px;
         margin-bottom: 20px;
       }
 
@@ -202,271 +202,8 @@
       .login-link a:hover {
         color: white;
       }
-
-      /* Modal Styles */
-      .modal {
-        display: none;
-        position: fixed;
-        z-index: 1000;
-        left: 0;
-        top: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.8);
-        backdrop-filter: blur(5px);
-      }
-
-      .modal-content {
-        background: rgba(255, 255, 255, 0.95);
-        margin: 5% auto;
-        padding: 30px;
-        border-radius: 15px;
-        width: 90%;
-        max-width: 700px;
-        max-height: 80vh;
-        overflow-y: auto;
-        position: relative;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-      }
-
-      .close {
-        color: #aaa;
-        float: right;
-        font-size: 28px;
-        font-weight: bold;
-        position: absolute;
-        right: 20px;
-        top: 15px;
-        cursor: pointer;
-      }
-
-      .close:hover,
-      .close:focus {
-        color: #000;
-      }
-
-      .modal h2 {
-        color: #333;
-        border-bottom: 2px solid #2ecc71;
-        padding-bottom: 10px;
-        margin-top: 0;
-      }
-
-      .modal h3 {
-        color: #555;
-        margin-top: 25px;
-      }
-
-      .modal p {
-        color: #666;
-        line-height: 1.6;
-        margin-bottom: 15px;
-      }
-
-      /* Error Messages */
-      .error-messages {
-        background: rgba(245, 101, 101, 0.1);
-        border: 1px solid rgba(245, 101, 101, 0.3);
-        border-radius: 10px;
-        padding: 15px;
-        margin-bottom: 20px;
-        text-align: left;
-      }
-
-      .error-messages ul {
-        margin: 0;
-        padding-left: 20px;
-        color: #fed7d7;
-        font-size: 14px;
-      }
-
-      .success-message {
-        background: rgba(72, 187, 120, 0.1);
-        border: 1px solid rgba(72, 187, 120, 0.3);
-        border-radius: 10px;
-        padding: 15px;
-        margin-bottom: 20px;
-        color: #c6f6d5;
-        text-align: center;
-      }
-
-      /* Social Network Styles (from login page) */
-      .forgot {
-        text-decoration: underline;
-      }
-
-      ul.social-network {
-        list-style: none;
-        display: inline;
-        margin-left: 0 !important;
-        padding: 0;
-      }
-
-      ul.social-network li {
-        display: inline;
-        margin: 0 5px;
-      }
-
-      .social-network a.icoFacebook:hover {
-        background-color: #3B5998;
-      }
-
-      .social-network a.icoTwitter:hover {
-        background-color: #33ccff;
-      }
-
-      .social-network a.icoGoogle:hover {
-        background-color: #BD3518;
-      }
-
-      .social-network a.icoFacebook:hover i,
-      .social-network a.icoTwitter:hover i,
-      .social-network a.icoGoogle:hover i {
-        color: #fff;
-      }
-
-      a.socialIcon:hover,
-      .socialHoverClass {
-        color: #44BCDD;
-      }
-
-      .social-circle li a {
-        display: inline-block;
-        position: relative;
-        margin: 0 auto 0 auto;
-        border-radius: 50%;
-        text-align: center;
-        width: 50px;
-        height: 50px;
-        font-size: 20px;
-      }
-
-      .social-circle li i {
-        margin: 0;
-        line-height: 50px;
-        text-align: center;
-      }
-
-      .social-circle li a:hover i,
-      .triggeredHover {
-        transform: rotate(360deg);
-        transition: all 0.2s;
-      }
-
-      .social-circle i {
-        color: #fff;
-        transition: all 0.8s;
-      }
-
-      /* Responsive Design */
-      @media (max-width: 768px) {
-        .signup-card {
-          padding: 30px 20px;
-          margin: 10px;
-        }
-        
-        .form-row {
-          grid-template-columns: 1fr;
-          gap: 0;
-        }
-        
-        .header h1 {
-          font-size: 24px;
-        }
-        
-        .modal-content {
-          margin: 10% auto;
-          padding: 20px;
-          width: 95%;
-        }
-      }
-
-      @media (max-width: 480px) {
-        .signup-card {
-          padding: 25px 15px;
-        }
-        
-        .header h1 {
-          font-size: 22px;
-        }
-      }
     </style>
-    <script>
-      document.addEventListener('DOMContentLoaded', function() {
-        const termsCheckbox = document.getElementById('terms');
-        const submitButton = document.querySelector('.submit-btn');
-        const modal = document.getElementById('termsModal');
-        const termsLink = document.getElementById('termsLink');
-        const privacyLink = document.getElementById('privacyLink');
-        const closeBtn = document.getElementsByClassName('close')[0];
-
-        // Handle terms checkbox
-        if (termsCheckbox) {
-          // Initially disable submit button if checkbox not checked
-          submitButton.disabled = !termsCheckbox.checked;
-          termsCheckbox.addEventListener('change', function() {
-            submitButton.disabled = !this.checked;
-          });
-        }
-
-        // Modal functionality
-        if (termsLink) {
-          termsLink.addEventListener('click', function(e) {
-            e.preventDefault();
-            modal.style.display = 'block';
-          });
-        }
-
-        if (privacyLink) {
-          privacyLink.addEventListener('click', function(e) {
-            e.preventDefault();
-            modal.style.display = 'block';
-          });
-        }
-
-        if (closeBtn) {
-          closeBtn.addEventListener('click', function() {
-            modal.style.display = 'none';
-          });
-        }
-
-        window.addEventListener('click', function(event) {
-          if (event.target == modal) {
-            modal.style.display = 'none';
-          }
-        });
-
-        // Form validation
-        document.querySelector('form').addEventListener('submit', function(e) {
-          if (termsCheckbox && !termsCheckbox.checked) {
-            e.preventDefault();
-            alert('Please accept the Terms and Conditions to continue.');
-          }
-        });
-      });
-
-      function validatePHMobile(input) {
-        const value = input.value;
-        const help = document.getElementById('mobileHelp');
-        // Only allow 10 digits, starts with 9, and not containing 666
-        const valid = (/^9\d{9}$/.test(value) && !/666/.test(value));
-        if (!valid && value.length > 0) {
-          help.style.display = 'block';
-          input.setCustomValidity('Invalid or disallowed number.');
-        } else {
-          help.style.display = 'none';
-          input.setCustomValidity('');
-        }
-      }
-      // On form submit, prepend +63 to the value
-      const form = document.querySelector('form');
-      form.addEventListener('submit', function(e) {
-        const input = document.getElementById('mobile_number');
-        if(input && !input.value.startsWith('+63')) {
-          input.value = '+63' + input.value;
-        }
-      });
-    </script>
+    <script src="{% static 'js/ph-address-cascade-api.js' %}"></script>
   </head>
   <body>
     {% include "ecom/navbar.html" %}
@@ -509,7 +246,7 @@
 
               <form method="post" enctype="multipart/form-data">
                 {% csrf_token %}
-                
+
                 <!-- Name fields -->
                 <div class="form-row">
                   <div class="form-group">
@@ -540,26 +277,29 @@
                 </div>
 
                 <!-- Address Section: Region, Province, City/Municipality, Barangay -->
-                <div class="form-row">
-                  <div class="form-group" style="flex: 1; margin-right: 10px;">
+                <div class="form-row" style="gap: 10px;">
+                  <div class="form-group" style="flex: 1;">
                     <label for="region">Region</label>
                     <select name="region" id="region" class="form-control" required>
                       <option value="" disabled selected>Select Region</option>
                     </select>
                   </div>
-                  <div class="form-group" style="flex: 1; margin-right: 10px;">
+                  <div class="form-group" style="flex: 1;">
                     <label for="province">Province</label>
                     <select name="province" id="province" class="form-control" required>
                       <option value="" disabled selected>Select Province</option>
                     </select>
                   </div>
-                  <div class="form-group" style="flex: 1; margin-right: 10px;">
+                </div>
+
+                <div class="form-row" style="gap: 10px;">
+                  <div class="form-group" style="flex: 1;">
                     <label for="citymun">City/Municipality</label>
                     <select name="citymun" id="citymun" class="form-control" required>
                       <option value="" disabled selected>Select City/Municipality</option>
                     </select>
-                </div>
-                <div class="form-group" style="flex: 1;">
+                  </div>
+                  <div class="form-group" style="flex: 1;">
                     <label for="barangay">Barangay</label>
                     <select name="barangay" id="barangay" class="form-control" required>
                       <option value="" disabled selected>Select Barangay</option>
@@ -573,7 +313,6 @@
                   {% render_field customerForm.street_address class="form-control" placeholder="Street Address" %}
                 </div>
 
-                <script src="{% static 'js/ph-address-cascade-api.js' %}"></script>
                 <script>
                   document.addEventListener('DOMContentLoaded', function() {
                     window.initPHAddressCascadeAPI({
