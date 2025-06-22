@@ -9,6 +9,7 @@ from ecom.views import delete_inventory, edit_inventory, bulk_update_orders
 from django.conf import settings
 from django.conf.urls.static import static
 from ecom.views import admin_manage_inventory_view
+from ecom import api_views
 
 
 
@@ -63,6 +64,8 @@ urlpatterns = [
     path('update-order/<int:pk>', views.update_order_view,name='update-order'),
 
 
+
+
     path('customersignup', views.customer_signup_view),
     path('customerlogin', LoginView.as_view(template_name='ecom/customerlogin.html'),name='customerlogin'),
     path('customer-home', views.customer_home_view,name='customer-home'),
@@ -105,6 +108,12 @@ urlpatterns = [
     path('payment-cancel/', views.payment_cancel, name='payment_cancel'),
     path('update-address/', views.update_address, name='update-address'),
     path('admin-manage-inventory/', admin_manage_inventory_view, name='admin-manage-inventory'),
+
+    # PSGC API proxy endpoints
+    path('api/regions/', api_views.get_regions, name='api-regions'),
+    path('api/provinces/', api_views.get_provinces, name='api-provinces'),
+    path('api/cities/', api_views.get_cities, name='api-cities'),
+    path('api/barangays/', api_views.get_barangays, name='api-barangays'),
 ] + static(settings.MEDIA_URL, document_root=settings.STATIC_ROOT) if settings.DEBUG else []
 
 

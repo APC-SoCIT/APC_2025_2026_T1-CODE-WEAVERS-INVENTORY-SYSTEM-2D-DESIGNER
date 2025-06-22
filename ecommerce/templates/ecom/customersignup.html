@@ -558,8 +558,8 @@
                     <select name="citymun" id="citymun" class="form-control" required>
                       <option value="" disabled selected>Select City/Municipality</option>
                     </select>
-                  </div>
-                  <div class="form-group" style="flex: 1;">
+                </div>
+                <div class="form-group" style="flex: 1;">
                     <label for="barangay">Barangay</label>
                     <select name="barangay" id="barangay" class="form-control" required>
                       <option value="" disabled selected>Select Barangay</option>
@@ -572,6 +572,18 @@
                   <label for="{{ customerForm.street_address.id_for_label }}">Street Address</label>
                   {% render_field customerForm.street_address class="form-control" placeholder="Street Address" %}
                 </div>
+
+                <script src="{% static 'js/ph-address-cascade-api.js' %}"></script>
+                <script>
+                  document.addEventListener('DOMContentLoaded', function() {
+                    window.initPHAddressCascadeAPI({
+                      region: 'region',
+                      province: 'province',
+                      citymun: 'citymun',
+                      barangay: 'barangay'
+                    });
+                  });
+                </script>
 
                 <!-- Postal Code and Contact -->
                 <div class="form-row">
