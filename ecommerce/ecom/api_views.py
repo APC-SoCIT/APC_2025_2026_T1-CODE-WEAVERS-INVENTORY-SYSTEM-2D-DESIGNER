@@ -38,10 +38,17 @@ def get_cities(request):
             data = response.json()
             return JsonResponse(data, safe=False)
         elif region_id:
-            # Fetch provinces for the region (including NCR)
+            # Fetch provinces for the region
             prov_response = requests.get(f"{PSGC_BASE_URL}/province", params={"id": region_id})
             prov_response.raise_for_status()
             provinces = prov_response.json()
+            if provinces is None or len(provinces) == 0:
+                # Fallback: fetch all cities and filter by region code
+                response = requests.get(f"{PSGC_BASE_URL}/municipal-city")
+                response.raise_for_status()
+                data = response.json()
+                filtered_cities = [city for city in data if city.get('regCode') == region_id or city.get('region_code') == region_id]
+                return JsonResponse(filtered_cities, safe=False)
             all_cities = []
             for prov in provinces:
                 city_response = requests.get(f"{PSGC_BASE_URL}/municipal-city", params={"id": prov.get('psgc_id') or prov.get('code')})
