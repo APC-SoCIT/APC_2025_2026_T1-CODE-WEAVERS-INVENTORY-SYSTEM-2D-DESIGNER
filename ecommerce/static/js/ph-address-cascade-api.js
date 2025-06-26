@@ -1,13 +1,9 @@
-// ph-address-cascade-api.js
-// Dynamically populates Region, Province, City/Municipality, and Barangay dropdowns using PSGC API proxy endpoints
-
 window.initPHAddressCascadeAPI = function(config) {
   const regionSel = document.getElementById(config.region);
   const provinceSel = document.getElementById(config.province);
   const citymunSel = document.getElementById(config.citymun);
   const barangaySel = document.getElementById(config.barangay);
 
-  // Helper: fetch JSON from API endpoint with optional params
   async function fetchJSON(url, params = {}) {
     const query = new URLSearchParams(params).toString();
     const fullUrl = query ? `${url}?${query}` : url;
@@ -16,13 +12,12 @@ window.initPHAddressCascadeAPI = function(config) {
     return res.json();
   }
 
-  function clearSelect(sel) {
-    sel.innerHTML = '<option value="" disabled selected>Select</option>';
+  function clearSelect(sel, placeholder = 'Select') {
+    sel.innerHTML = `<option value="" disabled selected>${placeholder}</option>`;
   }
 
   async function populateRegions() {
-    clearSelect(regionSel);
-    regionSel.innerHTML = '<option value="" disabled selected>Select Region</option>';
+    clearSelect(regionSel, 'Select Region');
     try {
       const regions = await fetchJSON('/api/regions/');
       regions.forEach(region => {
@@ -32,25 +27,30 @@ window.initPHAddressCascadeAPI = function(config) {
         regionSel.appendChild(opt);
       });
     } catch (e) {
-      console.error(e);
+      console.error('Error loading regions:', e);
     }
   }
 
   async function onRegionChange() {
-    clearSelect(provinceSel);
-    clearSelect(citymunSel);
-    clearSelect(barangaySel);
-    provinceSel.innerHTML = '<option value="" disabled selected>Select Province</option>';
     const regionId = regionSel.value;
     if (!regionId) return;
+
+    clearSelect(provinceSel, 'Select Province');
+    clearSelect(citymunSel, 'Select City/Municipality');
+    clearSelect(barangaySel, 'Select Barangay');
+    provinceSel.disabled = false;
+    citymunSel.disabled = false;
+
     try {
-      const provinces = await fetchJSON('/api/provinces/', {region_id: regionId});
-      if (provinces.length === 0) {
-        // No provinces, fetch cities directly for the region
+      const provinces = await fetchJSON('/api/provinces/', { region_id: regionId });
+
+      if (provinces.length === 0 || regionId === "13") {
+        // NCR or similar region with no provinces
         provinceSel.disabled = true;
-        const cities = await fetchJSON('/api/cities/', {region_id: regionId});
-        clearSelect(citymunSel);
-        citymunSel.innerHTML = '<option value="" disabled selected>Select City/Municipality</option>';
+        provinceSel.innerHTML = '<option value="" disabled selected>No Province</option>';
+        
+        const cities = await fetchJSON('/api/cities/', { region_id: regionId });
+        clearSelect(citymunSel, 'Select City/Municipality');
         cities.forEach(city => {
           const opt = document.createElement('option');
           opt.value = city.psgc_id || city.id || city.code || city.citymunCode;
@@ -58,6 +58,7 @@ window.initPHAddressCascadeAPI = function(config) {
           citymunSel.appendChild(opt);
         });
       } else {
+        // Normal provinces
         provinceSel.disabled = false;
         provinces.forEach(province => {
           const opt = document.createElement('option');
@@ -67,51 +68,40 @@ window.initPHAddressCascadeAPI = function(config) {
         });
       }
     } catch (e) {
-      console.error(e);
+      console.error('Error loading provinces or cities:', e);
     }
   }
 
   async function onProvinceChange() {
-    clearSelect(citymunSel);
-    clearSelect(barangaySel);
-    citymunSel.innerHTML = '<option value="" disabled selected>Select City/Municipality</option>';
     const provinceId = provinceSel.value;
     if (!provinceId) return;
+
+    clearSelect(citymunSel, 'Select City/Municipality');
+    clearSelect(barangaySel, 'Select Barangay');
+
     try {
-      const cities = await fetchJSON('/api/cities/', {province_id: provinceId});
-      if (cities.length === 0) {
-        // No cities, fetch barangays directly for the province
-        citymunSel.disabled = true;
-        const barangays = await fetchJSON('/api/barangays/', {province_id: provinceId});
-        clearSelect(barangaySel);
-        barangaySel.innerHTML = '<option value="" disabled selected>Select Barangay</option>';
-        barangays.forEach(brgy => {
-          const opt = document.createElement('option');
-          opt.value = brgy.psgc_id || brgy.id || brgy.code || brgy.brgyCode;
-          opt.textContent = brgy.name || brgy.brgyDesc;
-          barangaySel.appendChild(opt);
-        });
-      } else {
-        citymunSel.disabled = false;
-        cities.forEach(city => {
-          const opt = document.createElement('option');
-          opt.value = city.psgc_id || city.id || city.code || city.citymunCode;
-          opt.textContent = city.name || city.citymunDesc;
-          citymunSel.appendChild(opt);
-        });
-      }
+      const cities = await fetchJSON('/api/cities/', { province_id: provinceId });
+      citymunSel.disabled = false;
+      cities.forEach(city => {
+        const opt = document.createElement('option');
+        opt.value = city.psgc_id || city.id || city.code || city.citymunCode;
+        opt.textContent = city.name || city.citymunDesc;
+        citymunSel.appendChild(opt);
+      });
     } catch (e) {
-      console.error(e);
+      console.error('Error loading cities:', e);
     }
   }
 
   async function onCityMunChange() {
-    clearSelect(barangaySel);
-    barangaySel.innerHTML = '<option value="" disabled selected>Select Barangay</option>';
     const cityId = citymunSel.value;
     if (!cityId) return;
+
+    clearSelect(barangaySel, 'Select Barangay');
+
     try {
-      const barangays = await fetchJSON('/api/barangays/', {city_id: cityId});
+      const barangays = await fetchJSON('/api/barangays/', { city_id: cityId });
+      barangaySel.disabled = false;
       barangays.forEach(brgy => {
         const opt = document.createElement('option');
         opt.value = brgy.psgc_id || brgy.id || brgy.code || brgy.brgyCode;
@@ -119,7 +109,7 @@ window.initPHAddressCascadeAPI = function(config) {
         barangaySel.appendChild(opt);
       });
     } catch (e) {
-      console.error(e);
+      console.error('Error loading barangays:', e);
     }
   }
 
@@ -127,6 +117,5 @@ window.initPHAddressCascadeAPI = function(config) {
   provinceSel.addEventListener('change', onProvinceChange);
   citymunSel.addEventListener('change', onCityMunChange);
 
-  // Initialize by populating regions
   populateRegions();
 }
