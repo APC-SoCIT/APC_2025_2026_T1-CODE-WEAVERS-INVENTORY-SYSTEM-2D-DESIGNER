@@ -516,33 +516,44 @@
           </div>
           <div class="form-group">
             <label>Region</label>
-            <select name="region" id="region-select" class="form-control" required>
-              <option value="NCR" {% if user.customer.region == 'NCR' %}selected{% endif %}>National Capital Region (NCR) - ₱100</option>
-              <option value="CAR" {% if user.customer.region == 'CAR' %}selected{% endif %}>Cordillera Administrative Region (CAR) - ₱159</option>
-              <option value="R1" {% if user.customer.region == 'R1' %}selected{% endif %}>Region I - Ilocos Region - ₱200</option>
-              <option value="R2" {% if user.customer.region == 'R2' %}selected{% endif %}>Region II - Cagayan Valley - ₱200</option>
-              <option value="R3" {% if user.customer.region == 'R3' %}selected{% endif %}>Region III - Central Luzon - ₱200</option>
-              <option value="R4A" {% if user.customer.region == 'R4A' %}selected{% endif %}>Region IV-A - CALABARZON - ₱200</option>
-              <option value="R4B" {% if user.customer.region == 'R4B' %}selected{% endif %}>Region IV-B - MIMAROPA - ₱200</option>
-              <option value="R5" {% if user.customer.region == 'R5' %}selected{% endif %}>Region V - Bicol Region - ₱200</option>
-              <option value="R6" {% if user.customer.region == 'R6' %}selected{% endif %}>Region VI - Western Visayas - ₱200</option>
-              <option value="R7" {% if user.customer.region == 'R7' %}selected{% endif %}>Region VII - Central Visayas - ₱200</option>
-              <option value="R8" {% if user.customer.region == 'R8' %}selected{% endif %}>Region VIII - Eastern Visayas - ₱200</option>
-              <option value="R9" {% if user.customer.region == 'R9' %}selected{% endif %}>Region IX - Zamboanga Peninsula - ₱200</option>
-              <option value="R10" {% if user.customer.region == 'R10' %}selected{% endif %}>Region X - Northern Mindanao - ₱200</option>
-              <option value="R11" {% if user.customer.region == 'R11' %}selected{% endif %}>Region XI - Davao Region - ₱200</option>
-              <option value="R12" {% if user.customer.region == 'R12' %}selected{% endif %}>Region XII - SOCCSKSARGEN - ₱200</option>
-              <option value="R13" {% if user.customer.region == 'R13' %}selected{% endif %}>Region XIII - Caraga - ₱200</option>
-              <option value="BARMM" {% if user.customer.region == 'BARMM' %}selected{% endif %}>BARMM - ₱200</option>
+            <select name="region" id="region-select" class="form-control" required onchange="updateDeliveryFee()">
+              <option value="">Select Region</option>
+              <option value="NCR" data-fee="100" {% if user.customer.region == 'NCR' %}selected{% endif %}>National Capital Region (NCR)</option>
+              <option value="CAR" data-fee="159" {% if user.customer.region == 'CAR' %}selected{% endif %}>Cordillera Administrative Region (CAR)</option>
+              <option value="R1" data-fee="200" {% if user.customer.region == 'R1' %}selected{% endif %}>Region I - Ilocos Region</option>
+              <option value="R2" data-fee="200" {% if user.customer.region == 'R2' %}selected{% endif %}>Region II - Cagayan Valley</option>
+              <option value="R3" data-fee="200" {% if user.customer.region == 'R3' %}selected{% endif %}>Region III - Central Luzon</option>
+              <option value="R4A" data-fee="200" {% if user.customer.region == 'R4A' %}selected{% endif %}>Region IV-A - CALABARZON</option>
+              <option value="R4B" data-fee="200" {% if user.customer.region == 'R4B' %}selected{% endif %}>Region IV-B - MIMAROPA</option>
+              <option value="R5" data-fee="200" {% if user.customer.region == 'R5' %}selected{% endif %}>Region V - Bicol Region</option>
+              <option value="R6" data-fee="200" {% if user.customer.region == 'R6' %}selected{% endif %}>Region VI - Western Visayas</option>
+              <option value="R7" data-fee="200" {% if user.customer.region == 'R7' %}selected{% endif %}>Region VII - Central Visayas</option>
+              <option value="R8" data-fee="200" {% if user.customer.region == 'R8' %}selected{% endif %}>Region VIII - Eastern Visayas</option>
+              <option value="R9" data-fee="200" {% if user.customer.region == 'R9' %}selected{% endif %}>Region IX - Zamboanga Peninsula</option>
+              <option value="R10" data-fee="200" {% if user.customer.region == 'R10' %}selected{% endif %}>Region X - Northern Mindanao0</option>
+              <option value="R11" data-fee="200" {% if user.customer.region == 'R11' %}selected{% endif %}>Region XI - Davao Region</option>
+              <option value="R12" data-fee="200" {% if user.customer.region == 'R12' %}selected{% endif %}>Region XII - SOCCSKSARGEN</option>
+              <option value="R13" data-fee="200" {% if user.customer.region == 'R13' %}selected{% endif %}>Region XIII - Caraga</option>
+              <option value="BARMM" data-fee="200" {% if user.customer.region == 'BARMM' %}selected{% endif %}>BARMM</option>
             </select>
           </div>
           <div class="form-group">
-            <label>City</label>
-            <input type="text" name="city" value="{{ user.customer.city }}" class="form-control" required>
+            <label>Province</label>
+            <select name="province" id="province-select" class="form-control" required>
+              <option value="">Select Province</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>City/Municipality</label>
+            <select name="citymun" id="citymun-select" class="form-control" required>
+              <option value="">Select City/Municipality</option>
+            </select>
           </div>
           <div class="form-group">
             <label>Barangay</label>
-            <input type="text" name="barangay" value="{{ user.customer.barangay }}" class="form-control" required>
+            <select name="barangay" id="barangay-select" class="form-control" required>
+              <option value="">Select Barangay</option>
+            </select>
           </div>
           <div class="form-group">
             <label>Street Address</label>
@@ -755,6 +766,41 @@
       // Initialize calculations on page load
       document.addEventListener('DOMContentLoaded', function() {
         calculateTotals();
+      });
+    </script>
+    <script src="{% static 'js/ph-address-cascade-api.js' %}"></script>
+    <script>
+      // Pass initial values from Django to JS
+      const initialProvince = "{{ user.customer.province|escapejs }}";
+      const initialCitymun = "{{ user.customer.citymun|escapejs }}";
+      const initialBarangay = "{{ user.customer.barangay|escapejs }}";
+
+      document.addEventListener('DOMContentLoaded', function() {
+        // Initialize PH Address Cascade for cart address form
+        window.initPHAddressCascadeAPI({
+          region: 'region-select',
+          province: 'province-select',
+          citymun: 'citymun-select',
+          barangay: 'barangay-select'
+        });
+        // Set initial values after dropdowns are populated
+        setTimeout(function() {
+          if (initialProvince) {
+            document.getElementById('province-select').value = initialProvince;
+            document.getElementById('province-select').dispatchEvent(new Event('change'));
+          }
+        }, 500);
+        setTimeout(function() {
+          if (initialCitymun) {
+            document.getElementById('citymun-select').value = initialCitymun;
+            document.getElementById('citymun-select').dispatchEvent(new Event('change'));
+          }
+        }, 900);
+        setTimeout(function() {
+          if (initialBarangay) {
+            document.getElementById('barangay-select').value = initialBarangay;
+          }
+        }, 1300);
       });
     </script>
 </div>

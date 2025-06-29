@@ -1,4 +1,4 @@
-{% extends 'ecom/customer_base.html' %} {% load widget_tweaks %} {% block content %}
+{% extends 'ecom/customer_base.html' %} {% load widget_tweaks %} {% load static %} {% block content %}
 
 <head>
     <style media="screen">
@@ -105,6 +105,98 @@
             .edit-profile-card { padding: 18px 6px; }
         }
     </style>
+    <script src="{% static 'js/ph-address-cascade-api.js' %}"></script>
+    <script>
+      // Pass initial values from Django to JS
+      const initialRegion = "{{ customerForm.region.value|escapejs }}";
+      const initialProvince = "{{ customerForm.province.value|escapejs }}";
+      const initialCitymun = "{{ customerForm.citymun.value|escapejs }}";
+      const initialBarangay = "{{ customerForm.barangay.value|escapejs }}";
+
+      // Map PSA region codes to Django codes
+      const regionCodeMap = {
+        '130000000': 'NCR',
+        '140000000': 'CAR',
+        '010000000': 'R1',
+        '020000000': 'R2',
+        '030000000': 'R3',
+        '040000000': 'R4A',
+        '170000000': 'R4B',
+        '050000000': 'R5',
+        '060000000': 'R6',
+        '070000000': 'R7',
+        '080000000': 'R8',
+        '090000000': 'R9',
+        '100000000': 'R10',
+        '110000000': 'R11',
+        '120000000': 'R12',
+        '160000000': 'R13',
+        '150000000': 'BARMM'
+      };
+
+      function getMappedRegionCode() {
+        let psaCode = document.getElementById('region').value;
+        if (psaCode.length > 9) psaCode = psaCode.slice(0, 9);
+        return regionCodeMap[psaCode] || '';
+      }
+
+      document.addEventListener('DOMContentLoaded', function() {
+        if (window.initPHAddressCascadeAPI) {
+          window.initPHAddressCascadeAPI({
+            region: 'region',
+            province: 'province',
+            citymun: 'citymun',
+            barangay: 'barangay'
+          });
+          // Set initial values after dropdowns are populated
+          setTimeout(function() {
+            if (initialRegion) {
+              document.getElementById('region').value = initialRegion;
+              document.getElementById('region').dispatchEvent(new Event('change'));
+            }
+          }, 300);
+          setTimeout(function() {
+            if (initialProvince) {
+              document.getElementById('province').value = initialProvince;
+              document.getElementById('province').dispatchEvent(new Event('change'));
+            }
+          }, 700);
+          setTimeout(function() {
+            if (initialCitymun) {
+              document.getElementById('citymun').value = initialCitymun;
+              document.getElementById('citymun').dispatchEvent(new Event('change'));
+            }
+          }, 1100);
+          setTimeout(function() {
+            if (initialBarangay) {
+              document.getElementById('barangay').value = initialBarangay;
+            }
+          }, 1500);
+        }
+
+        // On form submit, set region value to Django code using a hidden input
+        const form = document.querySelector('form.edit-profile-form');
+        let hiddenRegionInput = document.getElementById('region_django_code');
+        if (!hiddenRegionInput) {
+          hiddenRegionInput = document.createElement('input');
+          hiddenRegionInput.type = 'hidden';
+          hiddenRegionInput.name = 'region';
+          hiddenRegionInput.id = 'region_django_code';
+          form.appendChild(hiddenRegionInput);
+        }
+        if (form) {
+          form.addEventListener('submit', function(e) {
+            let mapped = getMappedRegionCode();
+            if (mapped) {
+              hiddenRegionInput.value = mapped;
+            } else {
+              e.preventDefault();
+              alert('Invalid region selected. Please select a valid region.');
+            }
+          });
+        }
+      });
+    </script>
 </head>
 <br><br><br><br><br><br>
 
@@ -144,6 +236,22 @@
             </div>
             <div class="col-md-6">
                 <!-- Address Section: Region, Province, City/Municipality, Barangay -->
+                <div class="form-group">
+                    <span class="input-icon"><i class="fa fa-map"></i></span>
+                    <select name="region" id="region" class="form-control" required></select>
+                </div>
+                <div class="form-group">
+                    <span class="input-icon"><i class="fa fa-map-marker"></i></span>
+                    <select name="province" id="province" class="form-control" required></select>
+                </div>
+                <div class="form-group">
+                    <span class="input-icon"><i class="fa fa-building"></i></span>
+                    <select name="citymun" id="citymun" class="form-control" required></select>
+                </div>
+                <div class="form-group">
+                    <span class="input-icon"><i class="fa fa-location-arrow"></i></span>
+                    <select name="barangay" id="barangay" class="form-control" required></select>
+                </div>
                 <div class="form-group">
                     <span class="input-icon"><i class="fa fa-home"></i></span>
                     {% render_field customerForm.street_address class="form-control" placeholder="Street Address" %}

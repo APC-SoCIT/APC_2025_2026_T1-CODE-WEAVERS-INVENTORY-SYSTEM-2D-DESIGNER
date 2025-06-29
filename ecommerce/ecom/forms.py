@@ -27,27 +27,18 @@ class CustomerUserForm(forms.ModelForm):
 
 # Customer personal details form
 class CustomerForm(forms.ModelForm):
+    region = forms.CharField(max_length=100)
+    province = forms.CharField(max_length=100, required=False)
+    citymun = forms.CharField(max_length=100, required=False)
+    barangay = forms.CharField(max_length=100, required=False)
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Use model REGION_CHOICES for region field (code as value, label as display)
         self.fields['region'].choices = models.Customer.REGION_CHOICES
         self.fields['region'].widget = forms.Select()
         self.fields['region'].required = True
-        # Fix: If POSTed value is a label, convert to code
-        region_value = self.data.get('region') or self.initial.get('region')
-        if region_value:
-            # If the value is a label, convert to code
-            code = None
-            for c, label in models.Customer.REGION_CHOICES:
-                if region_value == label or region_value == c:
-                    code = c
-                    break
-            if code:
-                self.data = self.data.copy()
-                self.data['region'] = code
-                self.fields['region'].initial = code
-        # Allow any value for city and barangay by setting choices to the POSTed or initial value if present
-        for field in ['city', 'barangay']:
+        # Remove city and barangay logic, use citymun, province, barangay
+        for field in ['citymun', 'province', 'barangay']:
             value = self.data.get(field, None) or self.initial.get(field, None)
             if value:
                 self.fields[field].choices = [(value, value)]
@@ -58,9 +49,10 @@ class CustomerForm(forms.ModelForm):
 
     class Meta:
         model = models.Customer
-        fields = ['street_address', 'city', 'barangay', 'postal_code', 'mobile', 'profile_pic', 'region']
+        fields = ['street_address', 'citymun', 'province', 'barangay', 'postal_code', 'mobile', 'profile_pic', 'region']
         widgets = {
-            'city': forms.Select(choices=[]),
+            'citymun': forms.Select(choices=[]),
+            'province': forms.Select(choices=[]),
             'barangay': forms.Select(choices=[]),
         }
 

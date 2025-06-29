@@ -24,9 +24,10 @@ class Customer(models.Model):
     
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     profile_pic = models.ImageField(upload_to='profile_pic/CustomerProfilePic/', null=True, blank=True)
-    region = models.CharField(max_length=10, choices=REGION_CHOICES)
-    city = models.CharField(max_length=50)
-    barangay = models.CharField(max_length=50)
+    region = models.CharField(max_length=100, choices=REGION_CHOICES)
+    province = models.CharField(max_length=100, blank=True, null=True)
+    citymun = models.CharField(max_length=100, blank=True, null=True)
+    barangay = models.CharField(max_length=100, blank=True, null=True)
     street_address = models.CharField(max_length=100)
     postal_code = models.PositiveIntegerField()
     mobile = models.PositiveIntegerField()
@@ -35,9 +36,9 @@ class Customer(models.Model):
     def get_full_address(self):
         try:
             region_name = dict(self.REGION_CHOICES)[self.region] if self.region else ''
-            return f"{self.street_address}, {self.barangay}, {self.city}, {region_name}, {self.postal_code}"
+            return f"{self.street_address}, {self.barangay}, {self.citymun}, {self.province}, {region_name}, {self.postal_code}"
         except (KeyError, AttributeError):
-            return f"{self.street_address}, {self.barangay}, {self.city}, {self.postal_code}"
+            return f"{self.street_address}, {self.barangay}, {self.citymun}, {self.province}, {self.postal_code}"
 
     def __str__(self):
         return self.user.first_name

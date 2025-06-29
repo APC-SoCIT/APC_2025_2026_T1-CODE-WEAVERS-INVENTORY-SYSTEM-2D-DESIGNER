@@ -351,12 +351,36 @@
                   </label>
                 </div>
 
-                <button type="submit" class="submit-btn" disabled>Create Account</button>
+                <button type="submit" class="submit-btn" id="createAccountBtn" disabled>Create Account</button>
                 
                 <div class="login-link">
                   <a href="/customerlogin">Already have an account? Login Here!</a>
                 </div>
               </form>
+              <script>
+                // Enable the Create Account button only if terms are checked AND all address fields are selected
+                document.addEventListener('DOMContentLoaded', function() {
+                  var termsCheckbox = document.getElementById('terms');
+                  var submitBtn = document.getElementById('createAccountBtn');
+                  var region = document.getElementById('region');
+                  var province = document.getElementById('province');
+                  var citymun = document.getElementById('citymun');
+                  var barangay = document.getElementById('barangay');
+
+                  function checkEnable() {
+                    var allSelected = region.value && province.value && citymun.value && barangay.value;
+                    submitBtn.disabled = !(termsCheckbox.checked && allSelected);
+                  }
+
+                  if (termsCheckbox && submitBtn) {
+                    termsCheckbox.addEventListener('change', checkEnable);
+                  }
+                  [region, province, citymun, barangay].forEach(function(sel) {
+                    if (sel) sel.addEventListener('change', checkEnable);
+                  });
+                  checkEnable(); // Initial check
+                });
+              </script>
             </div>
           </div>
         </div>
@@ -429,5 +453,80 @@
     </div>
 
     {% include "ecom/footer.html" %}
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const regionCodeMap = {
+          '130000000': 'NCR',
+          '140000000': 'CAR',
+          '010000000': 'R1',
+          '020000000': 'R2',
+          '030000000': 'R3',
+          '040000000': 'R4A',
+          '170000000': 'R4B',
+          '050000000': 'R5',
+          '060000000': 'R6',
+          '070000000': 'R7',
+          '080000000': 'R8',
+          '090000000': 'R9',
+          '100000000': 'R10',
+          '110000000': 'R11',
+          '120000000': 'R12',
+          '160000000': 'R13',
+          '150000000': 'BARMM'
+        };
+        const regionSelect = document.getElementById('region');
+        const province = document.getElementById('province');
+        const citymun = document.getElementById('citymun');
+        const barangay = document.getElementById('barangay');
+        const termsCheckbox = document.getElementById('terms');
+        const submitBtn = document.getElementById('createAccountBtn');
+
+        function getMappedRegionCode() {
+          let psaCode = regionSelect.value;
+          if (psaCode.length > 9) psaCode = psaCode.slice(0, 9);
+          return regionCodeMap[psaCode] || '';
+        }
+
+        function checkEnable() {
+          var allSelected = regionSelect.value && province.value && citymun.value && barangay.value;
+          var mappedRegion = getMappedRegionCode();
+          submitBtn.disabled = !(termsCheckbox.checked && allSelected && mappedRegion);
+        }
+
+        if (regionSelect) {
+          regionSelect.addEventListener('change', function() {
+            let mapped = getMappedRegionCode();
+            this.setAttribute('data-django-code', mapped);
+            checkEnable();
+          });
+        }
+        [province, citymun, barangay, termsCheckbox].forEach(function(sel) {
+          if (sel) sel.addEventListener('change', checkEnable);
+        });
+        checkEnable(); // Initial check
+
+        // On form submit, set region value to Django code using a hidden input
+        const form = document.querySelector('form');
+        let hiddenRegionInput = document.getElementById('region_django_code');
+        if (!hiddenRegionInput) {
+          hiddenRegionInput = document.createElement('input');
+          hiddenRegionInput.type = 'hidden';
+          hiddenRegionInput.name = 'region';
+          hiddenRegionInput.id = 'region_django_code';
+          form.appendChild(hiddenRegionInput);
+        }
+        if (form && regionSelect) {
+          form.addEventListener('submit', function(e) {
+            let mapped = getMappedRegionCode();
+            if (mapped) {
+              hiddenRegionInput.value = mapped;
+            } else {
+              e.preventDefault();
+              alert('Invalid region selected. Please select a valid region.');
+            }
+          });
+        }
+      });
+    </script>
   </body>
 </html>

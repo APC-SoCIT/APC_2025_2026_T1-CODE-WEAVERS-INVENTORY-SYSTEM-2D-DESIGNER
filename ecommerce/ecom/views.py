@@ -1945,16 +1945,15 @@ def update_address(request):
         try:
             customer = Customer.objects.get(user=request.user)
         except Customer.DoesNotExist:
-            from django.contrib import messages
             messages.error(request, 'Customer profile not found.')
             return redirect('cart')
         customer.full_name = request.POST.get('full_name')
         customer.region = request.POST.get('region')
-        customer.city = request.POST.get('city')
-        # Fix: Use 'barangay' key instead of 'brgy' to match form field name
+        customer.province = request.POST.get('province')
+        customer.citymun = request.POST.get('citymun')
         customer.barangay = request.POST.get('barangay')
 
-        street = request.POST.get('street')
+        street = request.POST.get('street_address')
         if street is None or street.strip() == '':
             messages.error(request, 'Street address is required.')
             return redirect('cart')

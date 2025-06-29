@@ -3,9 +3,9 @@ from .models import Customer,Product,Orders,Feedback, OrderItem
 
 @admin.register(Customer)
 class CustomerAdmin(admin.ModelAdmin):
-    list_display = ['user', 'city', 'mobile']
-    list_filter = ['city']
-    search_fields = ['user__first_name', 'user__last_name', 'city', 'street_address']
+    list_display = ['user', 'citymun', 'mobile']
+    list_filter = ['citymun']
+    search_fields = ['user__first_name', 'user__last_name', 'citymun', 'street_address']
     readonly_fields = ['get_full_address']
 
     def get_name(self, obj):
