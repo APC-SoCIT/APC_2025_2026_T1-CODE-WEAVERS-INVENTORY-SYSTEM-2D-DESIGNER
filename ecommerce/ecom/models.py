@@ -30,7 +30,7 @@ class Customer(models.Model):
     barangay = models.CharField(max_length=100, blank=True, null=True)
     street_address = models.CharField(max_length=100)
     postal_code = models.PositiveIntegerField()
-    mobile = models.PositiveIntegerField()
+    mobile = models.CharField(max_length=13, help_text="Enter 10 digits, e.g. '956 837 0169'")
 
     @property
     def get_full_address(self):
@@ -145,5 +145,18 @@ class Feedback(models.Model):
     date= models.DateField(auto_now_add=True,null=True)
     def __str__(self):
         return self.name
+
+
+# Address model for admin system
+class Address(models.Model):
+    region = models.CharField(max_length=100, help_text="Region name, e.g. 'Ilocos Region'")
+    province = models.CharField(max_length=100, help_text="Province name, e.g. 'Ilocos Norte'")
+    city_municipality = models.CharField(max_length=100, help_text="City/Municipality name, e.g. 'Laoag City'")
+    barangay = models.CharField(max_length=100, help_text="Barangay name, e.g. 'Barangay 1'")
+    street = models.CharField(max_length=255, blank=True)
+    postal_code = models.CharField(max_length=20, blank=True)
+
+    def __str__(self):
+        return f"{self.street}, {self.barangay}, {self.city_municipality}, {self.province}, {self.region}, {self.postal_code}" 
 
 

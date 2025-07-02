@@ -262,7 +262,19 @@
                 </div>
                 <div class="form-group">
                     <span class="input-icon"><i class="fa fa-phone"></i></span>
-                    {% render_field customerForm.mobile class="form-control" placeholder="Mobile" %}
+                    {% render_field customerForm.mobile class="form-control" id="mobile_number" placeholder="0956 837 0169" maxlength="13" minlength="11" pattern="^09\d{2} \d{3} \d{4}$" oninput="autoFormatPHMobile(this)" %}
+                    <script>
+                    function autoFormatPHMobile(input) {
+                        let digits = input.value.replace(/\D/g, '');
+                        if (digits.startsWith('63')) digits = '0' + digits.slice(2);
+                        if (digits.length > 4 && digits.length <= 7)
+                            input.value = digits.slice(0,4) + ' ' + digits.slice(4);
+                        else if (digits.length > 7)
+                            input.value = digits.slice(0,4) + ' ' + digits.slice(4,7) + ' ' + digits.slice(7,11);
+                        else
+                            input.value = digits;
+                    }
+                    </script>
                 </div>
             </div>
         </div>

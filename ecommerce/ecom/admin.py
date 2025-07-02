@@ -1,5 +1,9 @@
 from django.contrib import admin
-from .models import Customer,Product,Orders,Feedback, OrderItem
+from .models import Customer, Product, Orders, Feedback, OrderItem, Address
+@admin.register(Address)
+class AddressAdmin(admin.ModelAdmin):
+    list_display = ['region', 'province', 'city_municipality', 'barangay', 'street', 'postal_code']
+    search_fields = ['region', 'province', 'city_municipality', 'barangay', 'street', 'postal_code']
 
 @admin.register(Customer)
 class CustomerAdmin(admin.ModelAdmin):
