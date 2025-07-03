@@ -27,6 +27,14 @@ class CustomerUserForm(forms.ModelForm):
 
 # Customer personal details form
 class CustomerForm(forms.ModelForm):
+    def clean_mobile(self):
+        mobile = self.cleaned_data.get('mobile', '')
+        import re
+        # Accepts format: 956 837 0169 (10 digits, 2 spaces)
+        pattern = r'^\d{3} \d{3} \d{4}$'
+        if not re.match(pattern, mobile):
+            raise forms.ValidationError("Enter number as '956 837 0169' (10 digits, spaces required).")
+        return mobile
     region = forms.CharField(max_length=100)
     province = forms.CharField(max_length=100, required=False)
     citymun = forms.CharField(max_length=100, required=False)
@@ -59,6 +67,8 @@ class CustomerForm(forms.ModelForm):
 
 # Extended signup form with privacy agreement
 class CustomerSignupForm(CustomerForm):
+    def clean_mobile(self):
+        return super().clean_mobile()
     privacy_policy = forms.BooleanField(
         required=True,
         label='I agree to the Privacy Policy',
@@ -89,6 +99,16 @@ class ProductForm(forms.ModelForm):
 class AddressForm(forms.Form):
     email = forms.EmailField(widget=forms.EmailInput())
     mobile = forms.CharField(max_length=15, widget=forms.TextInput())
+
+    def clean_mobile(self):
+        mobile = self.cleaned_data.get('mobile', '')
+        import re
+        digits = re.sub(r'\D', '', mobile)
+        if digits.startswith('63'):
+            digits = '0' + digits[2:]
+        if len(digits) != 11 or not digits.startswith('09'):
+            raise forms.ValidationError('Enter a valid Philippine mobile number (e.g., 09568370169).')
+        return digits
     address = forms.CharField(max_length=500, widget=forms.Textarea(attrs={'rows': 3}))
 
 

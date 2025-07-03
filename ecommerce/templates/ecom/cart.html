@@ -1,5 +1,6 @@
 {% extends 'ecom/homebase.html' %}
 {% load static %}
+{% load phone_format %}
 {% load humanize %}
 {% block content %}
 
@@ -485,7 +486,7 @@
       <div class="content">
         <div class="customer-info">
           <div class="customer-name">{{ user.first_name }} {{ user.last_name }}</div>
-          <div class="customer-phone">(+63) {{ user.customer.mobile|default:"9195331625" }}</div>
+          <div class="customer-phone">{{ user.customer.mobile|ph_mobile_format|default:"0956 837 0169" }}</div>
         </div>
         <div class="address-info">
           <div class="address-text">
@@ -512,7 +513,19 @@
           </div>
           <div class="form-group">
             <label>Phone Number</label>
-            <input type="text" name="phone" value="{{ user.customer.mobile }}" class="form-control" required>
+            <input type="text" name="phone" value="{{ user.customer.mobile|ph_mobile_format }}" class="form-control" required oninput="autoFormatPHMobile(this)">
+            <script>
+            function autoFormatPHMobile(input) {
+                let digits = input.value.replace(/\D/g, '');
+                if (digits.startsWith('63')) digits = '0' + digits.slice(2);
+                if (digits.length > 4 && digits.length <= 7)
+                    input.value = digits.slice(0,4) + ' ' + digits.slice(4);
+                else if (digits.length > 7)
+                    input.value = digits.slice(0,4) + ' ' + digits.slice(4,7) + ' ' + digits.slice(7,11);
+                else
+                    input.value = digits;
+            }
+            </script>
           </div>
           <div class="form-group">
             <label>Region</label>
@@ -691,7 +704,7 @@
       const paymentButtons = document.querySelectorAll('.payment-method-btn');
 
       // Check if cart is empty
-      const cartIsEmpty = {{ products|length|default:0 }} === 0;
+      const cartIsEmpty = {{ products|length|default_if_none:0 }} === 0;
 
       openModalBtn.addEventListener('click', (e) => {
         if (cartIsEmpty) {
@@ -768,6 +781,15 @@
         calculateTotals();
       });
     </script>
+    <!-- Payment Success Message (if applicable) -->
+    {% if payment_success %}
+    <div class="alert alert-success" style="margin: 40px auto; max-width: 600px; text-align: center; font-size: 1.2em;">
+      <strong>Payment Successful!</strong><br>
+      Thank you for your purchase. Your order has been placed and is being processed.<br>
+      <a href="/customer-home" class="btn btn-success" style="margin-top: 15px;">Continue Shopping</a>
+    </div>
+    {% endif %}
+
     <script src="{% static 'js/ph-address-cascade-api.js' %}"></script>
     <script>
       // Pass initial values from Django to JS

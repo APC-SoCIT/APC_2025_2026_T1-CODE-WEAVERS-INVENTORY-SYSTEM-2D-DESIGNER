@@ -334,9 +334,20 @@
                     <label for="{{ customerForm.mobile.id_for_label }}">Contact</label>
                     <div style="display:flex;align-items:center;">
                       <span style="padding:8px 12px;background:#eee;border-radius:24px 0 0 24px;border:1px solid #ccc;border-right:0;">+63</span>
-                      <input type="text" id="mobile_number" name="mobile" class="form-control" placeholder="9123456789" maxlength="10" minlength="10" pattern="^9\d{9}$" style="border-radius:0 24px 24px 0;" oninput="validatePHMobile(this)" required />
+                      {% render_field customerForm.mobile class="form-control" id="mobile_number" placeholder="956 837 0169" maxlength="13" minlength="13" pattern="^\d{3} \d{3} \d{4}$" style="border-radius:0 24px 24px 0;" oninput="autoFormatPHMobile(this)" %}
                     </div>
                     <small id="mobileHelp" style="color:red;display:none;">Invalid or disallowed number.</small>
+                    <script>
+                    function autoFormatPHMobile(input) {
+                        let digits = input.value.replace(/\D/g, '');
+                        if (digits.length > 3 && digits.length <= 6)
+                            input.value = digits.slice(0,3) + ' ' + digits.slice(3);
+                        else if (digits.length > 6)
+                            input.value = digits.slice(0,3) + ' ' + digits.slice(3,6) + ' ' + digits.slice(6,10);
+                        else
+                            input.value = digits;
+                    }
+                    </script>
                   </div>
                 </div>
 
