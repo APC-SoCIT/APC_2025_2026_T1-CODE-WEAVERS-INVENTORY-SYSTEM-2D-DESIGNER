@@ -490,7 +490,7 @@
         <div class="address-info">
           <div class="address-text">
             {% if user.customer.street_address %}
-              {{ user.customer.street_address }}, {{ user.customer.barangay }}, {{ user.customer.city }}, {{ user.customer.postal_code }}
+              {{ user.customer.get_full_address }}
             {% else %}
               2565 Pasigline Street, Sta. Ana, Barangay 778, Santa Ana, Metro Manila, Metro Manila 1009
             {% endif %}

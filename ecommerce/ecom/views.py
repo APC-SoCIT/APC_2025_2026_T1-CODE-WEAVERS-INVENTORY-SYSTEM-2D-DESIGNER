@@ -162,6 +162,8 @@ def adminclick_view(request):
     return HttpResponseRedirect('adminlogin')
 
 
+from ecom import utils
+
 def customer_signup_view(request):
     userForm = forms.CustomerUserForm()
     customerForm = forms.CustomerSignupForm()
@@ -175,6 +177,13 @@ def customer_signup_view(request):
             user.save()
             customer = customerForm.save(commit=False)
             customer.user = user
+
+            # Resolve and save names for region, province, citymun, barangay
+            customer.region = utils.get_region_name(customer.region)
+            customer.province = utils.get_province_name(customer.province)
+            customer.citymun = utils.get_citymun_name(customer.citymun)
+            customer.barangay = utils.get_barangay_name(customer.barangay)
+
             customer.save()
             my_customer_group = Group.objects.get_or_create(name='CUSTOMER')
             my_customer_group[0].user_set.add(user)
@@ -1937,6 +1946,8 @@ def get_transactions_by_month(request):
 def payment_cancel(request):
     return HttpResponse("❌ Payment canceled.")
 
+from ecom import utils
+
 @login_required
 def update_address(request):
     if not request.user.is_authenticated:
@@ -1948,10 +1959,12 @@ def update_address(request):
             messages.error(request, 'Customer profile not found.')
             return redirect('cart')
         customer.full_name = request.POST.get('full_name')
-        customer.region = request.POST.get('region')
-        customer.province = request.POST.get('province')
-        customer.citymun = request.POST.get('citymun')
-        customer.barangay = request.POST.get('barangay')
+
+        # Resolve and save names for region, province, citymun, barangay
+        customer.region = utils.get_region_name(request.POST.get('region'))
+        customer.province = utils.get_province_name(request.POST.get('province'))
+        customer.citymun = utils.get_citymun_name(request.POST.get('citymun'))
+        customer.barangay = utils.get_barangay_name(request.POST.get('barangay'))
 
         street = request.POST.get('street_address')
         if street is None or street.strip() == '':

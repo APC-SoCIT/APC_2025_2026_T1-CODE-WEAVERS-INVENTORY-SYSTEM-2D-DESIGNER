@@ -35,8 +35,12 @@ class Customer(models.Model):
     @property
     def get_full_address(self):
         try:
-            region_name = dict(self.REGION_CHOICES)[self.region] if self.region else ''
-            return f"{self.street_address}, {self.barangay}, {self.citymun}, {self.province}, {region_name}, {self.postal_code}"
+            from ecom.utils import get_region_name, get_province_name, get_citymun_name, get_barangay_name
+            region_name = get_region_name(self.region) if self.region else ''
+            province_name = get_province_name(self.province) if self.province else ''
+            citymun_name = get_citymun_name(self.citymun) if self.citymun else ''
+            barangay_name = get_barangay_name(self.barangay) if self.barangay else ''
+            return f"{self.street_address}, {barangay_name}, {citymun_name}, {province_name}, {region_name}, {self.postal_code}"
         except (KeyError, AttributeError):
             return f"{self.street_address}, {self.barangay}, {self.citymun}, {self.province}, {self.postal_code}"
 
@@ -143,7 +147,6 @@ class Feedback(models.Model):
     name=models.CharField(max_length=40)
     feedback=models.CharField(max_length=500)
     date= models.DateField(auto_now_add=True,null=True)
+
     def __str__(self):
         return self.name
-
-

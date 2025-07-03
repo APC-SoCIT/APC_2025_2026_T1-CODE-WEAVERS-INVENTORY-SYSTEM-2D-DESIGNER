@@ -22,7 +22,7 @@ window.initPHAddressCascadeAPI = function(config) {
       const regions = await fetchJSON('/api/regions/');
       regions.forEach(region => {
         const opt = document.createElement('option');
-        opt.value = region.psgc_id || region.id || region.code || region.regCode;
+        opt.value = region.psgc_code || region.psgc_id || region.id || region.code || region.regCode;
         opt.textContent = region.name || region.regDesc;
         regionSel.appendChild(opt);
       });
@@ -44,7 +44,7 @@ window.initPHAddressCascadeAPI = function(config) {
     try {
       const provinces = await fetchJSON('/api/provinces/', { region_id: regionId });
 
-      if (provinces.length === 0 || regionId === "13") {
+      if (provinces.length === 0 || regionId === "0400000000") {
         // NCR or similar region with no provinces
         provinceSel.disabled = true;
         provinceSel.innerHTML = '<option value="" disabled selected>No Province</option>';
