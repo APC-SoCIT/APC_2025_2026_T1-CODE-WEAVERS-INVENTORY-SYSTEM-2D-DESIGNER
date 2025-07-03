@@ -1447,7 +1447,7 @@ def customer_address_view(request):
 def payment_success_view(request):
     import uuid
     customer = models.Customer.objects.get(user_id=request.user.id)
-    products = None
+    products = []
     payment_method = request.GET.get('method', 'cod')  # Default to COD if not specified
 
     if 'product_ids' in request.COOKIES:
@@ -1460,7 +1460,7 @@ def payment_success_view(request):
                 if len(parts) >= 3:
                     product_id = parts[1]
                     product_ids_only.add(product_id)
-            products = models.Product.objects.filter(id__in=product_ids_only)
+            products = list(models.Product.objects.filter(id__in=product_ids_only))
 
     # For COD, use customer's profile information
     if payment_method == 'cod':
@@ -1499,7 +1499,7 @@ def payment_success_view(request):
     )
 
     # Create order items linked to the parent order
-    for product in products:
+    for product in (products or []):
         quantity = 1  # Default quantity to 1
         size = 'M'  # Default size
         for key in product_keys:
@@ -1548,7 +1548,7 @@ def payment_success_view(request):
         response.delete_cookie('address')
 
     # Clear product-specific cookies
-    for product in products:
+    for product in (products or []):
         for key in product_keys:
             if key.startswith(f'product_{product.id}_'):
                 cookie_key = f'{key}_details'

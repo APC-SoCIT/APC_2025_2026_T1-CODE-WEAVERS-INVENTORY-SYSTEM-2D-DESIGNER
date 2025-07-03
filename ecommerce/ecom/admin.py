@@ -27,10 +27,14 @@ class OrderItemInline(admin.TabularInline):
     readonly_fields = ('product', 'quantity', 'price')
 
 class OrderAdmin(admin.ModelAdmin):
-        list_display = ('id', 'customer', 'status', 'created_at')
-        list_filter = ('status', 'created_at')
-        search_fields = ('customer__name', 'customer__email')
-        inlines = [OrderItemInline]
+    list_display = (
+        'order_ref', 'customer', 'product', 'quantity', 'size', 'status',
+        'payment_method', 'address', 'mobile', 'email', 'order_date',
+        'created_at', 'estimated_delivery_date'
+    )
+    list_filter = ('status', 'created_at', 'payment_method')
+    search_fields = ('order_ref', 'customer__user__first_name', 'customer__user__last_name', 'product__name', 'mobile', 'email', 'address')
+    inlines = [OrderItemInline]
 
 admin.site.register(Orders, OrderAdmin)
 

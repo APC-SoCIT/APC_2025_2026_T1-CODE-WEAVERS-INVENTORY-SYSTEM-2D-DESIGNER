@@ -238,19 +238,19 @@
                 <!-- Address Section: Region, Province, City/Municipality, Barangay -->
                 <div class="form-group">
                     <span class="input-icon"><i class="fa fa-map"></i></span>
-                    <select name="region" id="region" class="form-control" required></select>
+                    {% render_field customerForm.region class="form-control" %}
                 </div>
                 <div class="form-group">
                     <span class="input-icon"><i class="fa fa-map-marker"></i></span>
-                    <select name="province" id="province" class="form-control" required></select>
+                    {% render_field customerForm.province class="form-control" %}
                 </div>
                 <div class="form-group">
                     <span class="input-icon"><i class="fa fa-building"></i></span>
-                    <select name="citymun" id="citymun" class="form-control" required></select>
+                    {% render_field customerForm.citymun class="form-control" %}
                 </div>
                 <div class="form-group">
                     <span class="input-icon"><i class="fa fa-location-arrow"></i></span>
-                    <select name="barangay" id="barangay" class="form-control" required></select>
+                    {% render_field customerForm.barangay class="form-control" %}
                 </div>
                 <div class="form-group">
                     <span class="input-icon"><i class="fa fa-home"></i></span>
@@ -262,15 +262,14 @@
                 </div>
                 <div class="form-group">
                     <span class="input-icon"><i class="fa fa-phone"></i></span>
-                    {% render_field customerForm.mobile class="form-control" id="mobile_number" placeholder="0956 837 0169" maxlength="13" minlength="11" pattern="^09\d{2} \d{3} \d{4}$" oninput="autoFormatPHMobile(this)" %}
+                    {% render_field customerForm.mobile class="form-control" id="mobile_number" placeholder="956 837 0169" maxlength="13" minlength="13" pattern="^\d{3} \d{3} \d{4}$" oninput="autoFormatPHMobile(this)" %}
                     <script>
                     function autoFormatPHMobile(input) {
                         let digits = input.value.replace(/\D/g, '');
-                        if (digits.startsWith('63')) digits = '0' + digits.slice(2);
-                        if (digits.length > 4 && digits.length <= 7)
-                            input.value = digits.slice(0,4) + ' ' + digits.slice(4);
-                        else if (digits.length > 7)
-                            input.value = digits.slice(0,4) + ' ' + digits.slice(4,7) + ' ' + digits.slice(7,11);
+                        if (digits.length > 3 && digits.length <= 6)
+                            input.value = digits.slice(0,3) + ' ' + digits.slice(3);
+                        else if (digits.length > 6)
+                            input.value = digits.slice(0,3) + ' ' + digits.slice(3,6) + ' ' + digits.slice(6,10);
                         else
                             input.value = digits;
                     }

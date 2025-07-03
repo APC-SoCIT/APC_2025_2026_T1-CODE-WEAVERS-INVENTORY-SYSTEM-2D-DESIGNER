@@ -1,5 +1,6 @@
 {% extends 'ecom/homebase.html' %}
 {% load static %}
+{% load phone_format %}
 {% load humanize %}
 {% block content %}
 
@@ -780,6 +781,15 @@
         calculateTotals();
       });
     </script>
+    <!-- Payment Success Message (if applicable) -->
+    {% if payment_success %}
+    <div class="alert alert-success" style="margin: 40px auto; max-width: 600px; text-align: center; font-size: 1.2em;">
+      <strong>Payment Successful!</strong><br>
+      Thank you for your purchase. Your order has been placed and is being processed.<br>
+      <a href="/customer-home" class="btn btn-success" style="margin-top: 15px;">Continue Shopping</a>
+    </div>
+    {% endif %}
+
     <script src="{% static 'js/ph-address-cascade-api.js' %}"></script>
     <script>
       // Pass initial values from Django to JS
