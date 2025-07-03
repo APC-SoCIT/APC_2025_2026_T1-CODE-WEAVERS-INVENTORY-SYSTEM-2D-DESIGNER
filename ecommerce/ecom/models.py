@@ -150,8 +150,6 @@ class Feedback(models.Model):
 
     def __str__(self):
         return self.name
-<<<<<<< HEAD
-=======
 
 
 # Address model for admin system
@@ -167,4 +165,3 @@ class Address(models.Model):
         return f"{self.street}, {self.barangay}, {self.city_municipality}, {self.province}, {self.region}, {self.postal_code}" 
 
 
->>>>>>> 1dc412603b51f5daaa7cc254553d9909d5b5000a

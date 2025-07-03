@@ -10,8 +10,10 @@ def format_ph_mobile(value):
     """
     if not value:
         return ''
+    # Convert value to string to avoid TypeError
+    value_str = str(value)
     # Remove all non-digit characters
-    digits = re.sub(r'\D', '', value)
+    digits = re.sub(r'\D', '', value_str)
     # Remove leading country code if present
     if digits.startswith('63'):
         digits = '0' + digits[2:]

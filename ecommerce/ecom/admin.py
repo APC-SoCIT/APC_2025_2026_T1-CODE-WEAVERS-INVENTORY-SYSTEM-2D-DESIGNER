@@ -7,7 +7,7 @@ class AddressAdmin(admin.ModelAdmin):
 
 @admin.register(Customer)
 class CustomerAdmin(admin.ModelAdmin):
-    list_display = ['user', 'citymun', 'mobile']
+    list_display = ['user', 'get_full_address', 'mobile']
     list_filter = ['citymun']
     search_fields = ['user__first_name', 'user__last_name', 'citymun', 'street_address']
     readonly_fields = ['get_full_address']
