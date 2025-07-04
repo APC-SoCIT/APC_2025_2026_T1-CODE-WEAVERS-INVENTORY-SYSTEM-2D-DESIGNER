@@ -162,6 +162,16 @@ class Address(models.Model):
     postal_code = models.CharField(max_length=20, blank=True)
 
     def __str__(self):
-        return f"{self.street}, {self.barangay}, {self.city_municipality}, {self.province}, {self.region}, {self.postal_code}" 
+        return f"{self.street}, {self.barangay}, {self.city_municipality}, {self.province}, {self.region}, {self.postal_code}"
+
+class ShippingFee(models.Model):
+    courier = models.CharField(max_length=50)
+    origin_region = models.CharField(max_length=50)
+    destination_region = models.CharField(max_length=50)
+    weight_kg = models.DecimalField(max_digits=4, decimal_places=2)
+    price_php = models.DecimalField(max_digits=8, decimal_places=2)
+
+    def __str__(self):
+        return f"{self.courier}: {self.origin_region} to {self.destination_region} ({self.weight_kg}kg) - ₱{self.price_php}"
 
 

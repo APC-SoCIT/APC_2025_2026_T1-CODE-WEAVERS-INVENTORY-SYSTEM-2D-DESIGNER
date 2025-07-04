@@ -1168,7 +1168,7 @@ def add_to_cart_view(request, pk):
     return response
 
 def cart_view(request):
-    region_choices = Customer.REGION_CHOICES  # <-- No extra indentation here!
+    region_choices = Customer.REGION_CHOICES
 
     # For cart counter
     if 'product_ids' in request.COOKIES:
@@ -1182,31 +1182,25 @@ def cart_view(request):
     total = 0
     delivery_fee = 0
     region = None
+    customer = None
     if request.user.is_authenticated:
         try:
             customer = models.Customer.objects.get(user=request.user)
             region = customer.region
         except models.Customer.DoesNotExist:
             region = None
-    # Set delivery fee based on region (Unified logic)
-    if region == 'NCR':
-        delivery_fee = 100
-    elif region == 'CAR':
-        delivery_fee = 159
-    elif region:
-        delivery_fee = 200
-    else:
-        delivery_fee = 0
-
+    # Use dynamic shipping fee lookup
+    origin_region = "NCR"
+    destination_region = region if region else "NCR"
+    delivery_fee = get_shipping_fee(origin_region, destination_region, weight_kg=0.5)
+    # ...existing code for products, VAT, etc...
     vat_rate = 12
     vat_multiplier = 1 + (vat_rate / 100)
-
     if 'product_ids' in request.COOKIES:
         product_ids = request.COOKIES['product_ids']
         product_keys = product_ids.split('|')
         product_ids_only = set()
         for key in product_keys:
-            # key format: product_{pk}_{size}
             parts = key.split('_')
             if len(parts) >= 3:
                 product_id = parts[1]
@@ -1216,42 +1210,39 @@ def cart_view(request):
                 product_id = parts[1]
                 size = 'M'
                 product_ids_only.add(product_id)
-
         db_products = models.Product.objects.filter(id__in=product_ids_only)
-
         for p in db_products:
-            # For each product, find all sizes in product_keys
             for key in product_keys:
                 if key.startswith(f'product_{p.id}_'):
                     size = key[len(f'product_{p.id}_'):]
+
                     cookie_key = f'{key}_details'
                     if cookie_key in request.COOKIES:
                         details = request.COOKIES[cookie_key].split(':')
                         if len(details) == 2:
                             size = details[0]
                             quantity = int(details[1])
-                            # Calculate VAT-exclusive unit price
-                            unit_price_vat_ex = p.price / vat_multiplier
-                            total += unit_price_vat_ex * quantity
+                            total += p.price * quantity
                             products.append({
                                 'product': p,
                                 'size': size,
-                                'quantity': quantity,
-                                'unit_price_vat_ex': unit_price_vat_ex
+                                'quantity': quantity
                             })
-
-    vat_amount = total * (vat_rate / 100)
-    grand_total = total + delivery_fee + vat_amount
+    vat_amount = total * 12 / 112
+    net_subtotal = total - vat_amount
+    grand_total = total + delivery_fee
     response = render(request, 'ecom/cart.html', {
         'products': products,
         'total': total,
         'delivery_fee': delivery_fee,
         'vat_rate': vat_rate,
         'vat_amount': vat_amount,
+        'net_subtotal': net_subtotal,
         'grand_total': grand_total,
-        'product_count_in_cart': product_count_in_cart
+        'product_count_in_cart': product_count_in_cart,
+        'user_address': customer,
+        'region_choices': region_choices,
     })
-
     return response
 
 
@@ -2009,3 +2000,16 @@ def admin_manage_inventory_view(request):
         'out_of_stock_items': out_of_stock_items,
         'total_stock': total_stock,
     })
+
+def get_shipping_fee(origin_region, destination_region, weight_kg=0.5):
+    from .models import ShippingFee
+    try:
+        fee = ShippingFee.objects.get(
+            courier="J&T Express",
+            origin_region=origin_region,
+            destination_region=destination_region,
+            weight_kg=weight_kg
+        )
+        return float(fee.price_php)
+    except ShippingFee.DoesNotExist:
+        return 0
