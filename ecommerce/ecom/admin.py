@@ -7,14 +7,29 @@ class AddressAdmin(admin.ModelAdmin):
 
 @admin.register(Customer)
 class CustomerAdmin(admin.ModelAdmin):
-    list_display = ['user', 'get_full_address', 'mobile']
-    list_filter = ['citymun']
-    search_fields = ['user__first_name', 'user__last_name', 'citymun', 'street_address']
-    readonly_fields = ['get_full_address']
+    list_display = ['user', 'mobile', 'region_name', 'province_name', 'citymun_name', 'barangay_name']
+    list_filter = ['region', 'province', 'citymun', 'barangay']
+    search_fields = ['user__first_name', 'user__last_name', 'region', 'province', 'citymun', 'barangay', 'street_address']
 
-    def get_name(self, obj):
-        return obj.get_name
-    get_name.short_description = 'Name'
+    def region_name(self, obj):
+        from ecom.utils import get_region_name
+        return get_region_name(obj.region) if obj.region else ''
+    region_name.short_description = 'Region'
+
+    def province_name(self, obj):
+        from ecom.utils import get_province_name
+        return get_province_name(obj.province) if obj.province else ''
+    province_name.short_description = 'Province'
+
+    def citymun_name(self, obj):
+        from ecom.utils import get_citymun_name
+        return get_citymun_name(obj.citymun) if obj.citymun else ''
+    citymun_name.short_description = 'City/Municipality'
+
+    def barangay_name(self, obj):
+        from ecom.utils import get_barangay_name
+        return get_barangay_name(obj.barangay) if obj.barangay else ''
+    barangay_name.short_description = 'Barangay'
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
