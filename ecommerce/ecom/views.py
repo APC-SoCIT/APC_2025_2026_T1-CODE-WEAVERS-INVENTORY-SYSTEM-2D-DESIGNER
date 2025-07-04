@@ -1950,19 +1950,16 @@ def update_address(request):
             messages.error(request, 'Customer profile not found.')
             return redirect('cart')
         customer.full_name = request.POST.get('full_name')
-
-        # Resolve and save names for region, province, citymun, barangay
-        customer.region = utils.get_region_name(request.POST.get('region'))
-        customer.province = utils.get_province_name(request.POST.get('province'))
-        customer.citymun = utils.get_citymun_name(request.POST.get('citymun'))
-        customer.barangay = utils.get_barangay_name(request.POST.get('barangay'))
-
+        # Save region code directly (e.g., 'NCR', 'CAR', etc.)
+        customer.region = request.POST.get('region')
+        customer.province = request.POST.get('province')
+        customer.citymun = request.POST.get('citymun')
+        customer.barangay = request.POST.get('barangay')
         street = request.POST.get('street_address')
         if street is None or street.strip() == '':
             messages.error(request, 'Street address is required.')
             return redirect('cart')
         customer.street_address = street
-
         customer.postal_code = request.POST.get('postal_code')
         customer.save()
         return redirect('cart')
