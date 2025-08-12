@@ -3,10 +3,9 @@
   Documentation folder for MCSPROJ
 
   Jan Christopher Reyes Francisco - https://github.com/jcfrancisco0103
-  Sean Marcus Maglaque - smmaglaque@student.apc.edu.ph
-  Jouie Embudo - https://github.com/Jouie201
-  Euri Marxell Lascano - https://github.com/Yanskitodo
-  John Marvin Sumalinog - https://github.com/Marvin029
+  Timothy Louise Perez - 
+  Kurt Yuri Fegarido - 
+  John Marvin Sumalinog - 
 
 Sharepoint: [https://asiapacificcollege.sharepoint.com/:u:/s/GearcraftWorksEcommerceWebsite/EarDR4Kp3fVCuODOb90igjABB3r86Ie5bOwRAYO8FHnORA?e=0bDNOb](https://asiapacificcollege.sharepoint.com/:u:/r/sites/GearcraftWorksEcommerceWebsite/SitePages/ProjectHome.aspx?csf=1&web=1&e=qmZZwQ)
 Website: [https://cuddly-funicular-q654p7wwj45crq-8000.app.github.dev/index/](https://cuddly-funicular-q654p7wwj45crq-8000.app.github.dev/signin/)
