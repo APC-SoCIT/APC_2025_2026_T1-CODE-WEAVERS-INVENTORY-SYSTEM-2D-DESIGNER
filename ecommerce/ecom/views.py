@@ -9,7 +9,7 @@ from django.contrib import messages
 from django.contrib.auth import authenticate, login
 from django.conf import settings
 from django.utils import timezone
-from .models import Customer
+from .models import Customer, SavedAddress
 from django.urls import reverse
 from .forms import InventoryForm
 from .forms import CustomerLoginForm
@@ -116,16 +116,109 @@ def order_counts(request):
 
 
 def home_view(request):
-    products=models.Product.objects.all()
+    products = models.Product.objects.all()
+    
+    # Cart count logic
     if 'product_ids' in request.COOKIES:
         product_ids = request.COOKIES['product_ids']
-        counter=product_ids.split('|')
-        product_count_in_cart=len(set(counter))
+        counter = product_ids.split('|')
+        product_count_in_cart = len(set(counter))
     else:
-        product_count_in_cart=0
+        product_count_in_cart = 0
+    
+    # If user is authenticated, redirect to appropriate dashboard
     if request.user.is_authenticated:
         return HttpResponseRedirect('afterlogin')
-    return render(request,'ecom/index.html',{'products':products,'product_count_in_cart':product_count_in_cart})
+    
+    # Enhanced search functionality
+    search_query = request.GET.get('search')
+    if search_query:
+        from django.db.models import Q
+        # Split search query into words for better matching
+        search_words = search_query.split()
+        query = Q()
+        
+        for word in search_words:
+            query |= (
+                Q(name__icontains=word) | 
+                Q(description__icontains=word)
+            )
+        
+        products = products.filter(query).distinct()
+    
+    # Price range filter
+    min_price = request.GET.get('min_price')
+    max_price = request.GET.get('max_price')
+    if min_price:
+        try:
+            products = products.filter(price__gte=float(min_price))
+        except ValueError:
+            pass
+    if max_price:
+        try:
+            products = products.filter(price__lte=float(max_price))
+        except ValueError:
+            pass
+    
+    # Availability filter
+    in_stock_only = request.GET.get('in_stock')
+    if in_stock_only:
+        # Get products that have inventory items with quantity > 0
+        available_products = models.InventoryItem.objects.filter(quantity__gt=0).values_list('product_id', flat=True)
+        products = products.filter(id__in=available_products)
+    
+    # Add product ratings and review counts
+    from django.db.models import Avg, Count
+    products = products.annotate(
+        average_rating=Avg('productreview__rating'),
+        review_count=Count('productreview', distinct=True)
+    )
+    
+    # Sort functionality
+    sort_by = request.GET.get('sort')
+    if sort_by == 'price_low':
+        products = products.order_by('price')
+    elif sort_by == 'price_high':
+        products = products.order_by('-price')
+    elif sort_by == 'name':
+        products = products.order_by('name')
+    elif sort_by == 'newest':
+        products = products.order_by('-id')
+    elif sort_by == 'popular':
+        # Sort by number of orders (most popular first)
+        products = products.annotate(
+            order_count=Count('orderitem')
+        ).order_by('-order_count')
+    elif sort_by == 'rating':
+        # Sort by highest rating first
+        products = products.order_by('-average_rating')
+    
+    # Pagination
+    from django.core.paginator import Paginator
+    paginator = Paginator(products, 12)  # Show 12 products per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    # Get price range for filters
+    from django.db.models import Min, Max
+    price_range = models.Product.objects.aggregate(
+        min_price=Min('price'),
+        max_price=Max('price')
+    )
+    
+    context = {
+        'products': page_obj,
+        'search_query': search_query,
+        'min_price': min_price,
+        'max_price': max_price,
+        'sort_by': sort_by,
+        'in_stock_only': in_stock_only,
+        'price_range': price_range,
+        'total_products': paginator.count,
+        'product_count_in_cart': product_count_in_cart,
+    }
+    
+    return render(request, 'ecom/index.html', context)
 
 @login_required(login_url='adminlogin')
 def manage_inventory(request):
@@ -1366,14 +1459,106 @@ def send_feedback_view(request):
 @login_required(login_url='customerlogin')
 @user_passes_test(is_customer)
 def customer_home_view(request):
-    products=models.Product.objects.all()
+    products = models.Product.objects.all()
+    
+    # Cart count logic
     if 'product_ids' in request.COOKIES:
         product_ids = request.COOKIES['product_ids']
-        counter=product_ids.split('|')
-        product_count_in_cart=len(set(counter))
+        counter = product_ids.split('|')
+        product_count_in_cart = len(set(counter))
     else:
-        product_count_in_cart=0
-    return render(request,'ecom/customer_home.html',{'products':products,'product_count_in_cart':product_count_in_cart})
+        product_count_in_cart = 0
+    
+    # Enhanced search functionality
+    search_query = request.GET.get('search')
+    if search_query:
+        from django.db.models import Q
+        # Split search query into words for better matching
+        search_words = search_query.split()
+        query = Q()
+        
+        for word in search_words:
+            query |= (
+                Q(name__icontains=word) | 
+                Q(description__icontains=word)
+            )
+        
+        products = products.filter(query).distinct()
+    
+    # Price range filter
+    min_price = request.GET.get('min_price')
+    max_price = request.GET.get('max_price')
+    if min_price:
+        try:
+            products = products.filter(price__gte=float(min_price))
+        except ValueError:
+            pass
+    if max_price:
+        try:
+            products = products.filter(price__lte=float(max_price))
+        except ValueError:
+            pass
+    
+    # Availability filter
+    in_stock_only = request.GET.get('in_stock')
+    if in_stock_only:
+        # Get products that have inventory items with quantity > 0
+        available_products = models.InventoryItem.objects.filter(quantity__gt=0).values_list('product_id', flat=True)
+        products = products.filter(id__in=available_products)
+    
+    # Sort functionality
+    sort_by = request.GET.get('sort')
+    if sort_by == 'price_low':
+        products = products.order_by('price')
+    elif sort_by == 'price_high':
+        products = products.order_by('-price')
+    elif sort_by == 'name':
+        products = products.order_by('name')
+    elif sort_by == 'newest':
+        products = products.order_by('-id')
+    elif sort_by == 'popular':
+        # Sort by number of orders (most popular first)
+        from django.db.models import Count
+        products = products.annotate(
+            order_count=Count('orderitem')
+        ).order_by('-order_count')
+    
+    # Pagination
+    from django.core.paginator import Paginator
+    paginator = Paginator(products, 12)  # Show 12 products per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    # Get price range for filters
+    from django.db.models import Min, Max
+    price_range = models.Product.objects.aggregate(
+        min_price=Min('price'),
+        max_price=Max('price')
+    )
+    
+    # Get customer's recent orders for recommendations
+    recent_orders = []
+    if request.user.is_authenticated:
+        try:
+            customer = models.Customer.objects.get(user=request.user)
+            recent_orders = models.Orders.objects.filter(customer=customer).order_by('-created_at')[:5]
+        except models.Customer.DoesNotExist:
+            pass
+    
+    context = {
+        'products': page_obj,
+        'search_query': search_query,
+        'min_price': min_price,
+        'max_price': max_price,
+        'sort_by': sort_by,
+        'in_stock_only': in_stock_only,
+        'price_range': price_range,
+        'total_products': paginator.count,
+        'product_count_in_cart': product_count_in_cart,
+        'recent_orders': recent_orders,
+    }
+    
+    return render(request, 'ecom/customer_home.html', context)
 
 
 
@@ -1806,6 +1991,9 @@ def create(request):
 def jersey_customizer_advanced_view(request):
     return render(request, 'ecom/jersey_customizer_advanced.html')
 
+def jersey_customizer_3d_view(request):
+    return render(request, 'ecom/jersey_customizer_3d.html')
+
 def jersey_customizer(request):
     return render(request, 'ecom/jersey_customizer.html')
 
@@ -1950,7 +2138,7 @@ def update_address(request):
             messages.error(request, 'Customer profile not found.')
             return redirect('cart')
         customer.full_name = request.POST.get('full_name')
-        # Save region code directly (e.g., 'NCR', 'CAR', etc.)
+        # Store raw codes without conversion
         customer.region = request.POST.get('region')
         customer.province = request.POST.get('province')
         customer.citymun = request.POST.get('citymun')
@@ -1962,6 +2150,7 @@ def update_address(request):
         customer.street_address = street
         customer.postal_code = request.POST.get('postal_code')
         customer.save()
+        messages.success(request, 'Address updated successfully!')
         return redirect('cart')
     return redirect('cart')
 
@@ -2010,3 +2199,86 @@ def get_shipping_fee(origin_region, destination_region, weight_kg=0.5):
         return float(fee.price_php)
     except ShippingFee.DoesNotExist:
         return 0
+
+@login_required
+def save_new_address(request):
+    if request.method == 'POST':
+        try:
+            customer = Customer.objects.get(user=request.user)
+            address = SavedAddress(
+                customer=customer,
+                region=request.POST.get('region'),
+                province=request.POST.get('province'),
+                citymun=request.POST.get('citymun'),
+                barangay=request.POST.get('barangay'),
+                street_address=request.POST.get('street_address'),
+                postal_code=request.POST.get('postal_code'),
+                is_default=not SavedAddress.objects.filter(customer=customer).exists()  # Make first address default
+            )
+            address.save()
+            messages.success(request, 'New address saved successfully!')
+            return JsonResponse({'status': 'success', 'message': 'Address saved successfully'})
+        except Customer.DoesNotExist:
+            return JsonResponse({'status': 'error', 'message': 'Customer profile not found'}, status=404)
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=400)
+
+@login_required
+def get_saved_addresses(request):
+    try:
+        customer = Customer.objects.get(user=request.user)
+        addresses = SavedAddress.objects.filter(customer=customer)
+        addresses_data = [{
+            'id': addr.id,
+            'region': addr.get_region_display() if hasattr(addr, 'get_region_display') else addr.region,
+            'province': addr.province,
+            'citymun': addr.citymun,
+            'barangay': addr.barangay,
+            'street_address': addr.street_address,
+            'postal_code': addr.postal_code,
+            'is_default': addr.is_default
+        } for addr in addresses]
+        return JsonResponse({'status': 'success', 'addresses': addresses_data})
+    except Customer.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Customer not found'}, status=404)
+
+@login_required
+def set_default_address(request, address_id):
+    if request.method == 'POST':
+        try:
+            customer = Customer.objects.get(user=request.user)
+            address = SavedAddress.objects.get(id=address_id, customer=customer)
+            
+            # Remove default status from all other addresses
+            SavedAddress.objects.filter(customer=customer).update(is_default=False)
+            
+            # Set new default address
+            address.is_default = True
+            address.save()
+            
+            # Update customer's current address
+            customer.region = address.region
+            customer.province = address.province
+            customer.citymun = address.citymun
+            customer.barangay = address.barangay
+            customer.street_address = address.street_address
+            customer.postal_code = address.postal_code
+            customer.save()
+            
+            return JsonResponse({'status': 'success', 'message': 'Default address updated successfully'})
+        except (Customer.DoesNotExist, SavedAddress.DoesNotExist):
+            return JsonResponse({'status': 'error', 'message': 'Address not found'}, status=404)
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=400)
+
+@login_required
+def delete_address(request, address_id):
+    if request.method == 'POST':
+        try:
+            customer = Customer.objects.get(user=request.user)
+            address = SavedAddress.objects.get(id=address_id, customer=customer)
+            if not address.is_default:  # Prevent deletion of default address
+                address.delete()
+                return JsonResponse({'status': 'success', 'message': 'Address deleted successfully'})
+            return JsonResponse({'status': 'error', 'message': 'Cannot delete default address'}, status=400)
+        except (Customer.DoesNotExist, SavedAddress.DoesNotExist):
+            return JsonResponse({'status': 'error', 'message': 'Address not found'}, status=404)
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=400)

@@ -2,6 +2,7 @@
 <html lang="en">
 {% load static %}
 {% load humanize %}
+{% load custom_filters %}
 <head>
   <meta charset="utf-8">
   <style>
@@ -28,9 +29,10 @@
       <strong>Contact:</strong> {{ customer.mobile }}<br>
       <strong>Address:</strong>
       {{ customer.street_address }},
-      {% if customer.barangay %}{{ customer.barangay }}, {% endif %}
-      {{ customer.city }},
-      {{ customer.region }},
+      {% if customer.barangay %}{{ customer.barangay|barangay_name }}, {% endif %}
+      {{ customer.citymun|citymun_name }},
+      {{ customer.province|province_name }},
+      {{ customer.region|region_name }},
       {{ customer.postal_code }}
     </div>
     <table>

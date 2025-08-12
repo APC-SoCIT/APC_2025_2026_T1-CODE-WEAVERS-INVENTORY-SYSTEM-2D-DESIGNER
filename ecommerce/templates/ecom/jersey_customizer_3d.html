@@ -1,0 +1,1808 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Jersey Designer - Advanced Customization</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+
+        .sidebar {
+            width: 350px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-right: 1px solid rgba(255, 255, 255, 0.2);
+            overflow-y: auto;
+            padding: 20px;
+            box-shadow: 2px 0 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .main-content {
+            flex: 1;
+            position: relative;
+            background: #1a1a1a;
+        }
+
+        #canvas-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 24px;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .control-section {
+            margin-bottom: 25px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .control-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 16px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+        }
+
+        .control-section h3::before {
+            content: '';
+            width: 4px;
+            height: 20px;
+            background: #667eea;
+            margin-right: 10px;
+            border-radius: 2px;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .control-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        input[type="color"] {
+            width: 50px;
+            height: 40px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        input[type="range"] {
+            flex: 1;
+            height: 6px;
+            border-radius: 3px;
+            background: #ddd;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus, input[type="number"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+            cursor: pointer;
+        }
+
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .btn-secondary {
+            background: #f8f9fa;
+            color: #333;
+            border: 2px solid #e0e0e0;
+        }
+
+        .btn-secondary:hover {
+            background: #e9ecef;
+            border-color: #667eea;
+        }
+
+        .color-palette {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .color-swatch {
+            width: 35px;
+            height: 35px;
+            border-radius: 8px;
+            cursor: pointer;
+            border: 3px solid transparent;
+            transition: all 0.3s;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .color-swatch:hover {
+            transform: scale(1.1);
+            border-color: #667eea;
+        }
+
+        .color-swatch.active {
+            border-color: #333;
+            transform: scale(1.1);
+        }
+
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+            z-index: 1000;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .controls-overlay {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 15px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .view-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .view-btn {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 6px;
+            background: #f8f9fa;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s;
+        }
+
+        .view-btn.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .stats-panel {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 10px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                height: auto;
+                max-height: 40vh;
+            }
+            
+            .main-content {
+                height: 60vh;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <div class="header">
+                <h1>🎨 3D Jersey Designer</h1>
+                <p>Create your perfect custom jersey with advanced 3D visualization</p>
+            </div>
+
+            <!-- 3D Model Selection -->
+            <div class="control-section">
+                <h3>🏀 3D Model Template</h3>
+                <div class="control-group">
+                    <label>Jersey Template</label>
+                    <select id="modelTemplate">
+                        <option value="basic">Basic Geometry (Current)</option>
+                        <option value="basketball-pro">Basketball Jersey - Professional</option>
+                        <option value="soccer-modern">Soccer Jersey - Modern</option>
+                        <option value="custom-upload">Upload Custom Model (.glb)</option>
+                    </select>
+                </div>
+                <div class="control-group" id="customUploadGroup" style="display: none;">
+                    <label>Upload GLB Model</label>
+                    <input type="file" id="customModelFile" accept=".glb,.gltf" style="width: 100%; padding: 8px; border: 2px dashed #667eea; border-radius: 8px;">
+                    <small style="color: #666; font-size: 12px;">Supports .glb and .gltf files (max 50MB)</small>
+                </div>
+                <div class="control-group">
+                    <small style="color: #555; font-size: 11px; line-height: 1.4;">
+                        <strong>💡 Get Professional Models:</strong><br>
+                        • <a href="https://sketchfab.com/3d-models/basketball-jersey-3ee634a324d5400ab84555b0636416f6" target="_blank" style="color: #667eea;">Sketchfab</a> - Free basketball jersey<br>
+                        • <a href="https://www.cgtrader.com/3d-models/jersey" target="_blank" style="color: #667eea;">CGTrader</a> - Professional models<br>
+                        • <a href="https://free3d.com/3d-models/jersey" target="_blank" style="color: #667eea;">Free3D</a> - Various jersey types
+                    </small>
+                </div>
+                <button class="btn btn-primary" id="loadModelBtn">Load Selected Model</button>
+            </div>
+
+            <!-- Apparel Type Selection -->
+            <div class="control-section">
+                <h3>👕 Apparel Type</h3>
+                <div class="control-group">
+                    <select id="apparelType">
+                        <option value="jersey">Jersey</option>
+                        <option value="shorts">Shorts</option>
+                        <option value="full-kit">Full Kit</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Colors -->
+            <div class="control-section">
+                <h3>🎨 Colors</h3>
+                <div class="control-group">
+                    <label>Primary Color</label>
+                    <div class="control-row">
+                        <input type="color" id="primaryColor" value="#ff0000">
+                        <input type="text" id="primaryColorHex" value="#ff0000" placeholder="#ff0000">
+                    </div>
+                    <div class="color-palette" id="primaryPalette">
+                        <div class="color-swatch" style="background: #ff0000" data-color="#ff0000"></div>
+                        <div class="color-swatch" style="background: #00ff00" data-color="#00ff00"></div>
+                        <div class="color-swatch" style="background: #0000ff" data-color="#0000ff"></div>
+                        <div class="color-swatch" style="background: #ffff00" data-color="#ffff00"></div>
+                        <div class="color-swatch" style="background: #ff00ff" data-color="#ff00ff"></div>
+                        <div class="color-swatch" style="background: #00ffff" data-color="#00ffff"></div>
+                        <div class="color-swatch" style="background: #ffffff" data-color="#ffffff"></div>
+                        <div class="color-swatch" style="background: #000000" data-color="#000000"></div>
+                        <div class="color-swatch" style="background: #808080" data-color="#808080"></div>
+                        <div class="color-swatch" style="background: #800000" data-color="#800000"></div>
+                        <div class="color-swatch" style="background: #008000" data-color="#008000"></div>
+                        <div class="color-swatch" style="background: #000080" data-color="#000080"></div>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <label>Secondary Color</label>
+                    <div class="control-row">
+                        <input type="color" id="secondaryColor" value="#ffffff">
+                        <input type="text" id="secondaryColorHex" value="#ffffff" placeholder="#ffffff">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Materials -->
+            <div class="control-section">
+                <h3>🧵 Materials</h3>
+                <div class="control-group">
+                    <label>Material Type</label>
+                    <select id="materialType">
+                        <option value="standard">Standard Fabric</option>
+                        <option value="mesh">Mesh</option>
+                        <option value="satin">Satin</option>
+                        <option value="metallic">Metallic</option>
+                    </select>
+                </div>
+                
+                <div class="control-group">
+                    <label>Roughness</label>
+                    <div class="control-row">
+                        <input type="range" id="roughness" min="0" max="1" step="0.1" value="0.5">
+                        <span id="roughnessValue">0.5</span>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label>Metalness</label>
+                    <div class="control-row">
+                        <input type="range" id="metalness" min="0" max="1" step="0.1" value="0.0">
+                        <span id="metalnessValue">0.0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Text & Numbers -->
+            <div class="control-section">
+                <h3>🔤 Text & Numbers</h3>
+                <div class="control-group">
+                    <label>Player Name</label>
+                    <input type="text" id="playerName" placeholder="Enter player name" maxlength="20">
+                </div>
+                
+                <div class="control-group">
+                    <label>Player Number</label>
+                    <input type="number" id="playerNumber" placeholder="99" min="0" max="99">
+                </div>
+
+                <div class="control-group">
+                    <label>Text Size</label>
+                    <div class="control-row">
+                        <input type="range" id="textSize" min="0.5" max="3" step="0.1" value="1">
+                        <span id="textSizeValue">1.0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Advanced Features -->
+            <div class="control-section">
+                <h3>⚡ Advanced Features</h3>
+                <div class="control-group">
+                    <label>Lighting Intensity</label>
+                    <div class="control-row">
+                        <input type="range" id="lightIntensity" min="0.1" max="3" step="0.1" value="1">
+                        <span id="lightIntensityValue">1.0</span>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label>Environment</label>
+                    <select id="environment">
+                        <option value="studio">Studio</option>
+                        <option value="outdoor">Outdoor</option>
+                        <option value="indoor">Indoor</option>
+                        <option value="sunset">Sunset</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="control-section">
+                <h3>💾 Actions</h3>
+                <button class="btn btn-primary" id="saveDesign">💾 Save Design</button>
+                <button class="btn btn-secondary" id="resetDesign">🔄 Reset</button>
+                <button class="btn btn-primary" id="addToCart">🛒 Add to Cart</button>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div id="canvas-container"></div>
+            
+            <div class="loading-overlay" id="loadingOverlay">
+                <div class="loading-spinner"></div>
+                <span>Loading 3D Designer...</span>
+            </div>
+
+            <div class="controls-overlay">
+                <div class="view-controls">
+                    <button class="view-btn active" data-view="front">Front</button>
+                    <button class="view-btn" data-view="back">Back</button>
+                    <button class="view-btn" data-view="side">Side</button>
+                    <button class="view-btn" data-view="full">360°</button>
+                </div>
+                <div style="font-size: 12px; color: #666;">
+                    🖱️ Drag to rotate • 🔍 Scroll to zoom
+                </div>
+            </div>
+
+            <div class="stats-panel" id="statsPanel">
+                FPS: <span id="fps">60</span><br>
+                Triangles: <span id="triangles">0</span><br>
+                Meshes: <span id="meshes">0</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let scene, camera, renderer, controls;
+        let jerseyMesh, shortsMesh, currentMesh;
+        let animationId;
+        let stats = { fps: 0, triangles: 0, meshes: 0 };
+        let autoRotate = false;
+        
+        // Initialize the 3D scene
+        function init() {
+            // Initialize GLTFLoader first
+            initializeGLTFLoader();
+            
+            // Create scene
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x1a1a1a);
+
+            // Create camera
+            const container = document.getElementById('canvas-container');
+            camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+            camera.position.set(0, 0, 5);
+
+            // Create renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1;
+            container.appendChild(renderer.domElement);
+
+            // Add orbit controls
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.minDistance = 2;
+            controls.maxDistance = 10;
+
+            // Add lights
+            setupLighting();
+
+            // Create jersey geometry
+            createJerseyGeometry();
+
+            // Setup event listeners
+            setupEventListeners();
+
+            // Start animation loop
+            animate();
+
+            // Hide loading overlay
+            document.getElementById('loadingOverlay').style.display = 'none';
+        }
+
+        function setupLighting() {
+            // Ambient light
+            const ambientLight = new THREE.AmbientLight(0x404040, 0.4);
+            scene.add(ambientLight);
+
+            // Main directional light
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+            directionalLight.position.set(5, 5, 5);
+            directionalLight.castShadow = true;
+            directionalLight.shadow.mapSize.width = 2048;
+            directionalLight.shadow.mapSize.height = 2048;
+            scene.add(directionalLight);
+
+            // Fill light
+            const fillLight = new THREE.DirectionalLight(0x8bb7f0, 0.5);
+            fillLight.position.set(-5, 0, 2);
+            scene.add(fillLight);
+
+            // Rim light
+            const rimLight = new THREE.DirectionalLight(0xffffff, 0.3);
+            rimLight.position.set(0, 5, -5);
+            scene.add(rimLight);
+        }
+
+        function createJerseyGeometry() {
+            // Create a jersey group to hold all parts
+            const jerseyGroup = new THREE.Group();
+            
+            // Base jersey material
+            const jerseyMaterial = new THREE.MeshStandardMaterial({
+                color: 0xff0000,
+                roughness: 0.5,
+                metalness: 0.0
+            });
+            
+            // Create jersey body (torso) with more realistic shape
+            const bodyGeometry = new THREE.BoxGeometry(2, 2.5, 0.2, 12, 12, 2);
+            // Adjust vertices to create a more realistic jersey shape
+            const bodyPositions = bodyGeometry.attributes.position;
+            
+            // Shape the jersey - wider at bottom, curved at shoulders
+            for (let i = 0; i < bodyPositions.count; i++) {
+                const y = bodyPositions.getY(i);
+                const x = bodyPositions.getX(i);
+                const z = bodyPositions.getZ(i);
+                
+                // Make bottom wider
+                if (y < -0.8) {
+                    bodyPositions.setX(i, x * 1.3);
+                }
+                
+                // Create shoulder curve
+                if (y > 0.8 && Math.abs(x) > 0.5) {
+                    bodyPositions.setY(i, y - 0.2 * Math.abs(x));
+                }
+                
+                // Create slight front-back curve for realistic jersey shape
+                if (z > 0) { // Front of jersey
+                    // Slight curve inward at chest
+                    if (y > 0.3 && y < 0.8) {
+                        bodyPositions.setZ(i, z - 0.05);
+                    }
+                }
+            }
+            bodyGeometry.computeVertexNormals();
+            
+            const bodyMesh = new THREE.Mesh(bodyGeometry, jerseyMaterial.clone());
+            bodyMesh.castShadow = true;
+            bodyMesh.receiveShadow = true;
+            jerseyGroup.add(bodyMesh);
+            
+            // Add jersey number to back
+            const numberGeometry = new THREE.PlaneGeometry(1, 1.2);
+            const numberMaterial = new THREE.MeshStandardMaterial({
+                color: 0xffffff,
+                roughness: 0.5,
+                metalness: 0.0,
+                transparent: true,
+                side: THREE.DoubleSide
+            });
+            
+            // Create canvas for the number
+            const numberCanvas = document.createElement('canvas');
+            numberCanvas.width = 256;
+            numberCanvas.height = 256;
+            const numberCtx = numberCanvas.getContext('2d');
+            numberCtx.fillStyle = '#ffffff';
+            numberCtx.font = 'bold 200px Arial';
+            numberCtx.textAlign = 'center';
+            numberCtx.textBaseline = 'middle';
+            numberCtx.fillText('23', 128, 128);
+            
+            // Create texture from canvas
+            const numberTexture = new THREE.CanvasTexture(numberCanvas);
+            numberMaterial.map = numberTexture;
+            
+            const numberMesh = new THREE.Mesh(numberGeometry, numberMaterial);
+            numberMesh.position.set(0, 0.2, -0.11); // Position on back of jersey
+            numberMesh.rotation.y = Math.PI;
+            jerseyGroup.add(numberMesh);
+            
+            // Add team logo placeholder to front
+            const logoGeometry = new THREE.CircleGeometry(0.4, 32);
+            const logoMaterial = new THREE.MeshStandardMaterial({
+                color: 0xffffff,
+                roughness: 0.5,
+                metalness: 0.0,
+                transparent: true,
+                side: THREE.DoubleSide
+            });
+            
+            // Create canvas for the logo
+            const logoCanvas = document.createElement('canvas');
+            logoCanvas.width = 128;
+            logoCanvas.height = 128;
+            const logoCtx = logoCanvas.getContext('2d');
+            
+            // Draw a simple placeholder logo
+            logoCtx.fillStyle = '#ffffff';
+            logoCtx.beginPath();
+            logoCtx.arc(64, 64, 60, 0, Math.PI * 2);
+            logoCtx.fill();
+            logoCtx.fillStyle = '#ff0000';
+            logoCtx.font = 'bold 40px Arial';
+            logoCtx.textAlign = 'center';
+            logoCtx.textBaseline = 'middle';
+            logoCtx.fillText('TEAM', 64, 64);
+            
+            // Create texture from canvas
+            const logoTexture = new THREE.CanvasTexture(logoCanvas);
+            logoMaterial.map = logoTexture;
+            
+            const logoMesh = new THREE.Mesh(logoGeometry, logoMaterial);
+            logoMesh.position.set(0, 0.6, 0.11); // Position on front of jersey
+            jerseyGroup.add(logoMesh);
+            
+            // Add stripes on sides
+            const stripeGeometry = new THREE.PlaneGeometry(0.1, 2);
+            const stripeMaterial = new THREE.MeshStandardMaterial({
+                color: 0xdddddd,
+                roughness: 0.5,
+                metalness: 0.0,
+                side: THREE.DoubleSide
+            });
+            
+            // Left stripe
+            const leftStripeMesh = new THREE.Mesh(stripeGeometry, stripeMaterial.clone());
+            leftStripeMesh.position.set(-1, 0, 0);
+            leftStripeMesh.rotation.y = Math.PI / 2;
+            jerseyGroup.add(leftStripeMesh);
+            
+            // Right stripe
+            const rightStripeMesh = new THREE.Mesh(stripeGeometry, stripeMaterial.clone());
+            rightStripeMesh.position.set(1, 0, 0);
+            rightStripeMesh.rotation.y = Math.PI / 2;
+            jerseyGroup.add(rightStripeMesh);
+            
+            // Create left sleeve
+            const leftSleeveGeometry = new THREE.CylinderGeometry(0.4, 0.5, 0.8, 8, 1, true);
+            const leftSleeveMesh = new THREE.Mesh(leftSleeveGeometry, jerseyMaterial.clone());
+            leftSleeveMesh.position.set(-1.2, 0.6, 0);
+            leftSleeveMesh.rotation.z = Math.PI / 2.5;
+            leftSleeveMesh.castShadow = true;
+            leftSleeveMesh.receiveShadow = true;
+            jerseyGroup.add(leftSleeveMesh);
+            
+            // Create right sleeve
+            const rightSleeveGeometry = new THREE.CylinderGeometry(0.4, 0.5, 0.8, 8, 1, true);
+            const rightSleeveMesh = new THREE.Mesh(rightSleeveGeometry, jerseyMaterial.clone());
+            rightSleeveMesh.position.set(1.2, 0.6, 0);
+            rightSleeveMesh.rotation.z = -Math.PI / 2.5;
+            rightSleeveMesh.castShadow = true;
+            rightSleeveMesh.receiveShadow = true;
+            jerseyGroup.add(rightSleeveMesh);
+            
+            // Create collar
+            const collarGeometry = new THREE.TorusGeometry(0.5, 0.1, 8, 16, Math.PI);
+            const collarMaterial = jerseyMaterial.clone();
+            collarMaterial.color.set(0xdddddd); // Different color for collar
+            const collarMesh = new THREE.Mesh(collarGeometry, collarMaterial);
+            collarMesh.position.set(0, 1.2, 0);
+            collarMesh.rotation.x = Math.PI;
+            collarMesh.castShadow = true;
+            collarMesh.receiveShadow = true;
+            jerseyGroup.add(collarMesh);
+            
+            // Create trim/stripe at the bottom
+            const trimGeometry = new THREE.TorusGeometry(1.2, 0.05, 8, 16, Math.PI);
+            const trimMaterial = jerseyMaterial.clone();
+            trimMaterial.color.set(0xdddddd); // Different color for trim
+            const trimMesh = new THREE.Mesh(trimGeometry, trimMaterial);
+            trimMesh.position.set(0, -1.2, 0);
+            trimMesh.castShadow = true;
+            trimMesh.receiveShadow = true;
+            jerseyGroup.add(trimMesh);
+            
+            // Position the entire jersey group
+            jerseyGroup.position.y = 0.5;
+            scene.add(jerseyGroup);
+            
+            // Store reference to the jersey group
+            jerseyMesh = jerseyGroup;
+            currentMesh = jerseyMesh;
+            
+            // Create shorts group
+            const shortsGroup = new THREE.Group();
+            
+            // Shorts material
+            const shortsMaterial = new THREE.MeshStandardMaterial({
+                color: 0x0000ff,
+                roughness: 0.5,
+                metalness: 0.0
+            });
+            
+            // Create main shorts body with more realistic shape
+            const shortsBodyGeometry = new THREE.BoxGeometry(1.8, 1, 0.3, 12, 8, 2);
+            // Adjust vertices to create a more realistic shorts shape
+            const shortsPositions = shortsBodyGeometry.attributes.position;
+            for (let i = 0; i < shortsPositions.count; i++) {
+                const y = shortsPositions.getY(i);
+                const x = shortsPositions.getX(i);
+                const z = shortsPositions.getZ(i);
+                
+                // Make bottom wider at the leg openings
+                if (y < -0.3) {
+                    shortsPositions.setX(i, x * 1.3);
+                }
+                
+                // Create waistband curve at top
+                if (y > 0.4) {
+                    shortsPositions.setZ(i, z * 0.8); // Make waistband thinner
+                }
+                
+                // Create slight front-back curve for realistic shorts shape
+                if (Math.abs(x) > 0.7 && y < 0) {
+                    // Curve the sides of the shorts outward slightly
+                    shortsPositions.setZ(i, z * 1.1);
+                }
+            }
+            shortsBodyGeometry.computeVertexNormals();
+            
+            const shortsBodyMesh = new THREE.Mesh(shortsBodyGeometry, shortsMaterial.clone());
+            shortsBodyMesh.castShadow = true;
+            shortsBodyMesh.receiveShadow = true;
+            shortsGroup.add(shortsBodyMesh);
+            
+            // Create waistband
+            const waistbandGeometry = new THREE.TorusGeometry(0.95, 0.1, 16, 32, Math.PI * 2);
+            const waistbandMaterial = shortsMaterial.clone();
+            waistbandMaterial.color.set(0xdddddd); // Different color for waistband
+            const waistbandMesh = new THREE.Mesh(waistbandGeometry, waistbandMaterial);
+            waistbandMesh.position.set(0, 0.45, 0);
+            waistbandMesh.rotation.x = Math.PI / 2;
+            waistbandMesh.castShadow = true;
+            waistbandMesh.receiveShadow = true;
+            shortsGroup.add(waistbandMesh);
+            
+            // Create left leg trim
+            const leftLegTrimGeometry = new THREE.TorusGeometry(0.6, 0.05, 8, 16, Math.PI);
+            const legTrimMaterial = shortsMaterial.clone();
+            legTrimMaterial.color.set(0xdddddd); // Different color for trim
+            const leftLegTrimMesh = new THREE.Mesh(leftLegTrimGeometry, legTrimMaterial);
+            leftLegTrimMesh.position.set(-0.5, -0.5, 0);
+            leftLegTrimMesh.rotation.x = Math.PI / 2;
+            leftLegTrimMesh.castShadow = true;
+            leftLegTrimMesh.receiveShadow = true;
+            shortsGroup.add(leftLegTrimMesh);
+            
+            // Create right leg trim
+            const rightLegTrimGeometry = new THREE.TorusGeometry(0.6, 0.05, 8, 16, Math.PI);
+            const rightLegTrimMesh = new THREE.Mesh(rightLegTrimGeometry, legTrimMaterial);
+            rightLegTrimMesh.position.set(0.5, -0.5, 0);
+            rightLegTrimMesh.rotation.x = Math.PI / 2;
+            rightLegTrimMesh.castShadow = true;
+            rightLegTrimMesh.receiveShadow = true;
+            shortsGroup.add(rightLegTrimMesh);
+            
+            // Add side stripes to shorts
+            const sideStripeGeometry = new THREE.PlaneGeometry(0.08, 0.9);
+            const sideStripeMaterial = new THREE.MeshStandardMaterial({
+                color: 0xdddddd,
+                roughness: 0.5,
+                metalness: 0.0,
+                side: THREE.DoubleSide
+            });
+            
+            // Left side stripe
+            const leftSideStripeMesh = new THREE.Mesh(sideStripeGeometry, sideStripeMaterial.clone());
+            leftSideStripeMesh.position.set(-0.9, 0, 0.15);
+            leftSideStripeMesh.rotation.y = Math.PI / 2;
+            shortsGroup.add(leftSideStripeMesh);
+            
+            // Right side stripe
+            const rightSideStripeMesh = new THREE.Mesh(sideStripeGeometry, sideStripeMaterial.clone());
+            rightSideStripeMesh.position.set(0.9, 0, 0.15);
+            rightSideStripeMesh.rotation.y = Math.PI / 2;
+            shortsGroup.add(rightSideStripeMesh);
+            
+            // Add team number to shorts (smaller version)
+            const shortsNumberGeometry = new THREE.PlaneGeometry(0.4, 0.4);
+            const shortsNumberMaterial = new THREE.MeshStandardMaterial({
+                color: 0xffffff,
+                roughness: 0.5,
+                metalness: 0.0,
+                transparent: true,
+                side: THREE.DoubleSide
+            });
+            
+            // Create canvas for the shorts number
+            const shortsNumberCanvas = document.createElement('canvas');
+            shortsNumberCanvas.width = 128;
+            shortsNumberCanvas.height = 128;
+            const shortsNumberCtx = shortsNumberCanvas.getContext('2d');
+            shortsNumberCtx.fillStyle = '#ffffff';
+            shortsNumberCtx.font = 'bold 100px Arial';
+            shortsNumberCtx.textAlign = 'center';
+            shortsNumberCtx.textBaseline = 'middle';
+            shortsNumberCtx.fillText('23', 64, 64);
+            
+            // Create texture from canvas
+            const shortsNumberTexture = new THREE.CanvasTexture(shortsNumberCanvas);
+            shortsNumberMaterial.map = shortsNumberTexture;
+            
+            const shortsNumberMesh = new THREE.Mesh(shortsNumberGeometry, shortsNumberMaterial);
+            shortsNumberMesh.position.set(-0.6, 0, 0.16); // Position on left leg
+            shortsNumberMesh.userData = { type: 'shortsNumber' };
+            shortsGroup.add(shortsNumberMesh);
+            
+            // Position the entire shorts group
+            shortsGroup.position.y = -1;
+            scene.add(shortsGroup);
+            
+            // Store reference to the shorts group
+            shortsMesh = shortsGroup;
+
+            // Add ground plane
+            const groundGeometry = new THREE.PlaneGeometry(20, 20);
+            const groundMaterial = new THREE.MeshStandardMaterial({
+                color: 0x333333,
+                roughness: 0.8,
+                metalness: 0.0
+            });
+            const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+            ground.rotation.x = -Math.PI / 2;
+            ground.position.y = -3;
+            ground.receiveShadow = true;
+            scene.add(ground);
+
+            updateStats();
+        }
+
+        function setupEventListeners() {
+            // Color controls
+            document.getElementById('primaryColor').addEventListener('change', updatePrimaryColor);
+            document.getElementById('primaryColorHex').addEventListener('input', updatePrimaryColorFromHex);
+            document.getElementById('secondaryColor').addEventListener('change', updateSecondaryColor);
+
+            // Color palette
+            document.querySelectorAll('.color-swatch').forEach(swatch => {
+                swatch.addEventListener('click', function() {
+                    const color = this.dataset.color;
+                    document.getElementById('primaryColor').value = color;
+                    document.getElementById('primaryColorHex').value = color;
+                    updatePrimaryColor();
+                    
+                    // Update active state
+                    document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+                    this.classList.add('active');
+                });
+            });
+
+            // Material controls
+            document.getElementById('materialType').addEventListener('change', updateMaterial);
+            document.getElementById('roughness').addEventListener('input', updateRoughness);
+            document.getElementById('metalness').addEventListener('input', updateMetalness);
+
+            // Text controls
+            document.getElementById('playerName').addEventListener('input', updatePlayerName);
+            document.getElementById('playerNumber').addEventListener('input', updatePlayerNumber);
+            document.getElementById('textSize').addEventListener('input', updateTextSize);
+
+            // Advanced controls
+            document.getElementById('lightIntensity').addEventListener('input', updateLightIntensity);
+            document.getElementById('environment').addEventListener('change', updateEnvironment);
+
+            // View controls
+            document.querySelectorAll('.view-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    changeView(this.dataset.view);
+                });
+            });
+
+            // Action buttons
+            document.getElementById('saveDesign').addEventListener('click', saveDesign);
+            document.getElementById('resetDesign').addEventListener('click', resetDesign);
+            document.getElementById('addToCart').addEventListener('click', addToCart);
+
+            // Apparel type
+            document.getElementById('apparelType').addEventListener('change', changeApparelType);
+
+            // Model template controls
+            document.getElementById('modelTemplate').addEventListener('change', function() {
+                const uploadGroup = document.getElementById('customUploadGroup');
+                if (this.value === 'custom-upload') {
+                    uploadGroup.style.display = 'block';
+                } else {
+                    uploadGroup.style.display = 'none';
+                }
+            });
+
+            document.getElementById('loadModelBtn').addEventListener('click', loadSelectedModel);
+            document.getElementById('customModelFile').addEventListener('change', handleCustomModelUpload);
+
+            // Window resize
+            window.addEventListener('resize', onWindowResize);
+        }
+
+        // GLB Model Loading System
+        let gltfLoader;
+        let currentLoadedModel = null;
+        let predefinedModels = {
+             'basketball-pro': 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/BoxAnimated/glTF/BoxAnimated.gltf',
+             'soccer-modern': 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Duck/glTF/Duck.gltf'
+         };
+
+        // Initialize GLTFLoader when available
+        function initializeGLTFLoader() {
+            try {
+                if (typeof THREE.GLTFLoader !== 'undefined') {
+                    gltfLoader = new THREE.GLTFLoader();
+                    console.log('GLTFLoader initialized successfully');
+                } else {
+                    console.warn('GLTFLoader not available. GLB model loading will be disabled.');
+                }
+            } catch (error) {
+                console.error('Error initializing GLTFLoader:', error);
+            }
+        }
+
+        function loadSelectedModel() {
+            const selectedTemplate = document.getElementById('modelTemplate').value;
+            
+            if (selectedTemplate === 'basic') {
+                // Use current basic geometry
+                clearLoadedModel();
+                createJerseyGeometry();
+                return;
+            }
+
+            if (selectedTemplate === 'custom-upload') {
+                const fileInput = document.getElementById('customModelFile');
+                if (fileInput.files.length === 0) {
+                    alert('Please select a GLB/GLTF file to upload.');
+                    return;
+                }
+                loadCustomModel(fileInput.files[0]);
+                return;
+            }
+
+            // Load predefined model
+            if (predefinedModels[selectedTemplate]) {
+                loadGLBModel(predefinedModels[selectedTemplate]);
+            }
+        }
+
+        function loadGLBModel(url) {
+            if (!gltfLoader) {
+                alert('GLB model loading is not available. Please refresh the page and try again.');
+                return;
+            }
+
+            // Show loading overlay
+            document.getElementById('loadingOverlay').style.display = 'flex';
+            document.querySelector('#loadingOverlay span').textContent = 'Loading 3D Model...';
+
+            gltfLoader.load(
+                url,
+                function(gltf) {
+                    try {
+                        // Clear existing models
+                        clearLoadedModel();
+                        
+                        // Add the loaded model to scene
+                        currentLoadedModel = gltf.scene;
+                        
+                        // Scale and position the model appropriately
+                        const box = new THREE.Box3().setFromObject(currentLoadedModel);
+                        const size = box.getSize(new THREE.Vector3());
+                        const maxSize = Math.max(size.x, size.y, size.z);
+                        const scale = 3 / maxSize; // Scale to fit in our scene
+                        
+                        currentLoadedModel.scale.setScalar(scale);
+                        currentLoadedModel.position.set(0, 0, 0);
+                        
+                        // Enable shadows for all meshes in the model
+                        currentLoadedModel.traverse(function(child) {
+                            if (child.isMesh) {
+                                child.castShadow = true;
+                                child.receiveShadow = true;
+                                
+                                // Store original material for color customization
+                                if (child.material) {
+                                    child.userData.originalMaterial = child.material.clone();
+                                }
+                            }
+                        });
+                        
+                        scene.add(currentLoadedModel);
+                        currentMesh = currentLoadedModel;
+                        
+                        // Update stats
+                        updateStats();
+                        
+                        // Hide loading overlay
+                        document.getElementById('loadingOverlay').style.display = 'none';
+                        
+                        console.log('Model loaded successfully:', gltf);
+                    } catch (error) {
+                        console.error('Error processing loaded model:', error);
+                        document.getElementById('loadingOverlay').style.display = 'none';
+                        alert('Error processing the loaded model. Please try a different model.');
+                    }
+                },
+                function(progress) {
+                    // Update loading progress
+                    if (progress.total > 0) {
+                        const percent = Math.round((progress.loaded / progress.total) * 100);
+                        document.querySelector('#loadingOverlay span').textContent = `Loading 3D Model... ${percent}%`;
+                    }
+                },
+                function(error) {
+                    console.error('Error loading model:', error);
+                    document.getElementById('loadingOverlay').style.display = 'none';
+                    alert('Error loading 3D model. Please check your internet connection or try a different model.');
+                }
+            );
+        }
+
+        function loadCustomModel(file) {
+            const reader = new FileReader();
+            
+            reader.onload = function(event) {
+                const arrayBuffer = event.target.result;
+                
+                // Show loading overlay
+                document.getElementById('loadingOverlay').style.display = 'flex';
+                document.querySelector('#loadingOverlay span').textContent = 'Processing uploaded model...';
+                
+                gltfLoader.parse(
+                    arrayBuffer,
+                    '',
+                    function(gltf) {
+                        // Clear existing models
+                        clearLoadedModel();
+                        
+                        // Add the loaded model to scene
+                        currentLoadedModel = gltf.scene;
+                        
+                        // Scale and position the model appropriately
+                        const box = new THREE.Box3().setFromObject(currentLoadedModel);
+                        const size = box.getSize(new THREE.Vector3());
+                        const maxSize = Math.max(size.x, size.y, size.z);
+                        const scale = 3 / maxSize;
+                        
+                        currentLoadedModel.scale.setScalar(scale);
+                        currentLoadedModel.position.set(0, 0, 0);
+                        
+                        // Enable shadows and prepare for customization
+                        currentLoadedModel.traverse(function(child) {
+                            if (child.isMesh) {
+                                child.castShadow = true;
+                                child.receiveShadow = true;
+                                
+                                if (child.material) {
+                                    child.userData.originalMaterial = child.material.clone();
+                                }
+                            }
+                        });
+                        
+                        scene.add(currentLoadedModel);
+                        currentMesh = currentLoadedModel;
+                        
+                        updateStats();
+                        document.getElementById('loadingOverlay').style.display = 'none';
+                        
+                        console.log('Custom model loaded successfully');
+                    },
+                    function(error) {
+                        console.error('Error parsing custom model:', error);
+                        document.getElementById('loadingOverlay').style.display = 'none';
+                        alert('Error loading custom model. Please ensure it\'s a valid GLB/GLTF file.');
+                    }
+                );
+            };
+            
+            reader.readAsArrayBuffer(file);
+        }
+
+        function clearLoadedModel() {
+            // Remove existing jersey and shorts
+            if (jerseyMesh) {
+                scene.remove(jerseyMesh);
+                jerseyMesh = null;
+            }
+            if (shortsMesh) {
+                scene.remove(shortsMesh);
+                shortsMesh = null;
+            }
+            if (currentLoadedModel) {
+                scene.remove(currentLoadedModel);
+                currentLoadedModel = null;
+            }
+            currentMesh = null;
+        }
+
+        function handleCustomModelUpload() {
+            const fileInput = document.getElementById('customModelFile');
+            const file = fileInput.files[0];
+            
+            if (file) {
+                const fileName = file.name;
+                const fileSize = (file.size / 1024 / 1024).toFixed(2); // Size in MB
+                console.log(`Selected file: ${fileName} (${fileSize} MB)`);
+                
+                // Validate file type
+                const validExtensions = ['.glb', '.gltf'];
+                const fileExtension = fileName.toLowerCase().substring(fileName.lastIndexOf('.'));
+                
+                if (!validExtensions.includes(fileExtension)) {
+                    alert('Please select a valid GLB or GLTF file.');
+                    fileInput.value = '';
+                    return;
+                }
+                
+                // Check file size (limit to 50MB)
+                if (file.size > 50 * 1024 * 1024) {
+                    alert('File size too large. Please select a file smaller than 50MB.');
+                    fileInput.value = '';
+                    return;
+                }
+            }
+        }
+
+        function updatePrimaryColor() {
+            const color = document.getElementById('primaryColor').value;
+            document.getElementById('primaryColorHex').value = color;
+            
+            // Handle GLB models
+            if (currentLoadedModel) {
+                currentLoadedModel.traverse(function(child) {
+                    if (child.isMesh && child.material) {
+                        // Create a new material based on the original
+                        if (child.userData.originalMaterial) {
+                            child.material = child.userData.originalMaterial.clone();
+                            child.material.color.setHex(color.replace('#', '0x'));
+                        }
+                    }
+                });
+                return;
+            }
+            
+            // Handle basic geometry models
+            if (currentMesh) {
+                // If it's a group (our composite models), update all children
+                if (currentMesh.isGroup) {
+                    // Update all meshes except those with special parts (collar, trim)
+                    currentMesh.children.forEach(child => {
+                        if (child.material && 
+                            !(child.material.color.getHexString() === 'dddddd')) {
+                            child.material.color.setHex(color.replace('#', '0x'));
+                        }
+                    });
+                } else {
+                    // For backward compatibility with single mesh
+                    currentMesh.material.color.setHex(color.replace('#', '0x'));
+                }
+            }
+        }
+
+        function updatePrimaryColorFromHex() {
+            const color = document.getElementById('primaryColorHex').value;
+            if (/^#[0-9A-F]{6}$/i.test(color)) {
+                document.getElementById('primaryColor').value = color;
+                
+                // Handle GLB models
+                if (currentLoadedModel) {
+                    currentLoadedModel.traverse(function(child) {
+                        if (child.isMesh && child.material) {
+                            if (child.userData.originalMaterial) {
+                                child.material = child.userData.originalMaterial.clone();
+                                child.material.color.setHex(color.replace('#', '0x'));
+                            }
+                        }
+                    });
+                    return;
+                }
+                
+                // Handle basic geometry models
+                if (currentMesh) {
+                    if (currentMesh.isGroup) {
+                        // Update all meshes except those with special parts
+                        currentMesh.children.forEach(child => {
+                            if (child.material && 
+                                !(child.material.color.getHexString() === 'dddddd')) {
+                                child.material.color.setHex(color.replace('#', '0x'));
+                            }
+                        });
+                    } else {
+                        currentMesh.material.color.setHex(color.replace('#', '0x'));
+                    }
+                }
+            }
+        }
+
+        function updateSecondaryColor() {
+            const color = document.getElementById('secondaryColor').value;
+            document.getElementById('secondaryColorHex').value = color;
+            
+            // Update shorts if visible
+            if (shortsMesh && shortsMesh.visible) {
+                if (shortsMesh.isGroup) {
+                    shortsMesh.children.forEach(child => {
+                        if (child.material && 
+                            !(child.material.color.getHexString() === 'dddddd')) {
+                            child.material.color.setHex(color.replace('#', '0x'));
+                        }
+                    });
+                } else {
+                    shortsMesh.material.color.setHex(color.replace('#', '0x'));
+                }
+            }
+            
+            // Update jersey trim/collar elements
+            if (jerseyMesh && jerseyMesh.isGroup) {
+                jerseyMesh.children.forEach(child => {
+                    if (child.material && 
+                        child.material.color.getHexString() === 'dddddd') {
+                        child.material.color.setHex(color.replace('#', '0x'));
+                    }
+                });
+            }
+        }
+
+        function updateMaterial() {
+            const materialType = document.getElementById('materialType').value;
+            
+            function applyMaterialToMesh(mesh) {
+                if (!mesh.material) return;
+                
+                switch (materialType) {
+                    case 'mesh':
+                        mesh.material.transparent = true;
+                        mesh.material.opacity = 0.8;
+                        break;
+                    case 'satin':
+                        mesh.material.roughness = 0.1;
+                        mesh.material.metalness = 0.1;
+                        break;
+                    case 'metallic':
+                        mesh.material.roughness = 0.2;
+                        mesh.material.metalness = 0.8;
+                        break;
+                    default:
+                        mesh.material.transparent = false;
+                        mesh.material.opacity = 1.0;
+                        mesh.material.roughness = 0.5;
+                        mesh.material.metalness = 0.0;
+                }
+            }
+            
+            // Handle GLB models
+            if (currentLoadedModel) {
+                currentLoadedModel.traverse(function(child) {
+                    if (child.isMesh) {
+                        applyMaterialToMesh(child);
+                    }
+                });
+                return;
+            }
+            
+            // Handle basic geometry models
+            if (currentMesh) {
+                if (currentMesh.isGroup) {
+                    currentMesh.children.forEach(child => {
+                        if (child.isMesh) {
+                            applyMaterialToMesh(child);
+                        }
+                    });
+                } else {
+                    applyMaterialToMesh(currentMesh);
+                }
+            }
+            
+            // Also update shorts if visible
+            if (shortsMesh && shortsMesh.visible) {
+                if (shortsMesh.isGroup) {
+                    shortsMesh.children.forEach(child => {
+                        if (child.isMesh) {
+                            applyMaterialToMesh(child);
+                        }
+                    });
+                } else {
+                    applyMaterialToMesh(shortsMesh);
+                }
+            }
+        }
+
+        function updateRoughness() {
+            const value = document.getElementById('roughness').value;
+            document.getElementById('roughnessValue').textContent = value;
+            
+            function applyRoughnessToMesh(mesh) {
+                if (mesh.material) {
+                    mesh.material.roughness = parseFloat(value);
+                }
+            }
+            
+            // Handle GLB models
+            if (currentLoadedModel) {
+                currentLoadedModel.traverse(function(child) {
+                    if (child.isMesh) {
+                        applyRoughnessToMesh(child);
+                    }
+                });
+                return;
+            }
+            
+            // Handle basic geometry models
+            if (currentMesh) {
+                if (currentMesh.isGroup) {
+                    currentMesh.children.forEach(child => {
+                        if (child.isMesh) {
+                            applyRoughnessToMesh(child);
+                        }
+                    });
+                } else {
+                    applyRoughnessToMesh(currentMesh);
+                }
+            }
+            
+            // Also update shorts if visible
+            if (shortsMesh && shortsMesh.visible) {
+                if (shortsMesh.isGroup) {
+                    shortsMesh.children.forEach(child => {
+                        if (child.isMesh) {
+                            applyRoughnessToMesh(child);
+                        }
+                    });
+                } else {
+                    applyRoughnessToMesh(shortsMesh);
+                }
+            }
+        }
+
+        function updateMetalness() {
+            const value = document.getElementById('metalness').value;
+            document.getElementById('metalnessValue').textContent = value;
+            
+            function applyMetalnessToMesh(mesh) {
+                if (mesh.material) {
+                    mesh.material.metalness = parseFloat(value);
+                }
+            }
+            
+            // Handle GLB models
+            if (currentLoadedModel) {
+                currentLoadedModel.traverse(function(child) {
+                    if (child.isMesh) {
+                        applyMetalnessToMesh(child);
+                    }
+                });
+                return;
+            }
+            
+            // Handle basic geometry models
+            if (currentMesh) {
+                if (currentMesh.isGroup) {
+                    currentMesh.children.forEach(child => {
+                        if (child.isMesh) {
+                            applyMetalnessToMesh(child);
+                        }
+                    });
+                } else {
+                    applyMetalnessToMesh(currentMesh);
+                }
+            }
+            
+            // Also update shorts if visible
+            if (shortsMesh && shortsMesh.visible) {
+                if (shortsMesh.isGroup) {
+                    shortsMesh.children.forEach(child => {
+                        if (child.isMesh) {
+                            applyMetalnessToMesh(child);
+                        }
+                    });
+                } else {
+                    applyMetalnessToMesh(shortsMesh);
+                }
+            }
+        }
+
+        function updatePlayerName() {
+            const name = document.getElementById('playerName').value;
+            
+            // Find the jersey in the scene
+            if (jerseyMesh && jerseyMesh.isGroup) {
+                // Create or update name on back of jersey
+                let nameMesh = null;
+                
+                // Check if name mesh already exists
+                jerseyMesh.children.forEach(child => {
+                    if (child.userData && child.userData.type === 'playerName') {
+                        nameMesh = child;
+                    }
+                });
+                
+                if (!nameMesh && name) {
+                    // Create new name mesh if it doesn't exist
+                    const nameGeometry = new THREE.PlaneGeometry(1.5, 0.3);
+                    const nameMaterial = new THREE.MeshStandardMaterial({
+                        color: 0xffffff,
+                        roughness: 0.5,
+                        metalness: 0.0,
+                        transparent: true,
+                        side: THREE.DoubleSide
+                    });
+                    
+                    nameMesh = new THREE.Mesh(nameGeometry, nameMaterial);
+                    nameMesh.position.set(0, 0.9, -0.11); // Position on upper back of jersey
+                    nameMesh.rotation.y = Math.PI;
+                    nameMesh.userData = { type: 'playerName' };
+                    jerseyMesh.add(nameMesh);
+                }
+                
+                if (nameMesh) {
+                    // Create canvas for the name
+                    const nameCanvas = document.createElement('canvas');
+                    nameCanvas.width = 512;
+                    nameCanvas.height = 128;
+                    const nameCtx = nameCanvas.getContext('2d');
+                    nameCtx.clearRect(0, 0, nameCanvas.width, nameCanvas.height);
+                    
+                    if (name) {
+                        // Draw name on canvas
+                        nameCtx.fillStyle = '#ffffff';
+                        nameCtx.font = 'bold 80px Arial';
+                        nameCtx.textAlign = 'center';
+                        nameCtx.textBaseline = 'middle';
+                        nameCtx.fillText(name.toUpperCase(), 256, 64);
+                        
+                        // Update texture
+                        if (nameMesh.material.map) {
+                            nameMesh.material.map.dispose();
+                        }
+                        nameMesh.material.map = new THREE.CanvasTexture(nameCanvas);
+                        nameMesh.material.needsUpdate = true;
+                        nameMesh.visible = true;
+                    } else {
+                        // Hide name mesh if name is empty
+                        nameMesh.visible = false;
+                    }
+                }
+            }
+        }
+
+        function updatePlayerNumber() {
+            const number = document.getElementById('playerNumber').value;
+            
+            // Update jersey number
+            if (jerseyMesh && jerseyMesh.isGroup) {
+                let numberMesh = null;
+                
+                // Find existing number mesh
+                jerseyMesh.children.forEach(child => {
+                    if (child.userData && child.userData.type === 'playerNumber') {
+                        numberMesh = child;
+                    }
+                });
+                
+                // If number mesh doesn't exist yet, the one created in init is used
+                if (!numberMesh) {
+                    // Find the default number mesh (the one without userData)
+                    jerseyMesh.children.forEach(child => {
+                        if (child.geometry && 
+                            child.geometry.type === 'PlaneGeometry' && 
+                            child.position.z < 0) {
+                            numberMesh = child;
+                            numberMesh.userData = { type: 'playerNumber' };
+                        }
+                    });
+                }
+                
+                if (numberMesh) {
+                    // Create canvas for the number
+                    const numberCanvas = document.createElement('canvas');
+                    numberCanvas.width = 256;
+                    numberCanvas.height = 256;
+                    const numberCtx = numberCanvas.getContext('2d');
+                    numberCtx.clearRect(0, 0, numberCanvas.width, numberCanvas.height);
+                    
+                    if (number) {
+                        // Draw number on canvas
+                        numberCtx.fillStyle = '#ffffff';
+                        numberCtx.font = 'bold 200px Arial';
+                        numberCtx.textAlign = 'center';
+                        numberCtx.textBaseline = 'middle';
+                        numberCtx.fillText(number, 128, 128);
+                        
+                        // Update texture
+                        if (numberMesh.material.map) {
+                            numberMesh.material.map.dispose();
+                        }
+                        numberMesh.material.map = new THREE.CanvasTexture(numberCanvas);
+                        numberMesh.material.needsUpdate = true;
+                        numberMesh.visible = true;
+                    } else {
+                        // Hide number mesh if number is empty
+                        numberMesh.visible = false;
+                    }
+                }
+            }
+            
+            // Update shorts number
+            if (shortsMesh && shortsMesh.isGroup) {
+                let shortsNumberMesh = null;
+                
+                // Find shorts number mesh
+                shortsMesh.children.forEach(child => {
+                    if (child.userData && child.userData.type === 'shortsNumber') {
+                        shortsNumberMesh = child;
+                    }
+                });
+                
+                if (shortsNumberMesh) {
+                    // Create canvas for the shorts number
+                    const shortsNumberCanvas = document.createElement('canvas');
+                    shortsNumberCanvas.width = 128;
+                    shortsNumberCanvas.height = 128;
+                    const shortsNumberCtx = shortsNumberCanvas.getContext('2d');
+                    shortsNumberCtx.clearRect(0, 0, shortsNumberCanvas.width, shortsNumberCanvas.height);
+                    
+                    if (number) {
+                        // Draw number on canvas
+                        shortsNumberCtx.fillStyle = '#ffffff';
+                        shortsNumberCtx.font = 'bold 100px Arial';
+                        shortsNumberCtx.textAlign = 'center';
+                        shortsNumberCtx.textBaseline = 'middle';
+                        shortsNumberCtx.fillText(number, 64, 64);
+                        
+                        // Update texture
+                        if (shortsNumberMesh.material.map) {
+                            shortsNumberMesh.material.map.dispose();
+                        }
+                        shortsNumberMesh.material.map = new THREE.CanvasTexture(shortsNumberCanvas);
+                        shortsNumberMesh.material.needsUpdate = true;
+                        shortsNumberMesh.visible = true;
+                    } else {
+                        // Hide shorts number mesh if number is empty
+                        shortsNumberMesh.visible = false;
+                    }
+                }
+            }
+        }
+
+        function updateTextSize() {
+            const value = document.getElementById('textSize').value;
+            document.getElementById('textSizeValue').textContent = value;
+        }
+
+        function updateLightIntensity() {
+            const value = document.getElementById('lightIntensity').value;
+            document.getElementById('lightIntensityValue').textContent = value;
+            scene.children.forEach(child => {
+                if (child instanceof THREE.DirectionalLight) {
+                    child.intensity = parseFloat(value);
+                }
+            });
+        }
+
+        function updateEnvironment() {
+            const environment = document.getElementById('environment').value;
+            switch (environment) {
+                case 'outdoor':
+                    scene.background = new THREE.Color(0x87CEEB);
+                    break;
+                case 'indoor':
+                    scene.background = new THREE.Color(0x2F2F2F);
+                    break;
+                case 'sunset':
+                    scene.background = new THREE.Color(0xFF6B35);
+                    break;
+                default:
+                    scene.background = new THREE.Color(0x1a1a1a);
+            }
+        }
+
+        function changeView(view) {
+            controls.autoRotate = false;
+            switch (view) {
+                case 'front':
+                    camera.position.set(0, 0, 5);
+                    controls.target.set(0, 0, 0);
+                    break;
+                case 'back':
+                    camera.position.set(0, 0, -5);
+                    controls.target.set(0, 0, 0);
+                    break;
+                case 'side':
+                    camera.position.set(5, 0, 0);
+                    controls.target.set(0, 0, 0);
+                    break;
+                case 'full':
+                    controls.autoRotate = !controls.autoRotate;
+                    break;
+            }
+            controls.update();
+        }
+
+        function changeApparelType() {
+            const type = document.getElementById('apparelType').value;
+            
+            // Handle GLB models differently
+            if (currentLoadedModel) {
+                // For GLB models, we can't separate jersey and shorts easily
+                // So we just show/hide the entire model
+                currentLoadedModel.visible = true;
+                currentMesh = currentLoadedModel;
+                return;
+            }
+            
+            // Handle basic geometry models
+            if (jerseyMesh) jerseyMesh.visible = false;
+            if (shortsMesh) shortsMesh.visible = false;
+            
+            switch (type) {
+                case 'jersey':
+                    if (jerseyMesh) {
+                        jerseyMesh.visible = true;
+                        currentMesh = jerseyMesh;
+                    }
+                    break;
+                case 'shorts':
+                    if (shortsMesh) {
+                        shortsMesh.visible = true;
+                        currentMesh = shortsMesh;
+                    }
+                    break;
+                case 'full-kit':
+                    if (jerseyMesh) jerseyMesh.visible = true;
+                    if (shortsMesh) shortsMesh.visible = true;
+                    currentMesh = jerseyMesh; // Default to jersey for controls
+                    break;
+            }
+        }
+
+        function saveDesign() {
+            const design = {
+                apparelType: document.getElementById('apparelType').value,
+                primaryColor: document.getElementById('primaryColor').value,
+                secondaryColor: document.getElementById('secondaryColor').value,
+                materialType: document.getElementById('materialType').value,
+                playerName: document.getElementById('playerName').value,
+                playerNumber: document.getElementById('playerNumber').value,
+                timestamp: new Date().toISOString()
+            };
+            
+            localStorage.setItem('jerseyDesign3D', JSON.stringify(design));
+            alert('🎉 Design saved successfully!');
+        }
+
+        function resetDesign() {
+            if (confirm('Are you sure you want to reset the design?')) {
+                document.getElementById('primaryColor').value = '#ff0000';
+                document.getElementById('secondaryColor').value = '#ffffff';
+                document.getElementById('materialType').value = 'standard';
+                document.getElementById('playerName').value = '';
+                document.getElementById('playerNumber').value = '';
+                
+                updatePrimaryColor();
+                updateSecondaryColor();
+                updateMaterial();
+            }
+        }
+
+        function addToCart() {
+            const design = {
+                apparelType: document.getElementById('apparelType').value,
+                primaryColor: document.getElementById('primaryColor').value,
+                playerName: document.getElementById('playerName').value,
+                playerNumber: document.getElementById('playerNumber').value,
+                price: 299.99
+            };
+            
+            alert('🛒 Jersey added to cart!\nPrice: $' + design.price + '\nType: ' + design.apparelType);
+        }
+
+        function updateStats() {
+            stats.meshes = 0;
+            stats.triangles = 0;
+            scene.traverse(function(child) {
+                if (child instanceof THREE.Mesh) {
+                    stats.meshes++;
+                    if (child.geometry.attributes.position) {
+                        stats.triangles += child.geometry.attributes.position.count / 3;
+                    }
+                }
+            });
+            
+            document.getElementById('meshes').textContent = stats.meshes;
+            document.getElementById('triangles').textContent = Math.floor(stats.triangles);
+        }
+
+        function onWindowResize() {
+            const container = document.getElementById('canvas-container');
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        }
+
+        function animate() {
+            animationId = requestAnimationFrame(animate);
+            
+            controls.update();
+            
+            // Update FPS counter
+            stats.fps = Math.round(1000 / (performance.now() - (stats.lastTime || 0)));
+            stats.lastTime = performance.now();
+            document.getElementById('fps').textContent = stats.fps;
+            
+            renderer.render(scene, camera);
+        }
+
+        // Initialize when page loads
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>

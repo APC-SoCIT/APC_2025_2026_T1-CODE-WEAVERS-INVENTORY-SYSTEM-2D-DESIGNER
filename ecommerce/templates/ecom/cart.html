@@ -2,6 +2,7 @@
 {% load static %}
 {% load phone_format %}
 {% load humanize %}
+{% load custom_filters %}
 {% block content %}
 
 {% if redirect_to %}
@@ -38,20 +39,104 @@
   <script src="https://www.paypal.com/sdk/js?client-id=AbktyGNl4UcmLDfE0d0Wm_YMY_bdcDmRO5dc3TEl7zR2XXACyUanC5vQr6lC4M4umP12sagxFbh1MP6J&currency=PHP"></script>
 
   <style media="screen">
+    /* Saved Addresses Modal Styles */
+    .saved-addresses-modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.5);
+      opacity: 0;
+      transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .saved-addresses-modal.show {
+      opacity: 1;
+    }
+
+    .saved-addresses-content {
+      background-color: #fefefe;
+      margin: 15% auto;
+      padding: 20px;
+      border: 1px solid #888;
+      width: 80%;
+      max-width: 600px;
+      border-radius: 8px;
+      transform: translateY(-20px);
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .saved-addresses-modal.show .saved-addresses-content {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    .saved-address-card {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 15px;
+      position: relative;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      animation: fadeInUp 0.5s ease-out;
+    }
+
+    .saved-address-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    .saved-address-card.default {
+      border-color: #4CAF50;
+      background-color: #f8fff8;
+    }
+
+    .default-badge {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background-color: #4CAF50;
+      color: white;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+    }
+
+    .address-actions {
+      margin-top: 10px;
+      display: flex;
+      gap: 10px;
+    }
+
+    .close-modal {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .close-modal:hover {
+      color: black;
+    }
+
     .cta {
       border: none;
       background: none;
       cursor: pointer;
-    
       display: flex;
       align-items: center;
       justify-content: center;
-      
       margin-left: auto;
       margin-right: 180px;
-    
       position: relative;
       top: 50px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      animation: fadeInRight 0.5s ease-out;
     }
     
     .cta span {
@@ -91,7 +176,7 @@
       left: 0;
       background-color: #000000;
       transform-origin: bottom right;
-      transition: transform 0.25s ease-out;
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
     
     .cta:hover .hover-underline-animation:after {
@@ -109,9 +194,15 @@
       font-size: 28px;
       padding: 20px;
       width: 200px;
-      transition: all 0.5s;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       cursor: pointer;
       margin: 10px;
+      animation: fadeIn 0.5s ease-out;
+    }
+
+    .button:hover {
+      transform: translateY(-2px) scale(1.02);
+      box-shadow: 0 10px 20px rgba(244, 81, 30, 0.3);
     }
 
     .button span {
@@ -491,7 +582,7 @@
         <div class="address-info">
           <div class="address-text">
             {% if user.customer.street_address %}
-              {{ user.customer.get_full_address }}
+              {{ user.customer.street_address }}, {{ user.customer.barangay|barangay_name }}, {{ user.customer.citymun|citymun_name }}, {{ user.customer.province|province_name }}, {{ user.customer.region|region_name }}, {{ user.customer.postal_code }}
             {% else %}
               2565 Pasigline Street, Sta. Ana, Barangay 778, Santa Ana, Metro Manila, Metro Manila 1009
             {% endif %}
@@ -499,13 +590,14 @@
         </div>
         <div class="actions">
           <button class="default-btn">Default</button>
+          <button class="btn btn-primary btn-sm" onclick="showSavedAddressesModal()">Saved Addresses</button>
           <a href="#" class="change-btn" onclick="showAddressForm()">Change</a>
         </div>
       </div>
       
       <!-- Address Edit Form -->
       <div class="address-form" id="address-form" style="display: none;">
-        <form method="post" action="{% url 'update-address' %}" onsubmit="setTimeout(function(){ window.location.reload(); }, 100);">
+        <form method="post" action="{% url 'update-address' %}" onsubmit="setTimeout(updateAddressDisplay, 1000);">
           {% csrf_token %}
           <div class="form-group">
             <label>Full Name</label>
@@ -662,21 +754,31 @@
       let subtotal = parseFloat("{{ total|floatformat:'2'|default:'0.00' }}");
       let deliveryFee = parseFloat("{{ delivery_fee|default:'50' }}");
       let vatRate = 0.12;
-
+      
+      // Initial address values
+      const initialProvince = "{{ user.customer.province|escapejs }}";
+      const initialCitymun = "{{ user.customer.citymun|escapejs }}";
+      const initialBarangay = "{{ user.customer.barangay|escapejs }}";
+      
       // Calculate totals
       function calculateTotals() {
         let vatAmount = (subtotal + deliveryFee) * vatRate;
         let grandTotal = subtotal + deliveryFee + vatAmount;
         
         // Update display
-        document.getElementById('delivery-amount').textContent = deliveryFee.toLocaleString();
-        document.getElementById('vat-value').textContent = vatAmount.toFixed(2);
-        document.getElementById('grand-total-value').textContent = grandTotal.toFixed(2);
-        document.getElementById('footer-total').textContent = grandTotal.toFixed(2);
+        const deliveryAmountEl = document.getElementById('delivery-amount');
+        const vatValueEl = document.getElementById('vat-value');
+        const grandTotalValueEl = document.getElementById('grand-total-value');
+        const footerTotalEl = document.getElementById('footer-total');
+    
+        if (deliveryAmountEl) deliveryAmountEl.textContent = deliveryFee.toLocaleString();
+        if (vatValueEl) vatValueEl.textContent = vatAmount.toFixed(2);
+        if (grandTotalValueEl) grandTotalValueEl.textContent = grandTotal.toFixed(2);
+        if (footerTotalEl) footerTotalEl.textContent = grandTotal.toFixed(2);
         
         return grandTotal;
       }
-
+    
       // Update delivery fee based on region selection
       function updateDeliveryFee() {
         const regionSelect = document.getElementById('region-select');
@@ -684,16 +786,16 @@
         deliveryFee = parseInt(selectedOption.dataset.fee) || 50;
         calculateTotals();
       }
-
+    
       // Address form functions
       function showAddressForm() {
         document.getElementById('address-form').style.display = 'block';
       }
-
+    
       function hideAddressForm() {
         document.getElementById('address-form').style.display = 'none';
       }
-
+    
       // Modal open/close
       const openModalBtn = document.getElementById('openModalBtn');
       const closeModalBtn = document.getElementById('closeModalBtn');
@@ -702,10 +804,10 @@
       const gcashContainer = document.getElementById('gcash-button-container');
       const codForm = document.getElementById('cod-form');
       const paymentButtons = document.querySelectorAll('.payment-method-btn');
-
+    
       // Check if cart is empty
       const cartIsEmpty = {{ products|length|default_if_none:0 }} === 0;
-
+    
       openModalBtn.addEventListener('click', (e) => {
         if (cartIsEmpty) {
           e.preventDefault();
@@ -714,21 +816,21 @@
         }
         modal.style.display = 'flex';
       });
-
+    
       closeModalBtn.addEventListener('click', () => {
         modal.style.display = 'none';
         paypalContainer.style.display = 'none';
         gcashContainer.style.display = 'none';
         codForm.style.display = 'none';
       });
-
+    
       // Payment method selection
       paymentButtons.forEach(button => {
         button.addEventListener('click', () => {
           const method = button.dataset.method;
           paymentButtons.forEach(btn => btn.style.background = 'white');
           button.style.background = '#f0f0f0';
-
+    
           if (method === 'paypal') {
             paypalContainer.style.display = 'block';
             gcashContainer.style.display = 'none';
@@ -744,18 +846,18 @@
           }
         });
       });
-
+    
       // COD Form Submission
       document.getElementById('cod-checkout-form').addEventListener('submit', (e) => {
         e.preventDefault();
         window.location.href = '/payment-success?method=cod';
       });
-
+    
       // GCash Button Click Handler
       document.getElementById('gcash-pay-button').addEventListener('click', () => {
         window.location.href = '/pay-with-gcash/';
       });
-
+    
       // PayPal Button
       paypal.Buttons({
         createOrder: function (data, actions) {
@@ -775,10 +877,47 @@
           });
         }
       }).render('#paypal-button-container');
-
-      // Initialize calculations on page load
+    
+      // Initialize calculations and address cascade on page load
       document.addEventListener('DOMContentLoaded', function() {
         calculateTotals();
+    
+        // Initialize PH Address Cascade for cart address form
+        window.initPHAddressCascadeAPI({
+          region: 'region-select',
+          province: 'province-select',
+          citymun: 'citymun-select',
+          barangay: 'barangay-select'
+        });
+    
+        // Trigger region change event after a short delay to populate provinces
+        setTimeout(function() {
+          const regionSelect = document.getElementById('region-select');
+          if (regionSelect.value) {
+            regionSelect.dispatchEvent(new Event('change'));
+          }
+          // Set initial values after dropdowns are populated
+          setTimeout(function() {
+            if (initialProvince) {
+              document.getElementById('province-select').value = initialProvince;
+              document.getElementById('province-select').dispatchEvent(new Event('change'));
+            }
+          }, 500);
+          setTimeout(function() {
+            if (initialCitymun) {
+              document.getElementById('citymun-select').value = initialCitymun;
+              document.getElementById('citymun-select').dispatchEvent(new Event('change'));
+            }
+          }, 900);
+          setTimeout(function() {
+            if (initialBarangay) {
+              document.getElementById('barangay-select').value = initialBarangay;
+            }
+          }, 1300);
+        }, 100);
+    
+        // Update address display
+        updateAddressDisplay();
       });
     </script>
     <!-- Payment Success Message (if applicable) -->
@@ -792,41 +931,325 @@
 
     <script src="{% static 'js/ph-address-cascade-api.js' %}"></script>
     <script>
-      // Pass initial values from Django to JS
-      const initialProvince = "{{ user.customer.province|escapejs }}";
-      const initialCitymun = "{{ user.customer.citymun|escapejs }}";
-      const initialBarangay = "{{ user.customer.barangay|escapejs }}";
+      // Function to fetch and display address names
+      async function updateAddressDisplay() {
+        const regionCode = "{{ user.customer.region }}";
+        const provinceCode = "{{ user.customer.province }}";
+        const cityCode = "{{ user.customer.citymun }}";
+        const barangayCode = "{{ user.customer.barangay }}";
+    
+        try {
+          // Fetch region name
+          const regionsResponse = await fetch('/api/regions/').then(res => res.json());
+          const regions = Array.isArray(regionsResponse) ? regionsResponse : regionsResponse.regions || [];
+          const region = regions.find(r => r.psgc_code === regionCode || r.code === regionCode);
+          const regionName = region ? region.name : regionCode;
+    
+          // Fetch province name
+          let provinceName = provinceCode;
+          if (regionCode !== 'NCR') {
+            const provincesResponse = await fetch(`/api/provinces/?region_id=${regionCode}`).then(res => res.json());
+            const provinces = Array.isArray(provincesResponse) ? provincesResponse : provincesResponse.provinces || [];
+            const province = provinces.find(p => p.psgc_id === provinceCode || p.code === provinceCode);
+            provinceName = province ? province.name : provinceCode;
+          }
+    
+          // Fetch city name
+          const citiesResponse = await fetch(`/api/cities/?${regionCode === 'NCR' ? 'region_id=' + regionCode : 'province_id=' + provinceCode}`).then(res => res.json());
+          const cities = Array.isArray(citiesResponse) ? citiesResponse : citiesResponse.cities || [];
+          const city = cities.find(c => c.psgc_id === cityCode || c.code === cityCode);
+          const cityName = city ? city.name : cityCode;
+    
+          // Fetch barangay name
+          const barangaysResponse = await fetch(`/api/barangays/?city_id=${cityCode}`).then(res => res.json());
+          const barangays = Array.isArray(barangaysResponse) ? barangaysResponse : barangaysResponse.barangays || [];
+          const barangay = barangays.find(b => b.psgc_id === barangayCode || b.code === barangayCode);
+          const barangayName = barangay ? barangay.name : barangayCode;
+    
+          // Update the address display
+          const addressText = document.querySelector('.address-text');
+          if (addressText) {
+            addressText.innerHTML = `
+              {% if user.customer.street_address %}
+                {{ user.customer.street_address }}, ${barangayName}, ${cityName}, ${provinceName}, ${regionName}, {{ user.customer.postal_code }}
+              {% else %}
+                2565 Pasigline Street, Sta. Ana, Barangay 778, Santa Ana, Metro Manila, Metro Manila 1009
+              {% endif %}
+            `;
+          }
+        } catch (error) {
+          console.error('Error updating address display:', error);
+        }
+      }
+      
+      // Call the function when the page loads<script>
+        document.addEventListener('DOMContentLoaded', updateAddressDisplay);
 
-      document.addEventListener('DOMContentLoaded', function() {
-        // Initialize PH Address Cascade for cart address form
-        window.initPHAddressCascadeAPI({
-          region: 'region-select',
-          province: 'province-select',
-          citymun: 'citymun-select',
-          barangay: 'barangay-select'
-        });
-        // Set initial values after dropdowns are populated
-        setTimeout(function() {
-          if (initialProvince) {
-            document.getElementById('province-select').value = initialProvince;
-            document.getElementById('province-select').dispatchEvent(new Event('change'));
+        function showSavedAddressesModal() {
+          // Fetch saved addresses
+          fetch('/get-saved-addresses/')
+            .then(response => response.json())
+            .then(data => {
+              if (data.status === 'success') {
+                const addressesList = document.getElementById('saved-addresses-list');
+                addressesList.innerHTML = '';
+                
+                data.addresses.forEach(address => {
+                  const addressCard = document.createElement('div');
+                  addressCard.className = `saved-address-card ${address.is_default ? 'default' : ''}`;
+                  
+                  if (address.is_default) {
+                    addressCard.innerHTML += '<span class="default-badge">Default</span>';
+                  }
+                  
+                  addressCard.innerHTML += `
+                    <div class="address-text">
+                      ${address.street_address}, ${address.barangay}, ${address.citymun}, ${address.province}, 
+                      ${address.region}, ${address.postal_code}
+                    </div>
+                    <div class="address-actions">
+                      ${!address.is_default ? `
+                        <button class="btn btn-sm btn-success" onclick="setDefaultAddress(${address.id})">Set as Default</button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteAddress(${address.id})">Delete</button>
+                      ` : ''}
+                    </div>
+                  `;
+                  
+                  addressesList.appendChild(addressCard);
+                });
+              }
+            });
+          
+          document.getElementById('saved-addresses-modal').style.display = 'block';
+        }
+
+        function closeSavedAddressesModal() {
+          document.getElementById('saved-addresses-modal').style.display = 'none';
+        }
+
+        function setDefaultAddress(addressId) {
+          fetch(`/set-default-address/${addressId}/`, {
+            method: 'POST',
+            headers: {
+              'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            }
+          })
+            .then(response => response.json())
+            .then(data => {
+              if (data.status === 'success') {
+                location.reload();
+              } else {
+                alert(data.message);
+              }
+            });
+        }
+
+        function deleteAddress(addressId) {
+          if (confirm('Are you sure you want to delete this address?')) {
+            fetch(`/delete-address/${addressId}/`, {
+              method: 'POST',
+              headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+              }
+            })
+              .then(response => response.json())
+              .then(data => {
+                if (data.status === 'success') {
+                  showSavedAddressesModal();  // Refresh the modal
+                } else {
+                  alert(data.message);
+                }
+              });
           }
-        }, 500);
-        setTimeout(function() {
-          if (initialCitymun) {
-            document.getElementById('citymun-select').value = initialCitymun;
-            document.getElementById('citymun-select').dispatchEvent(new Event('change'));
-          }
-        }, 900);
-        setTimeout(function() {
-          if (initialBarangay) {
-            document.getElementById('barangay-select').value = initialBarangay;
-          }
-        }, 1300);
-      });
-    </script>
+        }
+
+        // Modify the existing showAddressForm function
+        function showAddressForm() {
+          closeSavedAddressesModal();  // Close the modal if it's open
+          document.getElementById('address-form').style.display = 'block';
+        }
+      </script>
+
+<!-- Saved Addresses Modal -->
+<div id="saved-addresses-modal" class="saved-addresses-modal">
+  <div class="saved-addresses-content">
+    <span class="close-modal" onclick="closeSavedAddressesModal()">&times;</span>
+    <h3>Saved Addresses</h3>
+    <div id="saved-addresses-list">
+      <!-- Saved addresses will be dynamically populated here -->
+    </div>
+    <button class="btn btn-primary" onclick="showAddressForm()">Add New Address</button>
+  </div>
+</div>
+
+<div id="saved-addresses-modal" class="saved-addresses-modal">
+  <div class="saved-addresses-content">
+    <span class="close-modal" onclick="closeSavedAddressesModal()">&times;</span>
+    <h3>Saved Addresses</h3>
+    <div id="saved-addresses-list">
+      <!-- Addresses will be loaded here -->
+    </div>
+    <button class="btn btn-primary" onclick="showAddressForm()">Add New Address</button>
+  </div>
+</div>
 </div>
 
 <br><br><br><br><br>
 
 {% endblock content %}
+
+/* Saved Addresses Modal Styles */
+.saved-addresses-modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.5);
+}
+
+.saved-addresses-content {
+  background-color: #fefefe;
+  margin: 15% auto;
+  padding: 20px;
+  border: 1px solid #888;
+  width: 80%;
+  max-width: 600px;
+  border-radius: 8px;
+}
+
+.saved-address-card {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 15px;
+  position: relative;
+}
+
+.saved-address-card.default {
+  border-color: #4CAF50;
+  background-color: #f8fff8;
+}
+
+.default-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: #4CAF50;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+}
+
+.address-actions {
+  margin-top: 10px;
+  display: flex;
+  gap: 10px;
+}
+
+.close-modal {
+  color: #aaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.close-modal:hover {
+  color: black;
+}
+
+function showSavedAddressesModal() {
+  // Fetch saved addresses
+  fetch('/get-saved-addresses/')
+    .then(response => response.json())
+    .then(data => {
+      if (data.status === 'success') {
+        const addressesList = document.getElementById('saved-addresses-list');
+        addressesList.innerHTML = '';
+        
+        data.addresses.forEach(address => {
+          const addressCard = document.createElement('div');
+          addressCard.className = `saved-address-card ${address.is_default ? 'default' : ''}`;
+          
+          if (address.is_default) {
+            addressCard.innerHTML += '<span class="default-badge">Default</span>';
+          }
+          
+          addressCard.innerHTML += `
+            <div class="address-text">
+              ${address.street_address}, ${address.barangay}, ${address.citymun}, ${address.province}, 
+              ${address.region}, ${address.postal_code}
+            </div>
+            <div class="address-actions">
+              ${!address.is_default ? `
+                <button class="btn btn-sm btn-success" onclick="setDefaultAddress(${address.id})">Set as Default</button>
+                <button class="btn btn-sm btn-danger" onclick="deleteAddress(${address.id})">Delete</button>
+              ` : ''}
+            </div>
+          `;
+          
+          addressesList.appendChild(addressCard);
+        });
+      }
+    });
+  
+  const modal = document.getElementById('saved-addresses-modal');
+  modal.style.display = 'block';
+  modal.offsetHeight; // Trigger reflow
+  modal.classList.add('show');
+}
+
+function closeSavedAddressesModal() {
+  const modal = document.getElementById('saved-addresses-modal');
+  modal.classList.remove('show');
+  setTimeout(() => {
+    modal.style.display = 'none';
+  }, 300); // Match transition duration
+}
+
+function setDefaultAddress(addressId) {
+  fetch(`/set-default-address/${addressId}/`, {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+    }
+  })
+    .then(response => response.json())
+    .then(data => {
+      if (data.status === 'success') {
+        location.reload();
+      } else {
+        alert(data.message);
+      }
+    });
+}
+
+function deleteAddress(addressId) {
+  if (confirm('Are you sure you want to delete this address?')) {
+    fetch(`/delete-address/${addressId}/`, {
+      method: 'POST',
+      headers: {
+        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+      }
+    })
+      .then(response => response.json())
+      .then(data => {
+        if (data.status === 'success') {
+          showSavedAddressesModal();  // Refresh the modal
+        } else {
+          alert(data.message);
+        }
+      });
+  }
+}
+
+// Modify the existing showAddressForm function
+function showAddressForm() {
+  closeSavedAddressesModal();  // Close the modal if it's open
+  document.getElementById('address-form').style.display = 'block';
+}
+</script>

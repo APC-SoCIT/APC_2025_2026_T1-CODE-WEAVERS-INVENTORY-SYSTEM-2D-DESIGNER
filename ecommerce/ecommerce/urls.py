@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.urls import path
 from ecom import views
+from ecom import wishlist_views
 from django.contrib.auth.views import LoginView,LogoutView
 from django.views.generic import RedirectView
 from django.urls import reverse_lazy
@@ -94,6 +95,7 @@ urlpatterns = [
     path('facebook/', RedirectView.as_view(url='https://www.facebook.com/worksteamwear'), name='facebook'),
     path('instagram/', RedirectView.as_view(url='https://www.instagram.com/worksteamwear/'), name='instagram'),
     path('create/', views.create, name='create'),
+    path('jersey-customizer/3d/', views.jersey_customizer_3d_view, name='jersey_customizer_3d'),
     path('jersey-customizer/advanced/', views.jersey_customizer_advanced_view, name='jersey_customizer_advanced'),
     path('jersey-customizer/', views.jersey_customizer, name='jersey_customizer'),
     path('jersey-template/', views.jersey_template, name='jersey_template'),
@@ -114,6 +116,25 @@ urlpatterns = [
     path('api/provinces/', api_views.get_provinces, name='api-provinces'),
     path('api/cities/', api_views.get_cities, name='api-cities'),
     path('api/barangays/', api_views.get_barangays, name='api-barangays'),
+    path('save-address/', views.save_new_address, name='save-address'),
+    path('get-saved-addresses/', views.get_saved_addresses, name='get-saved-addresses'),
+    path('set-default-address/<int:address_id>/', views.set_default_address, name='set-default-address'),
+    path('delete-address/<int:address_id>/', views.delete_address, name='delete-address'),
+    
+    # Wishlist functionality
+    path('add-to-wishlist/<int:product_id>/', wishlist_views.add_to_wishlist, name='add-to-wishlist'),
+    path('remove-from-wishlist/<int:product_id>/', wishlist_views.remove_from_wishlist, name='remove-from-wishlist'),
+    path('wishlist/', wishlist_views.wishlist_view, name='wishlist'),
+    
+    # Product reviews
+    path('add-review/<int:product_id>/', wishlist_views.add_review, name='add-review'),
+    path('product/<int:product_id>/', wishlist_views.product_detail_view, name='product-detail'),
+    
+    # Newsletter
+    path('newsletter-signup/', wishlist_views.newsletter_signup, name='newsletter-signup'),
+    
+    # Enhanced search API
+    path('api/search/', wishlist_views.search_products_api, name='search-api'),
 ] + static(settings.MEDIA_URL, document_root=settings.STATIC_ROOT) if settings.DEBUG else []
 
 

@@ -21,24 +21,21 @@
         width: 100%;
         max-width: 400px;
         padding: 40px;
-        position: absolute;
-        top: 35000%;
-        left: 100%;
-        transform: translate(-50%, -50%);
-        background: rgba(255, 255, 255, 0.1); /* More transparent background */
-        backdrop-filter: blur(15px); /* Increased blur effect */
-        -webkit-backdrop-filter: blur(15px); /* Increased blur effect for Safari */
+        position: relative;
+        margin: 100px auto;
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
         text-align: center;
-        transition: 0.25s;
         border-radius: 20px;
-        border: 1px solid rgba(255, 255, 255, 0.3); /* Border to enhance glass effect */
-        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
       }
 
       .box:hover {
-        box-shadow: 1px 1px 25px 1px rgba(255, 255, 255, 0.75); /* Enhanced shadow on hover */
-        -webkit-box-shadow: 1px 1px 25px 1px rgba(255, 255, 255, 0.75); /* Enhanced shadow for WebKit browsers on hover */
-        -moz-box-shadow: 1px 1px 25px 1px rgba(255, 255, 255, 0.75); /* Enhanced shadow for Mozilla browsers on hover */
+        box-shadow: 1px 1px 25px 1px rgba(255, 255, 255, 0.75);
+        -webkit-box-shadow: 1px 1px 25px 1px rgba(255, 255, 255, 0.75);
+        -moz-box-shadow: 1px 1px 25px 1px rgba(255, 255, 255, 0.75);
       }
 
       .box input[type="text"],
@@ -54,18 +51,18 @@
         outline: none;
         color: white;
         border-radius: 24px;
-        transition: 0.25s;
+
       }
 
       .box h1 {
         color: white;
-        font-family: 'Bodoni Moda SC', serif; /* Apply Bodoni Moda SC font */
-        font-weight: 600; /* Adjust the font weight as needed */
+        font-family: 'Bodoni Moda SC', serif;
+        font-weight: 600;
+
       }
 
       .box input[type="text"]:focus,
       .box input[type="password"]:focus {
-        width: 300px;
         border-color: #d3d3d3;
       }
 
@@ -80,12 +77,12 @@
         outline: none;
         color: white;
         border-radius: 24px;
-        transition: 0.25s;
         cursor: pointer;
       }
 
       .box input[type="submit"]:hover {
         background: #2ecc71;
+
       }
 
       .forgot {
@@ -146,14 +143,12 @@
 
       .social-circle li a:hover i,
       .triggeredHover {
-        transform: rotate(360deg);
-        transition: all 0.2s;
+
       }
 
       .social-circle i {
         color: #fff;
-        transition: all 0.8s;
-        transition: all 0.8s;
+
       }
     </style>
   </head>
@@ -186,10 +181,7 @@
         </div>
       </div>
     </div>
-    <br><br><br><br><br><br><br><br><br>
-    <br><br><br><br><br><br><br><br><br>
-    <br><br><br><br><br><br><br><br><br>
-    <br><br><br><br><br><br><br><br><br>
+    <br><br><br>
     {% include "ecom/footer.html" %}
   </body>
 </html>

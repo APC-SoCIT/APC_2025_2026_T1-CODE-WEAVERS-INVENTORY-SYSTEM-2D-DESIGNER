@@ -1,8 +1,26 @@
 {% extends 'ecom/admin_base.html' %}
 {% load static %}
 {% load humanize %}
+{% load custom_filters %}
 
 {% block content %}
+<style>
+    .address-section {
+        margin: 1rem 0;
+    }
+    .address-details {
+        margin-top: 0.5rem;
+        padding-left: 1rem;
+        border-left: 2px solid #e5e7eb;
+    }
+    .address-details div {
+        margin: 0.25rem 0;
+        color: #4b5563;
+    }
+    .address-details div:empty {
+        display: none;
+    }
+</style>
 <main class="p-6">
     <div class="mb-6 flex items-center space-x-4">
         <a href="{% url 'admin-view-users' %}" class="text-gray-500 hover:text-gray-700">
@@ -31,7 +49,17 @@
                 <div><strong>Name:</strong> {{ customer.get_name }}</div>
                 <div><strong>Email:</strong> {{ customer.user.email }}</div>
                 <div><strong>Contact:</strong> {{ customer.mobile }}</div>
-                <div><strong>Address:</strong> {{ customer.get_full_address }}</div>
+                <div class="address-section">
+                    <strong>Address:</strong>
+                    <div class="address-details">
+                        <div>{{ customer.street_address }}</div>
+                        <div>{{ customer.barangay|barangay_name|default_if_none:'' }}</div>
+                        <div>{{ customer.citymun|citymun_name|default_if_none:'' }}</div>
+                        <div>{{ customer.province|province_name|default_if_none:'' }}</div>
+                        <div>{{ customer.region|region_name|default_if_none:'' }}</div>
+                        <div>{{ customer.postal_code }}</div>
+                    </div>
+                </div>
                 <div><strong>Status:</strong> {{ customer.status }}</div>
             </div>
         </section>

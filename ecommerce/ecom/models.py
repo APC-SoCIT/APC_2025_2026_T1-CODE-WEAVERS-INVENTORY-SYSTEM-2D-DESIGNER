@@ -34,15 +34,39 @@ class Customer(models.Model):
 
     @property
     def get_full_address(self):
-        try:
-            from ecom.utils import get_region_name, get_province_name, get_citymun_name, get_barangay_name
-            region_name = get_region_name(self.region) if self.region else ''
-            province_name = get_province_name(self.province) if self.province else ''
-            citymun_name = get_citymun_name(self.citymun) if self.citymun else ''
-            barangay_name = get_barangay_name(self.barangay) if self.barangay else ''
-            return f"{self.street_address}, {barangay_name}, {citymun_name}, {province_name}, {region_name}, {self.postal_code}"
-        except (KeyError, AttributeError):
-            return f"{self.street_address}, {self.barangay}, {self.citymun}, {self.province}, {self.postal_code}"
+        # Return formatted address with actual names
+        from .utils import get_region_name, get_province_name, get_citymun_name, get_barangay_name
+        
+        region_name = get_region_name(self.region) if self.region else self.region
+        province_name = get_province_name(self.province) if self.province else self.province
+        citymun_name = get_citymun_name(self.citymun) if self.citymun else self.citymun
+        barangay_name = get_barangay_name(self.barangay) if self.barangay else self.barangay
+        
+        return f"{self.street_address}, {barangay_name}, {citymun_name}, {province_name}, {region_name}, {self.postal_code}"
+
+    @property
+    def region_name(self):
+        """Get the readable region name"""
+        from .utils import get_region_name
+        return get_region_name(self.region) if self.region else self.region
+
+    @property
+    def province_name(self):
+        """Get the readable province name"""
+        from .utils import get_province_name
+        return get_province_name(self.province) if self.province else self.province
+
+    @property
+    def citymun_name(self):
+        """Get the readable city/municipality name"""
+        from .utils import get_citymun_name
+        return get_citymun_name(self.citymun) if self.citymun else self.citymun
+
+    @property
+    def barangay_name(self):
+        """Get the readable barangay name"""
+        from .utils import get_barangay_name
+        return get_barangay_name(self.barangay) if self.barangay else self.barangay
 
     def __str__(self):
         return self.user.first_name
@@ -173,5 +197,73 @@ class ShippingFee(models.Model):
 
     def __str__(self):
         return f"{self.courier}: {self.origin_region} to {self.destination_region} ({self.weight_kg}kg) - ₱{self.price_php}"
+
+
+
+class SavedAddress(models.Model):
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name='saved_addresses')
+    region = models.CharField(max_length=100, choices=Customer.REGION_CHOICES)
+    province = models.CharField(max_length=100)
+    citymun = models.CharField(max_length=100)
+    barangay = models.CharField(max_length=100)
+    street_address = models.CharField(max_length=100)
+    postal_code = models.PositiveIntegerField()
+    is_default = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-is_default', '-updated_at']
+
+    def __str__(self):
+        return f"{self.street_address}, {self.barangay}, {self.citymun}, {self.province}, {self.region}, {self.postal_code}"
+
+    def save(self, *args, **kwargs):
+        if self.is_default:
+            # Set all other addresses of this customer to non-default
+            SavedAddress.objects.filter(customer=self.customer).update(is_default=False)
+        super().save(*args, **kwargs)
+
+
+class Wishlist(models.Model):
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('customer', 'product')
+
+    def __str__(self):
+        return f"{self.customer.user.username} - {self.product.name}"
+
+class ProductReview(models.Model):
+    RATING_CHOICES = [
+        (1, '1 Star'),
+        (2, '2 Stars'),
+        (3, '3 Stars'),
+        (4, '4 Stars'),
+        (5, '5 Stars'),
+    ]
+    
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    rating = models.IntegerField(choices=RATING_CHOICES)
+    review_text = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('customer', 'product')
+
+    def __str__(self):
+        return f"{self.customer.user.username} - {self.product.name} ({self.rating} stars)"
+
+class Newsletter(models.Model):
+    email = models.EmailField(unique=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.email
 
 

@@ -38,6 +38,7 @@
     text-align: center;
     margin-bottom: 30px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    animation: fadeIn 1s ease-out;
   }
 
   .menu {
@@ -56,7 +57,8 @@
     background: rgba(255, 255, 255, 0.6);
     border-radius: 50px;
     margin: 0 .2em 1em;
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    animation: fadeInUp 0.5s ease-out;
   }
 
   .menu label:hover {
@@ -73,10 +75,11 @@
     z-index: 10;
     background-size: cover;
     background-position: center;
-    transition: left 0s .75s;
+    transition: left 0.75s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
     align-items: center;
     justify-content: center;
+    animation: fadeIn 0.5s ease-out;
   }
 
   .slide-content {
@@ -114,33 +117,7 @@
     background-image: url("{% static 'images/b3.webp' %}");
   }
 
-  /* Category tabs */
-  .category-tabs {
-    display: flex;
-    justify-content: center;
-    margin-bottom: 30px;
-    flex-wrap: wrap;
-  }
 
-  .category-tab {
-    padding: 10px 20px;
-    margin: 0 5px 10px;
-    background-color: #fff;
-    border: 2px solid #eee;
-    border-radius: 30px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    font-weight: 600;
-    color: #555;
-  }
-
-  .category-tab:hover, .category-tab.active {
-    background-color: #3E454C;
-    color: white;
-    border-color: #3E454C;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-  }
 
   /* Search and filter bar */
   .search-filter-container {
@@ -153,6 +130,13 @@
     flex-wrap: wrap;
     justify-content: space-between;
     align-items: center;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    animation: fadeInDown 0.5s ease-out;
+  }
+
+  .search-filter-container:hover {
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    transform: translateY(-2px);
   }
 
   .search-box {
@@ -169,7 +153,8 @@
     border: 1px solid #ddd;
     border-radius: 30px;
     font-size: 14px;
-    transition: all 0.3s;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    animation: fadeIn 0.5s ease-out;
   }
 
   .search-box input:focus {
@@ -1041,42 +1026,37 @@
   </div>
 </div>
 
-<!-- Category Tabs -->
+<!-- Products Section -->
 <div class="container">
-  <div class="category-tabs">
-    <div class="category-tab active" data-category="all">All Products</div>
-    <div class="category-tab" data-category="elementary">Elementary</div>
-    <div class="category-tab" data-category="boys">Boys</div>
-    <div class="category-tab" data-category="girls">Girls</div>
-    <div class="category-tab" data-category="adults">Adults</div>
-  </div>
 
   <!-- Search and Filter Bar -->
-  <div class="search-filter-container">
+  <form method="GET" action="{% url 'customer-home' %}" class="search-filter-container">
     <div class="search-box">
       <i class="fa fa-search"></i>
-      <input type="text" placeholder="Search products...">
+      <input type="text" name="search" placeholder="Search products..." value="{{ search_query|default:'' }}">
     </div>
     <div class="filter-options">
       <span class="filter-label">Sort by:</span>
-      <select class="filter-select">
-        <option value="featured">Featured</option>
-        <option value="price-low">Price: Low to High</option>
-        <option value="price-high">Price: High to Low</option>
-        <option value="newest">Newest</option>
+      <select class="filter-select" name="sort" id="sort-select" onchange="this.form.submit()">
+        <option value="featured" {% if sort_by == 'featured' %}selected{% endif %}>Featured</option>
+        <option value="price_low" {% if sort_by == 'price_low' %}selected{% endif %}>Price: Low to High</option>
+        <option value="price_high" {% if sort_by == 'price_high' %}selected{% endif %}>Price: High to Low</option>
+        <option value="newest" {% if sort_by == 'newest' %}selected{% endif %}>Newest</option>
+        <option value="rating" {% if sort_by == 'rating' %}selected{% endif %}>Highest Rated</option>
+        <option value="popular" {% if sort_by == 'popular' %}selected{% endif %}>Most Popular</option>
       </select>
       
-      <span class="filter-label">Filter:</span>
-      <select class="filter-select">
-        <option value="all">All Sizes</option>
-        <option value="xs">XS</option>
-        <option value="s">S</option>
-        <option value="m">M</option>
-        <option value="l">L</option>
-        <option value="xl">XL</option>
-      </select>
+
+      
+      <label class="filter-label">
+        <input type="checkbox" name="in_stock" value="1" {% if in_stock_only %}checked{% endif %} onchange="this.form.submit()"> In Stock Only
+      </label>
+      
+      <button type="submit" class="filter-select" style="background-color: #3E454C; color: white; border: none; cursor: pointer;">
+        <i class="fa fa-search"></i> Search
+      </button>
     </div>
-  </div>
+  </form>
 
   <!-- Products Grid -->
   {% if products %}
@@ -1113,19 +1093,61 @@
         {% else %}
           <img src="/static/images/default.jpg" alt="No Image" class="product-image">
         {% endif %}
+        
+        <!-- Wishlist Button -->
+        {% if user.is_authenticated %}
+        <div class="product-wishlist" onclick="toggleWishlist(this, event, '{{ product.id }}')">
+          <i class="fa fa-heart-o" id="wishlist-icon-{{ product.id }}"></i>
+        </div>
+        {% endif %}
+        
+        <!-- Product Badge for New Items -->
+        <div class="product-badge" style="display: none;">New</div>
+        
         <button class="quick-view-btn" onclick="openProductDetail('{{ product.id }}')">Quick View</button>
       </div>
       <div class="product-details">
         <div class="product-name">{{ product.name }}</div>
-        <div class="product-description">{{ product.description }}</div>
-        <div class="product-price">₱{{ product.price }}</div>
+        <div class="product-description">{{ product.description|truncatechars:80 }}</div>
+        <div class="product-price">₱{{ product.price|floatformat:2 }}</div>
+        
+        <!-- Product Rating (if reviews exist) -->
+        <div class="product-rating">
+          <div class="rating-stars">
+            {% for i in "12345" %}
+              <i class="fa fa-star{% if forloop.counter > product.average_rating|default:0 %}-o{% endif %}"></i>
+            {% endfor %}
+          </div>
+          <span class="rating-count">({{ product.review_count|default:0 }} reviews)</span>
+        </div>
       </div>
     </div>
     {% endfor %}
   </div>
   <!-- Pagination -->
-  <div class="pagination">
+  {% if products.has_other_pages %}
+  <div class="pagination" style="display: flex; justify-content: center; align-items: center; margin: 30px 0;">
+    <div style="display: flex; align-items: center; gap: 10px;">
+      {% if products.has_previous %}
+        <a href="?{% if search_query %}search={{ search_query }}&{% endif %}{% if sort_by %}sort={{ sort_by }}&{% endif %}{% if in_stock_only %}in_stock=1&{% endif %}page=1" 
+           style="padding: 8px 12px; background-color: #3E454C; color: white; text-decoration: none; border-radius: 4px;">First</a>
+        <a href="?{% if search_query %}search={{ search_query }}&{% endif %}{% if sort_by %}sort={{ sort_by }}&{% endif %}{% if in_stock_only %}in_stock=1&{% endif %}page={{ products.previous_page_number }}" 
+           style="padding: 8px 12px; background-color: #3E454C; color: white; text-decoration: none; border-radius: 4px;">Previous</a>
+      {% endif %}
+      
+      <span style="margin: 0 15px; font-weight: 600; color: #3E454C;">
+        Page {{ products.number }} of {{ products.paginator.num_pages }}
+      </span>
+      
+      {% if products.has_next %}
+        <a href="?{% if search_query %}search={{ search_query }}&{% endif %}{% if sort_by %}sort={{ sort_by }}&{% endif %}{% if in_stock_only %}in_stock=1&{% endif %}page={{ products.next_page_number }}" 
+           style="padding: 8px 12px; background-color: #3E454C; color: white; text-decoration: none; border-radius: 4px;">Next</a>
+        <a href="?{% if search_query %}search={{ search_query }}&{% endif %}{% if sort_by %}sort={{ sort_by }}&{% endif %}{% if in_stock_only %}in_stock=1&{% endif %}page={{ products.paginator.num_pages }}" 
+           style="padding: 8px 12px; background-color: #3E454C; color: white; text-decoration: none; border-radius: 4px;">Last</a>
+      {% endif %}
+    </div>
   </div>
+  {% endif %}
   
   {% else %}
   <div class="text-center py-5">
@@ -1375,36 +1397,9 @@
     document.getElementById('productDetailContent').innerHTML = '';
   }
 
-  // Category tabs functionality
+  // Product interaction functionality
   document.addEventListener('DOMContentLoaded', function() {
-    const categoryTabs = document.querySelectorAll('.category-tab');
     const productCards = document.querySelectorAll('.product-card');
-    
-    categoryTabs.forEach(tab => {
-      tab.addEventListener('click', function() {
-        // Remove active class from all tabs
-        categoryTabs.forEach(t => t.classList.remove('active'));
-        
-        // Add active class to clicked tab
-        this.classList.add('active');
-        
-        const category = this.dataset.category;
-        
-        // Show/hide products based on category
-        productCards.forEach(card => {
-          if (category === 'all' || card.dataset.category === category) {
-            card.style.display = 'block';
-            // Add animation
-            card.classList.add('fade-in');
-            setTimeout(() => {
-              card.classList.remove('fade-in');
-            }, 500);
-          } else {
-            card.style.display = 'none';
-          }
-        });
-      });
-    });
     
     // Make product cards clickable to open detail modal
     productCards.forEach(card => {
@@ -1519,102 +1514,121 @@
     }, 5000);
   }
   
-  // Search functionality
+  // Enhanced search functionality with debouncing
+  let searchTimeout;
   document.querySelector('.search-box input').addEventListener('input', function() {
-    const searchTerm = this.value.toLowerCase();
-    const productCards = document.querySelectorAll('.product-card');
+    clearTimeout(searchTimeout);
+    const form = this.closest('form');
     
-    productCards.forEach(card => {
-      const productName = card.querySelector('.product-name').textContent.toLowerCase();
-      const productDesc = card.querySelector('.product-description').textContent.toLowerCase();
-      
-      if (productName.includes(searchTerm) || productDesc.includes(searchTerm)) {
-        card.style.display = 'block';
-      } else {
-        card.style.display = 'none';
-      }
-    });
-  });
-  
-  // Sort functionality
-  document.querySelector('.filter-select').addEventListener('change', function() {
-    const sortValue = this.value;
-    const productsGrid = document.querySelector('.products-grid');
-    const productCards = Array.from(document.querySelectorAll('.product-card'));
-    
-    // Sort products based on selected option
-    productCards.sort((a, b) => {
-      const priceA = parseFloat(a.querySelector('.product-price').textContent.replace('₱', ''));
-      const priceB = parseFloat(b.querySelector('.product-price').textContent.replace('₱', ''));
-      
-      if (sortValue === 'price-low') {
-        return priceA - priceB;
-      } else if (sortValue === 'price-high') {
-        return priceB - priceA;
-      }
-      
-      // Default to original order for 'featured' and 'newest'
-      return 0;
-    });
-    
-    // Re-append sorted products
-    productCards.forEach(card => {
-      productsGrid.appendChild(card);
-    });
+    searchTimeout = setTimeout(() => {
+      form.submit();
+    }, 500); // Wait 500ms after user stops typing
   });
 
-  // Wishlist functionality
-  function toggleWishlist(element, event) {
+  // Wishlist functionality with AJAX
+  function toggleWishlist(element, event, productId) {
     event.stopPropagation(); // Prevent opening the product detail modal
     
-    const card = element.closest('.product-card');
     const icon = element.querySelector('i');
-    const grid = document.querySelector('.products-grid');
+    const isInWishlist = icon.classList.contains('fa-heart');
     
-    if (icon.classList.contains('fa-heart-o')) {
-      // Add to wishlist
-      icon.classList.remove('fa-heart-o');
-      icon.classList.add('fa-heart');
-      element.style.color = '#ff6b6b';
-      
-      // Store current position if not already stored
-      if (!card.dataset.currentPosition) {
-        card.dataset.currentPosition = Array.from(grid.children).indexOf(card);
+    // Determine the action and URL
+    const action = isInWishlist ? 'remove' : 'add';
+    const url = isInWishlist ? '/remove-from-wishlist/' : '/add-to-wishlist/';
+    
+    // Show loading state
+    element.style.opacity = '0.5';
+    element.style.pointerEvents = 'none';
+    
+    // Make AJAX request
+    fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCookie('csrftoken'),
+      },
+      body: JSON.stringify({
+        'product_id': productId
+      })
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        if (action === 'add') {
+          // Add to wishlist
+          icon.classList.remove('fa-heart-o');
+          icon.classList.add('fa-heart');
+          element.style.color = '#ff6b6b';
+          showNotification('Added to wishlist!');
+        } else {
+          // Remove from wishlist
+          icon.classList.remove('fa-heart');
+          icon.classList.add('fa-heart-o');
+          element.style.color = '#555';
+          showNotification('Removed from wishlist!');
+        }
+      } else {
+        showNotification(data.message || 'An error occurred');
       }
-      
-      // Move to the top of the grid
-      grid.prepend(card);
-    } else {
-      // Remove from wishlist
-      icon.classList.remove('fa-heart');
-      icon.classList.add('fa-heart-o');
-      element.style.color = '#555';
-      
-      // Get original position
-      const originalPosition = parseInt(card.dataset.originalPosition) - 1;
-      
-      // Find where to insert the card
-      const cards = Array.from(grid.children);
-      let insertBeforeElement = null;
-      
-      for (let i = 0; i < cards.length; i++) {
-        const pos = parseInt(cards[i].dataset.originalPosition) - 1;
-        if (pos > originalPosition) {
-          insertBeforeElement = cards[i];
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      showNotification('An error occurred. Please try again.');
+    })
+    .finally(() => {
+      // Restore normal state
+      element.style.opacity = '1';
+      element.style.pointerEvents = 'auto';
+    });
+  }
+  
+  // Function to get CSRF token
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
           break;
         }
       }
-      
-      // Insert at the correct position or append if it should go at the end
-      if (insertBeforeElement) {
-        grid.insertBefore(card, insertBeforeElement);
-      } else {
-        grid.appendChild(card);
-      }
-      
-      // Clear current position
-      delete card.dataset.currentPosition;
     }
+    return cookieValue;
   }
+  
+  // Load wishlist status on page load
+  function loadWishlistStatus() {
+    {% if user.is_authenticated %}
+    fetch('/wishlist/', {
+      method: 'GET',
+      headers: {
+        'X-CSRFToken': getCookie('csrftoken'),
+      }
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.wishlist_items) {
+        data.wishlist_items.forEach(productId => {
+          const icon = document.getElementById('wishlist-icon-' + productId);
+          if (icon) {
+            icon.classList.remove('fa-heart-o');
+            icon.classList.add('fa-heart');
+            icon.closest('.product-wishlist').style.color = '#ff6b6b';
+          }
+        });
+      }
+    })
+    .catch(error => {
+      console.error('Error loading wishlist:', error);
+    });
+    {% endif %}
+  }
+  
+  // Call loadWishlistStatus when page loads
+  document.addEventListener('DOMContentLoaded', function() {
+    loadWishlistStatus();
+  });
 </script>
 {% endblock content %}

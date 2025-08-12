@@ -46,13 +46,15 @@
         width: 100%;
         max-width: 480px;
         box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-        transition: 0.25s;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        animation: fadeInUp 0.6s ease-out;
       }
 
       .signup-card:hover {
         box-shadow: 1px 1px 25px 1px rgba(255, 255, 255, 0.75);
         -webkit-box-shadow: 1px 1px 25px 1px rgba(255, 255, 255, 0.75);
         -moz-box-shadow: 1px 1px 25px 1px rgba(255, 255, 255, 0.75);
+        transform: translateY(-5px);
       }
 
       .header {
@@ -66,12 +68,14 @@
         font-size: 28px;
         font-weight: 600;
         margin-bottom: 8px;
+        animation: fadeInDown 0.5s ease-out;
       }
 
       .header p {
         color: rgba(255, 255, 255, 0.8);
         font-size: 16px;
         font-weight: 400;
+        animation: fadeInDown 0.6s ease-out;
       }
 
       .form-group {
@@ -100,9 +104,10 @@
         border-radius: 24px;
         color: white;
         font-size: 14px;
-        transition: all 0.3s ease;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         outline: none;
         text-align: center;
+        animation: fadeIn 0.5s ease-out;
       }
 
       .form-control::placeholder {
@@ -134,6 +139,8 @@
         background: rgba(255, 255, 255, 0.05);
         border-radius: 15px;
         border: 1px solid rgba(255, 255, 255, 0.1);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        animation: fadeIn 0.8s ease-out;
       }
 
       .terms-container input[type="checkbox"] {
@@ -171,13 +178,14 @@
         font-size: 16px;
         font-weight: 600;
         cursor: pointer;
-        transition: all 0.3s ease;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         margin-bottom: 20px;
+        animation: fadeInUp 0.7s ease-out;
       }
 
       .submit-btn:hover:not(:disabled) {
         background: #2ecc71;
-        transform: translateY(-2px);
+        transform: translateY(-2px) scale(1.02);
         box-shadow: 0 10px 20px rgba(46, 204, 113, 0.3);
       }
 
@@ -196,7 +204,8 @@
         color: rgba(255, 255, 255, 0.8);
         text-decoration: underline;
         font-size: 14px;
-        transition: color 0.3s;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        animation: fadeIn 0.9s ease-out;
       }
 
       .login-link a:hover {

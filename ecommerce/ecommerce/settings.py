@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/3.0/ref/settings/
 """
 
 import os
+from decouple import config
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -22,12 +23,12 @@ STATIC_DIR=os.path.join(BASE_DIR,'static')
 # See https://docs.djangoproject.com/en/3.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = '#vw(03o=(9kbvg!&2d5i!2$_58x@_-3l4wujpow6(ym37jxnza'
+SECRET_KEY = config('SECRET_KEY', default='#vw(03o=(9kbvg!&2d5i!2$_58x@_-3l4wujpow6(ym37jxnza')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = config('DEBUG', default=True, cast=bool)
 
-ALLOWED_HOSTS = ["147.185.221.27", "127.0.0.1", "localhost"]
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default="147.185.221.27,127.0.0.1,localhost").split(',')
 
 
 # Application definition
@@ -145,17 +146,32 @@ EMAIL_BACKEND ='django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_USE_TLS = True
 EMAIL_PORT = 587
-EMAIL_HOST_USER = 'from@gmail.com' # this email will be used to send emails
-EMAIL_HOST_PASSWORD = 'xyz' # host email password required
+EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='from@gmail.com') # this email will be used to send emails
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='xyz') # host email password required
 # now sign in with your host gmail account in your browser
 # open following link and turn it ON
 # https://myaccount.google.com/lesssecureapps
 # otherwise you will get SMTPAuthenticationError at /contactus
 # this process is required because google blocks apps authentication by default
-EMAIL_RECEIVING_USER = ['to@gmail.com'] # email on which you will receive messages sent from website
+EMAIL_RECEIVING_USER = [config('EMAIL_RECEIVING_USER', default='to@gmail.com')] # email on which you will receive messages sent from website
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # PayPal API Credentials
-PAYPAL_CLIENT_ID = 'AbktyGNl4UcmLDfE0d0Wm_YMY_bdcDmRO5dc3TEl7zR2XXACyUanC5vQr6lC4M4umP12sagxFbh1MP6J'
-PAYPAL_SECRET_KEY = 'ELWqmuYmOjP4ssKV-II1KQuudeNpk4dngnQc_bpZD4L9Am9UFNrXTUgDl2GPq6OYa2YiSoFZSsLYygst'
+PAYPAL_CLIENT_ID = config('PAYPAL_CLIENT_ID', default='AbktyGNl4UcmLDfE0d0Wm_YMY_bdcDmRO5dc3TEl7zR2XXACyUanC5vQr6lC4M4umP12sagxFbh1MP6J')
+PAYPAL_SECRET_KEY = config('PAYPAL_SECRET_KEY', default='ELWqmuYmOjP4ssKV-II1KQuudeNpk4dngnQc_bpZD4L9Am9UFNrXTUgDl2GPq6OYa2YiSoFZSsLYygst')
+
+# PSGC API Configuration
+PSGC_API_BASE_URL = config('PSGC_API_BASE_URL', default='https://psgc.gitlab.io/api')
+
+# Cache Configuration
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-snowflake',
+        'TIMEOUT': 300,  # 5 minutes
+        'OPTIONS': {
+            'MAX_ENTRIES': 1000,
+        }
+    }
+}

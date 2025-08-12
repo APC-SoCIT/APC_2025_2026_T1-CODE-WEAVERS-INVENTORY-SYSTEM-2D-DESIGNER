@@ -1,5 +1,6 @@
 {% extends 'ecom/customer_base.html' %}
 {% load static %}
+{% load custom_filters %}
 {% block content %}
 
 <style media="screen">
@@ -54,7 +55,7 @@
   <div class="col-sm-4 col-md-4">
     <blockquote>
       <p>Username: {{ request.user }}</p>
-      <small><cite title="Source Title">Address: {{ customer.get_full_address }} <i class="glyphicon glyphicon-map-marker"></i></cite></small>
+      <small><cite title="Source Title">Address: {{ customer.street_address }}, {{ customer.barangay|barangay_name|default_if_none:customer.barangay }}, {{ customer.citymun|citymun_name|default_if_none:customer.citymun }}, {{ customer.province|province_name|default_if_none:customer.province }}, {{ customer.region|region_name|default_if_none:customer.region }}, {{ customer.postal_code }} <i class="glyphicon glyphicon-map-marker"></i></cite></small>
     </blockquote>
     <p><i class="glyphicon glyphicon-phone"></i>Contact: {{ customer.mobile }}</p>
   </div>
