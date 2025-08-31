@@ -595,9 +595,40 @@
         </div>
       </div>
       
+      <!-- Saved Addresses List -->
+      {% if saved_addresses %}
+      <div class="saved-addresses-list" style="margin-top: 15px;">
+        <h5 style="color: #666; font-size: 14px; margin-bottom: 10px;">Saved Addresses:</h5>
+        {% for address in saved_addresses %}
+        <div class="saved-address-item" data-default="{% if address.is_default %}true{% else %}false{% endif %}" onclick="selectAddress({{ address.id }}, '{{ address.street_address }}, {{ address.barangay|barangay_name }}, {{ address.citymun|citymun_name }}, {{ address.province|province_name }}, {{ address.region|region_name }}, {{ address.postal_code }}')" style="border: 1px solid #e0e0e0; border-radius: 8px; padding: 12px; margin-bottom: 10px; background-color: {% if address.is_default %}#f8fff8{% else %}#fafafa{% endif %}; cursor: pointer; transition: all 0.2s ease;" onmouseover="this.style.backgroundColor='#e8f4fd'; this.style.borderColor='#007bff';" onmouseout="this.style.backgroundColor='{% if address.is_default %}#f8fff8{% else %}#fafafa{% endif %}'; this.style.borderColor='#e0e0e0';">
+          <div class="address-header" style="display: flex; justify-content: between; align-items: center; margin-bottom: 8px;">
+            <div class="address-info" style="flex: 1;">
+              <div class="address-text" style="font-size: 14px; color: #333;">
+                {{ address.street_address }}, {{ address.barangay|barangay_name }}, {{ address.citymun|citymun_name }}, {{ address.province|province_name }}, {{ address.region|region_name }}, {{ address.postal_code }}
+              </div>
+            </div>
+            <div class="address-actions" style="display: flex; gap: 8px; align-items: center;">
+              {% if address.is_default %}
+                <span class="default-badge" style="background-color: #4CAF50; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px;">Default</span>
+              {% else %}
+                <button class="btn btn-sm btn-outline-success" onclick="setDefaultAddress({{ address.id }})" style="font-size: 11px; padding: 2px 8px;">Set as Default</button>
+                <button class="btn btn-sm btn-outline-danger" onclick="deleteAddress({{ address.id }})" style="font-size: 11px; padding: 2px 8px;">Delete</button>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <!-- No saved addresses, show button to add first address -->
+      <div style="margin-top: 15px;">
+        <button class="btn btn-outline-primary btn-sm" onclick="showAddressForm()" style="font-size: 12px; padding: 4px 8px;">Add Address</button>
+      </div>
+      {% endif %}
+      
       <!-- Address Edit Form -->
       <div class="address-form" id="address-form" style="display: none;">
-        <form method="post" action="{% url 'update-address' %}" onsubmit="setTimeout(updateAddressDisplay, 1000);">
+        <form method="post" action="{% url 'save-address' %}" onsubmit="return saveNewAddress(event);">
           {% csrf_token %}
           <div class="form-group">
             <label>Full Name</label>
@@ -1081,17 +1112,6 @@
     <button class="btn btn-primary" onclick="showAddressForm()">Add New Address</button>
   </div>
 </div>
-
-<div id="saved-addresses-modal" class="saved-addresses-modal">
-  <div class="saved-addresses-content">
-    <span class="close-modal" onclick="closeSavedAddressesModal()">&times;</span>
-    <h3>Saved Addresses</h3>
-    <div id="saved-addresses-list">
-      <!-- Addresses will be loaded here -->
-    </div>
-    <button class="btn btn-primary" onclick="showAddressForm()">Add New Address</button>
-  </div>
-</div>
 </div>
 
 <br><br><br><br><br>
@@ -1239,7 +1259,7 @@ function deleteAddress(addressId) {
       .then(response => response.json())
       .then(data => {
         if (data.status === 'success') {
-          showSavedAddressesModal();  // Refresh the modal
+          location.reload();  // Refresh the page to update the address list
         } else {
           alert(data.message);
         }
@@ -1247,9 +1267,89 @@ function deleteAddress(addressId) {
   }
 }
 
+// Function to save new address via AJAX
+function saveNewAddress(event) {
+  event.preventDefault();
+  
+  const form = event.target;
+  const formData = new FormData(form);
+  
+  fetch('/save-address/', {
+    method: 'POST',
+    body: formData,
+    headers: {
+      'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+    }
+  })
+    .then(response => response.json())
+    .then(data => {
+      if (data.status === 'success') {
+        // Clear the form
+        form.reset();
+        // Hide the form
+        document.getElementById('address-form').style.display = 'none';
+        // Show success message
+        alert('Address saved successfully!');
+        // Reload the page to show the new address in the list
+        location.reload();
+      } else {
+        alert(data.message || 'Error saving address');
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      alert('Error saving address. Please try again.');
+    });
+  
+  return false;
+}
+
+// Function to hide address form
+function hideAddressForm() {
+  document.getElementById('address-form').style.display = 'none';
+}
+
 // Modify the existing showAddressForm function
 function showAddressForm() {
   closeSavedAddressesModal();  // Close the modal if it's open
   document.getElementById('address-form').style.display = 'block';
+}
+
+// Function to select a saved address as delivery address
+function selectAddress(addressId, fullAddress) {
+  // Update the delivery address display
+  const deliveryAddressElement = document.querySelector('.delivery-address');
+  if (deliveryAddressElement) {
+    deliveryAddressElement.innerHTML = `
+      <strong>Delivery Address:</strong><br>
+      ${fullAddress}
+      <button class="btn btn-link btn-sm" onclick="showAddressForm()" style="padding: 0; margin-left: 10px; font-size: 12px;">Change</button>
+    `;
+  }
+  
+  // Store the selected address ID for checkout
+  sessionStorage.setItem('selectedAddressId', addressId);
+  
+  // Visual feedback
+  document.querySelectorAll('.saved-address-item').forEach(item => {
+    item.style.backgroundColor = item.getAttribute('data-default') === 'true' ? '#f8fff8' : '#fafafa';
+    item.style.borderColor = '#e0e0e0';
+  });
+  
+  // Highlight selected address
+  event.target.closest('.saved-address-item').style.backgroundColor = '#e8f4fd';
+  event.target.closest('.saved-address-item').style.borderColor = '#007bff';
+  
+  // Show success message
+  const successMsg = document.createElement('div');
+  successMsg.innerHTML = '<div class="alert alert-success alert-dismissible fade show" role="alert" style="margin-top: 10px;">Address selected successfully!<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>';
+  document.querySelector('.saved-addresses-list').appendChild(successMsg);
+  
+  // Auto-remove success message after 3 seconds
+  setTimeout(() => {
+    if (successMsg.parentNode) {
+      successMsg.remove();
+    }
+  }, 3000);
 }
 </script>

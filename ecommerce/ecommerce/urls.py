@@ -14,6 +14,7 @@ from ecom import api_views
 
 
 
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/login/', RedirectView.as_view(url=reverse_lazy('customerlogin')), name='accounts-login-redirect'),
@@ -86,6 +87,7 @@ urlpatterns = [
     path('customer-address', views.customer_address_view,name='customer-address'),
     path('payment-success/', views.payment_success_view,name='payment-success'),
     path('customizer/', views.jersey_customizer, name='customizer'),
+
     path('pre-order', views.pre_order, name='pre_order'),
     path('home', views.home,name='home'),
     # Removed the view_customer URL pattern as view_customer_view no longer exists
@@ -116,6 +118,9 @@ urlpatterns = [
     path('api/provinces/', api_views.get_provinces, name='api-provinces'),
     path('api/cities/', api_views.get_cities, name='api-cities'),
     path('api/barangays/', api_views.get_barangays, name='api-barangays'),
+    
+    # AI Design Generation API
+    path('api/generate-ai-design/', api_views.generate_ai_design, name='api-generate-ai-design'),
     path('save-address/', views.save_new_address, name='save-address'),
     path('get-saved-addresses/', views.get_saved_addresses, name='get-saved-addresses'),
     path('set-default-address/<int:address_id>/', views.set_default_address, name='set-default-address'),
@@ -135,6 +140,8 @@ urlpatterns = [
     
     # Enhanced search API
     path('api/search/', wishlist_views.search_products_api, name='search-api'),
+    
+
 ] + static(settings.MEDIA_URL, document_root=settings.STATIC_ROOT) if settings.DEBUG else []
 
 

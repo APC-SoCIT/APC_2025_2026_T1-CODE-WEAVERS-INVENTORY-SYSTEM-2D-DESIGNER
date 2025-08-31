@@ -1545,8 +1545,16 @@ def customer_home_view(request):
         except models.Customer.DoesNotExist:
             pass
     
+    # Since there's no Category model, we'll create a simple categories list
+    categories = ['T-Shirts', 'Jerseys', 'Hoodies', 'Accessories']
+    
+    # Get current category from request parameters
+    category = request.GET.get('category')
+    
     context = {
         'products': page_obj,
+        'categories': categories,
+        'current_category': category,
         'search_query': search_query,
         'min_price': min_price,
         'max_price': max_price,
@@ -2282,3 +2290,11 @@ def delete_address(request, address_id):
         except (Customer.DoesNotExist, SavedAddress.DoesNotExist):
             return JsonResponse({'status': 'error', 'message': 'Address not found'}, status=404)
     return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=400)
+
+
+# AI Designer View
+def ai_designer_view(request):
+    """
+    AI-powered 2D designer page for creating custom designs
+    """
+    return render(request, 'ecom/ai_designer.html')
