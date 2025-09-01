@@ -3,9 +3,10 @@
   Documentation folder for MCSPROJ
 
   Jan Christopher Reyes Francisco - https://github.com/jcfrancisco0103
-  Timothy Louise Perez - 
-  Kurt Yuri Fegarido - 
+  Timothy Louise Perez - trperez@student.apc.edu.ph
+  Kurt Yuri Fegarido - kcfegarido@student.apc.edu.ph
   John Marvin Sumalinog - 
+  Rainier Edward Lopez - 
 
 Sharepoint: [https://asiapacificcollege.sharepoint.com/:u:/s/GearcraftWorksEcommerceWebsite/EarDR4Kp3fVCuODOb90igjABB3r86Ie5bOwRAYO8FHnORA?e=0bDNOb](https://asiapacificcollege.sharepoint.com/:u:/r/sites/GearcraftWorksEcommerceWebsite/SitePages/ProjectHome.aspx?csf=1&web=1&e=qmZZwQ)
 Website: [https://cuddly-funicular-q654p7wwj45crq-8000.app.github.dev/index/](https://cuddly-funicular-q654p7wwj45crq-8000.app.github.dev/signin/)
