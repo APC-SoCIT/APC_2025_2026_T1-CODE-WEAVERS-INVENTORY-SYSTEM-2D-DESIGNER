@@ -267,3 +267,60 @@ class Newsletter(models.Model):
         return self.email
 
 
+class ChatSession(models.Model):
+    session_id = models.CharField(max_length=100, unique=True)
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"Chat Session {self.session_id}"
+
+
+class ChatMessage(models.Model):
+    MESSAGE_TYPES = (
+        ('user', 'User Message'),
+        ('bot', 'Bot Response'),
+    )
+    
+    session = models.ForeignKey(ChatSession, on_delete=models.CASCADE, related_name='messages')
+    message_type = models.CharField(max_length=10, choices=MESSAGE_TYPES)
+    content = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+    is_helpful = models.BooleanField(null=True, blank=True)  # User feedback on bot responses
+
+    class Meta:
+        ordering = ['timestamp']
+
+    def __str__(self):
+        return f"{self.message_type}: {self.content[:50]}..."
+
+
+class ChatbotKnowledge(models.Model):
+    CATEGORY_CHOICES = (
+        ('general', 'General Help'),
+        ('ordering', 'Ordering Process'),
+        ('products', 'Products & Inventory'),
+        ('account', 'Account Management'),
+        ('shipping', 'Shipping & Delivery'),
+        ('payment', 'Payment Methods'),
+        ('customization', 'Product Customization'),
+        ('returns', 'Returns & Refunds'),
+    )
+    
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
+    keywords = models.TextField(help_text="Comma-separated keywords that trigger this response")
+    question = models.CharField(max_length=200)
+    answer = models.TextField()
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.category}: {self.question}"
+
+    def get_keywords_list(self):
+        return [keyword.strip().lower() for keyword in self.keywords.split(',')]
+
+

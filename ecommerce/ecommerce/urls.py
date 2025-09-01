@@ -11,6 +11,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from ecom.views import admin_manage_inventory_view
 from ecom import api_views
+from ecom import chatbot_views
 
 
 
@@ -141,6 +142,11 @@ urlpatterns = [
     # Enhanced search API
     path('api/search/', wishlist_views.search_products_api, name='search-api'),
     
+    # Chatbot URLs
+    path('chatbot/', chatbot_views.chatbot_widget, name='chatbot-widget'),
+    path('api/chatbot/send-message/', chatbot_views.chat_message, name='chatbot-send-message'),
+    path('api/chatbot/history/', chatbot_views.chat_history, name='chatbot-history'),
+    path('api/chatbot/feedback/', chatbot_views.chat_feedback, name='chatbot-feedback'),
 
 ] + static(settings.MEDIA_URL, document_root=settings.STATIC_ROOT) if settings.DEBUG else []
 

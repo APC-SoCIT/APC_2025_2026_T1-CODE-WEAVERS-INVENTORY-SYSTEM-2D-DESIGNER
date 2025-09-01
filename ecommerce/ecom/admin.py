@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Customer, Product, Orders, Feedback, OrderItem, Address
+from .models import Customer, Product, Orders, Feedback, OrderItem, Address, ChatSession, ChatMessage, ChatbotKnowledge
 @admin.register(Address)
 class AddressAdmin(admin.ModelAdmin):
     list_display = ['region', 'province', 'city_municipality', 'barangay', 'street', 'postal_code']
@@ -57,3 +57,31 @@ admin.site.register(Orders, OrderAdmin)
 class FeedbackAdmin(admin.ModelAdmin):
     list_display = ['name', 'date']
     search_fields = ['name', 'feedback']
+
+
+@admin.register(ChatSession)
+class ChatSessionAdmin(admin.ModelAdmin):
+    list_display = ['session_id', 'customer', 'created_at', 'is_active']
+    list_filter = ['is_active', 'created_at']
+    search_fields = ['session_id', 'customer__user__first_name', 'customer__user__last_name']
+    readonly_fields = ['session_id', 'created_at', 'updated_at']
+
+
+@admin.register(ChatMessage)
+class ChatMessageAdmin(admin.ModelAdmin):
+    list_display = ['session', 'message_type', 'content_preview', 'timestamp', 'is_helpful']
+    list_filter = ['message_type', 'timestamp', 'is_helpful']
+    search_fields = ['content', 'session__session_id']
+    readonly_fields = ['timestamp']
+    
+    def content_preview(self, obj):
+        return obj.content[:50] + '...' if len(obj.content) > 50 else obj.content
+    content_preview.short_description = 'Content Preview'
+
+
+@admin.register(ChatbotKnowledge)
+class ChatbotKnowledgeAdmin(admin.ModelAdmin):
+    list_display = ['category', 'question', 'is_active', 'created_at']
+    list_filter = ['category', 'is_active', 'created_at']
+    search_fields = ['question', 'answer', 'keywords']
+    readonly_fields = ['created_at', 'updated_at']
