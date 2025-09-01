@@ -1,0 +1,117 @@
+{% extends 'ecom/admin_base.html' %}
+{% load static %}
+{% load humanize %}
+{% load custom_filters %}
+
+{% block content %}
+<style>
+    .address-section {
+        margin: 1rem 0;
+    }
+    .address-details {
+        margin-top: 0.5rem;
+        padding-left: 1rem;
+        border-left: 2px solid #e5e7eb;
+    }
+    .address-details div {
+        margin: 0.25rem 0;
+        color: #4b5563;
+    }
+    .address-details div:empty {
+        display: none;
+    }
+</style>
+<main class="p-6">
+    <div class="mb-6 flex items-center space-x-4">
+        <a href="{% url 'admin-view-users' %}" class="text-gray-500 hover:text-gray-700">
+            <i data-lucide="arrow-left" class="h-6 w-6"></i>
+        </a>
+        <div class="flex items-center space-x-2">
+            <i data-lucide="user" class="h-8 w-8 text-gray-600"></i>
+            <h1 class="text-2xl font-bold text-gray-900">{{ customer.get_name }}</h1>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="mb-6 border-b border-gray-200">
+        <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+            <a href="#profile" class="tab-link border-b-2 border-blue-600 text-blue-600 px-3 py-2 text-sm font-medium" aria-current="page">Profile</a>
+            <a href="#transactions" class="tab-link border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 px-3 py-2 text-sm font-medium">Transactions</a>
+        </nav>
+    </div>
+
+    <!-- Tab Contents -->
+    <div id="tab-contents">
+        <section id="profile" class="tab-content">
+            <h2 class="text-lg font-semibold mb-4">Profile Information</h2>
+            <div class="space-y-2 text-sm">
+                <div><strong>Customer ID:</strong> {{ customer.customer_code }}</div>
+                <div><strong>Name:</strong> {{ customer.get_name }}</div>
+                <div><strong>Email:</strong> {{ customer.user.email }}</div>
+                <div><strong>Contact:</strong> {{ customer.mobile }}</div>
+                <div class="address-section">
+                    <strong>Address:</strong>
+                    <div class="address-details">
+                        <div>{{ customer.street_address }}</div>
+                        <div>{{ customer.barangay|barangay_name|default_if_none:'' }}</div>
+                        <div>{{ customer.citymun|citymun_name|default_if_none:'' }}</div>
+                        <div>{{ customer.province|province_name|default_if_none:'' }}</div>
+                        <div>{{ customer.region|region_name|default_if_none:'' }}</div>
+                        <div>{{ customer.postal_code }}</div>
+                    </div>
+                </div>
+                <div><strong>Status:</strong> {{ customer.status }}</div>
+            </div>
+        </section>
+
+        <section id="transactions" class="tab-content hidden">
+            <h2 class="text-lg font-semibold mb-4">Transaction History</h2>
+            {% if transactions %}
+            <div class="space-y-4">
+                {% for txn in transactions %}
+                <div class="p-4 border rounded-md flex justify-between items-center">
+                    <div>
+                        <div class="font-semibold">{{ txn.product_name }}</div>
+                        <div class="text-xs text-gray-500">{{ txn.order_date }} • {{ txn.order_ref }}</div>
+                    </div>
+                    <div class="text-sm font-semibold {% if txn.amount >= 0 %}text-green-600{% else %}text-red-600{% endif %}">
+                        {% if txn.amount >= 0 %}+{% endif %}₱ {{ txn.amount|floatformat:2|intcomma }}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-gray-500">No transactions found.</p>
+            {% endif %}
+        </section>
+    </div>
+</main>
+
+<script>
+    // Tab switching logic
+    document.querySelectorAll('.tab-link').forEach(link => {
+        link.addEventListener('click', e => {
+            e.preventDefault();
+            const targetId = link.getAttribute('href').substring(1);
+
+            // Remove active classes from all tabs
+            document.querySelectorAll('.tab-link').forEach(tab => {
+                tab.classList.remove('border-blue-600', 'text-blue-600');
+                tab.classList.add('border-transparent', 'text-gray-500');
+            });
+
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+
+            // Activate clicked tab and show content
+            link.classList.add('border-blue-600', 'text-blue-600');
+            document.getElementById(targetId).classList.remove('hidden');
+        });
+    });
+
+    // Initialize Lucide icons
+    lucide.createIcons();
+</script>
+{% endblock %}

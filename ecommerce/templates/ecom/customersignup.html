@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+{% load static %}
+{% load widget_tweaks %}
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <title>WorksTeamWear</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Bodoni+Moda+SC:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&display=swap" rel="stylesheet">
+    <style media="screen">
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: 'Inter', sans-serif;
+        background: url('{% static "images/background.jpg" %}') no-repeat center center fixed;
+        background-size: cover;
+        min-height: 100vh;
+      }
+
+      .container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: calc(100vh - 800px); /* Account for navbar and footer spacing */
+        padding: 20px;
+      }
+
+      .row {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+      }
+
+      .signup-card {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 20px;
+        padding: 40px;
+        width: 100%;
+        max-width: 480px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        animation: fadeInUp 0.6s ease-out;
+      }
+
+      .signup-card:hover {
+        box-shadow: 1px 1px 25px 1px rgba(255, 255, 255, 0.75);
+        -webkit-box-shadow: 1px 1px 25px 1px rgba(255, 255, 255, 0.75);
+        -moz-box-shadow: 1px 1px 25px 1px rgba(255, 255, 255, 0.75);
+        transform: translateY(-5px);
+      }
+
+      .header {
+        text-align: center;
+        margin-bottom: 30px;
+      }
+
+      .header h1 {
+        color: white;
+        font-family: 'Bodoni Moda SC', serif;
+        font-size: 28px;
+        font-weight: 600;
+        margin-bottom: 8px;
+        animation: fadeInDown 0.5s ease-out;
+      }
+
+      .header p {
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 16px;
+        font-weight: 400;
+        animation: fadeInDown 0.6s ease-out;
+      }
+
+      .form-group {
+        margin-bottom: 20px;
+      }
+
+      .form-row {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+
+      .form-group label {
+        display: block;
+        color: white;
+        font-size: 14px;
+        font-weight: 500;
+        margin-bottom: 8px;
+      }
+
+      .form-control {
+        width: 100%;
+        padding: 12px 16px;
+        background: rgba(255, 255, 255, 0.1);
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-radius: 24px;
+        color: white;
+        font-size: 14px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        outline: none;
+        text-align: center;
+        animation: fadeIn 0.5s ease-out;
+      }
+
+      .form-control::placeholder {
+        color: rgba(255, 255, 255, 0.7);
+      }
+
+      .form-control:focus {
+        border-color: #d3d3d3;
+        background: rgba(255, 255, 255, 0.15);
+        transform: translateY(-1px);
+      }
+
+      select.form-control {
+        cursor: pointer;
+        text-align: center;
+      }
+
+      select.form-control option {
+        background: #4a5568;
+        color: white;
+      }
+
+      .terms-container {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        margin: 25px 0;
+        padding: 15px;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 15px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        animation: fadeIn 0.8s ease-out;
+      }
+
+      .terms-container input[type="checkbox"] {
+        margin-top: 2px;
+        width: 18px;
+        height: 18px;
+        accent-color: #2ecc71;
+        cursor: pointer;
+      }
+
+      .terms-text {
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 13px;
+        line-height: 1.5;
+      }
+
+      .terms-text a {
+        color: #64b5f6;
+        text-decoration: underline;
+        cursor: pointer;
+        transition: color 0.3s;
+      }
+
+      .terms-text a:hover {
+        color: #90caf9;
+      }
+
+      .submit-btn {
+        width: 100%;
+        padding: 14px;
+        background: none;
+        border: 2px solid #2ecc71;
+        border-radius: 24px;
+        color: white;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        margin-bottom: 20px;
+        animation: fadeInUp 0.7s ease-out;
+      }
+
+      .submit-btn:hover:not(:disabled) {
+        background: #2ecc71;
+        transform: translateY(-2px) scale(1.02);
+        box-shadow: 0 10px 20px rgba(46, 204, 113, 0.3);
+      }
+
+      .submit-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+        border-color: #666;
+      }
+
+      .login-link {
+        text-align: center;
+      }
+
+      .login-link a {
+        color: rgba(255, 255, 255, 0.8);
+        text-decoration: underline;
+        font-size: 14px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        animation: fadeIn 0.9s ease-out;
+      }
+
+      .login-link a:hover {
+        color: white;
+      }
+    </style>
+    <script src="{% static 'js/ph-address-cascade-api.js' %}"></script>
+  </head>
+  <body>
+    {% include "ecom/navbar.html" %}
+    <div class="container">
+      <div class="row">
+        <div class="col-md-6">
+          <div class="card">
+            <div class="signup-card">
+              <div class="header">
+                <h1>WorksTeamWear</h1>
+                <p>Create your account to get started</p>
+              </div>
+
+              <!-- Display form errors -->
+              {% if form.errors or userForm.errors or customerForm.errors %}
+                <div class="error-messages">
+                  <ul>
+                    {% for field, errors in userForm.errors.items %}
+                      {% for error in errors %}
+                        <li>{{ field|title }}: {{ error }}</li>
+                      {% endfor %}
+                    {% endfor %}
+                    {% for field, errors in customerForm.errors.items %}
+                      {% for error in errors %}
+                        <li>{{ field|title }}: {{ error }}</li>
+                      {% endfor %}
+                    {% endfor %}
+                  </ul>
+                </div>
+              {% endif %}
+
+              <!-- Success message -->
+              {% if messages %}
+                {% for message in messages %}
+                  <div class="success-message">
+                    {{ message }}
+                  </div>
+                {% endfor %}
+              {% endif %}
+
+              <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <!-- Name fields -->
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="{{ userForm.first_name.id_for_label }}">First Name</label>
+                    {% render_field userForm.first_name class="form-control" placeholder="First Name" %}
+                  </div>
+                  <div class="form-group">
+                    <label for="{{ userForm.last_name.id_for_label }}">Last Name</label>
+                    {% render_field userForm.last_name class="form-control" placeholder="Last Name" %}
+                  </div>
+                </div>
+
+                <!-- Username -->
+                <div class="form-group">
+                  <label for="{{ userForm.username.id_for_label }}">Username</label>
+                  {% render_field userForm.username class="form-control" placeholder="Username" %}
+                </div>
+
+                <!-- Password -->
+                <div class="form-group">
+                  <label for="{{ userForm.password.id_for_label }}">Password</label>
+                  {% render_field userForm.password class="form-control" placeholder="Password" %}
+                </div>
+                <!-- Confirm Password -->
+                <div class="form-group">
+                  <label for="{{ userForm.confirm_password.id_for_label }}">Confirm Password</label>
+                  {% render_field userForm.confirm_password class="form-control" placeholder="Confirm Password" %}
+                </div>
+
+                <!-- Address Section: Region, Province, City/Municipality, Barangay -->
+                <div class="form-row" style="gap: 10px;">
+                  <div class="form-group" style="flex: 1;">
+                    <label for="region">Region</label>
+                    <select name="region" id="region" class="form-control" required>
+                      <option value="" disabled selected>Select Region</option>
+                    </select>
+                  </div>
+                  <div class="form-group" style="flex: 1;">
+                    <label for="province">Province</label>
+                    <select name="province" id="province" class="form-control" required>
+                      <option value="" disabled selected>Select Province</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="form-row" style="gap: 10px;">
+                  <div class="form-group" style="flex: 1;">
+                    <label for="citymun">City/Municipality</label>
+                    <select name="citymun" id="citymun" class="form-control" required>
+                      <option value="" disabled selected>Select City/Municipality</option>
+                    </select>
+                  </div>
+                  <div class="form-group" style="flex: 1;">
+                    <label for="barangay">Barangay</label>
+                    <select name="barangay" id="barangay" class="form-control" required>
+                      <option value="" disabled selected>Select Barangay</option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- Street Address -->
+                <div class="form-group">
+                  <label for="{{ customerForm.street_address.id_for_label }}">Street Address</label>
+                  {% render_field customerForm.street_address class="form-control" placeholder="Street Address" %}
+                </div>
+
+                <script>
+                  document.addEventListener('DOMContentLoaded', function() {
+                    window.initPHAddressCascadeAPI({
+                      region: 'region',
+                      province: 'province',
+                      citymun: 'citymun',
+                      barangay: 'barangay'
+                    });
+                  });
+                </script>
+
+                <!-- Postal Code and Contact -->
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="{{ customerForm.postal_code.id_for_label }}">Postal Code</label>
+                    {% render_field customerForm.postal_code class="form-control" placeholder="Postal Code" %}
+                  </div>
+                  <div class="form-group">
+                    <label for="{{ customerForm.mobile.id_for_label }}">Contact</label>
+                    <div style="display:flex;align-items:center;">
+                      <span style="padding:8px 12px;background:#eee;border-radius:24px 0 0 24px;border:1px solid #ccc;border-right:0;">+63</span>
+                      {% render_field customerForm.mobile class="form-control" id="mobile_number" placeholder="956 837 0169" maxlength="13" minlength="13" pattern="^\d{3} \d{3} \d{4}$" style="border-radius:0 24px 24px 0;" oninput="autoFormatPHMobile(this)" %}
+                    </div>
+                    <small id="mobileHelp" style="color:red;display:none;">Invalid or disallowed number.</small>
+                    <script>
+                    function autoFormatPHMobile(input) {
+                        let digits = input.value.replace(/\D/g, '');
+                        if (digits.length > 3 && digits.length <= 6)
+                            input.value = digits.slice(0,3) + ' ' + digits.slice(3);
+                        else if (digits.length > 6)
+                            input.value = digits.slice(0,3) + ' ' + digits.slice(3,6) + ' ' + digits.slice(6,10);
+                        else
+                            input.value = digits;
+                    }
+                    </script>
+                  </div>
+                </div>
+
+                <!-- Terms and Conditions -->
+                <div class="terms-container">
+                  {% render_field customerForm.privacy_policy class="form-check-input" id="terms" %}
+                  <label for="terms" class="terms-text">
+                    I agree to the 
+                    <a href="#" id="termsLink">Terms and Conditions</a> 
+                    and 
+                    <a href="#" id="privacyLink">Privacy Policy</a>
+                  </label>
+                </div>
+
+                <button type="submit" class="submit-btn" id="createAccountBtn" disabled>Create Account</button>
+                
+                <div class="login-link">
+                  <a href="/customerlogin">Already have an account? Login Here!</a>
+                </div>
+              </form>
+              <script>
+                // Enable the Create Account button only if terms are checked AND all address fields are selected
+                document.addEventListener('DOMContentLoaded', function() {
+                  var termsCheckbox = document.getElementById('terms');
+                  var submitBtn = document.getElementById('createAccountBtn');
+                  var region = document.getElementById('region');
+                  var province = document.getElementById('province');
+                  var citymun = document.getElementById('citymun');
+                  var barangay = document.getElementById('barangay');
+
+                  function checkEnable() {
+                    var allSelected = region.value && province.value && citymun.value && barangay.value;
+                    submitBtn.disabled = !(termsCheckbox.checked && allSelected);
+                  }
+
+                  if (termsCheckbox && submitBtn) {
+                    termsCheckbox.addEventListener('change', checkEnable);
+                  }
+                  [region, province, citymun, barangay].forEach(function(sel) {
+                    if (sel) sel.addEventListener('change', checkEnable);
+                  });
+                  checkEnable(); // Initial check
+                });
+              </script>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Terms and Conditions Modal -->
+    <div id="termsModal" class="modal">
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>Terms and Conditions & Privacy Policy</h2>
+        <p><strong>Last updated:</strong> December 2024</p>
+        
+        <h3>1. Acceptance of Terms</h3>
+        <p>By creating an account with WorksTeamWear, you agree to be bound by these Terms and Conditions. If you do not agree to these terms, please do not use our service.</p>
+        
+        <h3>2. Account Registration</h3>
+        <p>You must provide accurate, current, and complete information during the registration process. You are responsible for maintaining the confidentiality of your account credentials and for all activities that occur under your account.</p>
+        
+        <h3>3. Use of Service</h3>
+        <p>You agree to use our service only for lawful purposes and in accordance with these terms. You may not:</p>
+        <p>• Use the service for any illegal or unauthorized purpose<br>
+        • Violate any laws in your jurisdiction<br>
+        • Transmit any harmful or malicious code<br>
+        • Interfere with or disrupt the service</p>
+        
+        <h3>4. Privacy Policy</h3>
+        <p><strong>Information We Collect:</strong></p>
+        <p>• Personal information (name, email, address, phone number)<br>
+        • Account credentials<br>
+        • Usage data and preferences</p>
+        
+        <p><strong>How We Use Your Information:</strong></p>
+        <p>• To provide and maintain our service<br>
+        • To process your orders and transactions<br>
+        • To communicate with you about your account<br>
+        • To improve our service and user experience</p>
+        
+        <p><strong>Information Sharing:</strong></p>
+        <p>We do not sell, trade, or rent your personal information to third parties. We may share your information only in the following circumstances:</p>
+        <p>• With your explicit consent<br>
+        • To comply with legal obligations<br>
+        • To protect our rights and safety</p>
+        
+        <h3>5. Data Security</h3>
+        <p>We implement appropriate security measures to protect your personal information against unauthorized access, alteration, disclosure, or destruction. However, no method of transmission over the internet is 100% secure.</p>
+        
+        <h3>6. Order Processing</h3>
+        <p>All orders are subject to acceptance and availability. We reserve the right to refuse or cancel any order for any reason. Prices and availability are subject to change without notice.</p>
+        
+        <h3>7. Limitation of Liability</h3>
+        <p>WorksTeamWear shall not be liable for any indirect, incidental, special, consequential, or punitive damages, including without limitation, loss of profits, data, use, goodwill, or other intangible losses.</p>
+        
+        <h3>8. Changes to Terms</h3>
+        <p>We reserve the right to modify these terms at any time. Changes will be effective immediately upon posting on our website. Your continued use of the service constitutes acceptance of the modified terms.</p>
+        
+        <h3>9. Termination</h3>
+        <p>We may terminate or suspend your account immediately, without prior notice, for conduct that we believe violates these terms or is harmful to other users, us, or third parties.</p>
+        
+        <h3>10. Contact Information</h3>
+        <p>If you have any questions about these Terms and Conditions or our Privacy Policy, please contact us at:</p>
+        <p><strong>Email:</strong> support@worksteamwear.com<br>
+        <strong>Phone:</strong> +1 (555) 123-4567<br>
+        <strong>Address:</strong> 123 Business Street, City, State 12345</p>
+        
+        <p style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 12px; color: #888;">
+          By clicking "I agree" and creating an account, you acknowledge that you have read, understood, and agree to be bound by these Terms and Conditions and Privacy Policy.
+        </p>
+      </div>
+    </div>
+
+    {% include "ecom/footer.html" %}
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const regionCodeMap = {
+          '130000000': 'NCR',
+          '140000000': 'CAR',
+          '010000000': 'R1',
+          '020000000': 'R2',
+          '030000000': 'R3',
+          '040000000': 'R4A',
+          '170000000': 'R4B',
+          '050000000': 'R5',
+          '060000000': 'R6',
+          '070000000': 'R7',
+          '080000000': 'R8',
+          '090000000': 'R9',
+          '100000000': 'R10',
+          '110000000': 'R11',
+          '120000000': 'R12',
+          '160000000': 'R13',
+          '150000000': 'BARMM'
+        };
+        const regionSelect = document.getElementById('region');
+        const province = document.getElementById('province');
+        const citymun = document.getElementById('citymun');
+        const barangay = document.getElementById('barangay');
+        const termsCheckbox = document.getElementById('terms');
+        const submitBtn = document.getElementById('createAccountBtn');
+
+        function getMappedRegionCode() {
+          let psaCode = regionSelect.value;
+          if (psaCode.length > 9) psaCode = psaCode.slice(0, 9);
+          return regionCodeMap[psaCode] || '';
+        }
+
+        function checkEnable() {
+          var allSelected = regionSelect.value && province.value && citymun.value && barangay.value;
+          var mappedRegion = getMappedRegionCode();
+          submitBtn.disabled = !(termsCheckbox.checked && allSelected && mappedRegion);
+        }
+
+        if (regionSelect) {
+          regionSelect.addEventListener('change', function() {
+            let mapped = getMappedRegionCode();
+            this.setAttribute('data-django-code', mapped);
+            checkEnable();
+          });
+        }
+        [province, citymun, barangay, termsCheckbox].forEach(function(sel) {
+          if (sel) sel.addEventListener('change', checkEnable);
+        });
+        checkEnable(); // Initial check
+
+        // On form submit, set region value to Django code using a hidden input
+        const form = document.querySelector('form');
+        let hiddenRegionInput = document.getElementById('region_django_code');
+        if (!hiddenRegionInput) {
+          hiddenRegionInput = document.createElement('input');
+          hiddenRegionInput.type = 'hidden';
+          hiddenRegionInput.name = 'region';
+          hiddenRegionInput.id = 'region_django_code';
+          form.appendChild(hiddenRegionInput);
+        }
+        if (form && regionSelect) {
+          form.addEventListener('submit', function(e) {
+            let mapped = getMappedRegionCode();
+            if (mapped) {
+              hiddenRegionInput.value = mapped;
+            } else {
+              e.preventDefault();
+              alert('Invalid region selected. Please select a valid region.');
+            }
+          });
+        }
+      });
+    </script>
+  </body>
+</html>

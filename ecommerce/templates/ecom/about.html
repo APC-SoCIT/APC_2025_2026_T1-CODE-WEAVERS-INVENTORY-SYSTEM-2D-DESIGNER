@@ -1,0 +1,176 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WorksTeamWear | About Us</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/alpinejs/3.10.2/cdn.min.js" defer></script>
+    <style>
+        .fade-mask {
+            -webkit-mask-image: linear-gradient(to right, rgba(0,0,0,0), rgba(0,0,0,1) 20%, rgba(0,0,0,1) 80%, rgba(0,0,0,0));
+            mask-image: linear-gradient(to right, rgba(0,0,0,0), rgba(0,0,0,1) 20%, rgba(0,0,0,1) 80%, rgba(0,0,0,0));
+        }
+
+        .team-member {
+            opacity: 0;
+            transform: translateY(50px);
+        }
+
+        .team-member.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+  
+  <!-- Navigation -->
+    <nav class="bg-gray-900">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex items-center justify-between h-16">
+                <div class="text-white text-xl font-bold">WorksTeamWear</div>
+                <div class="flex space-x-4">
+                    <a href="{% url 'customer-home' %}" class="text-white px-3 py-2">Home</a>
+                    <a href="/jersey-customizer/advanced/" class="text-gray-300 hover:text-white px-3 py-2">2d Designer</a>
+                    <a href="{% url 'about' %}" class="text-gray-300 hover:text-white px-3 py-2">About Us</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    
+    <!-- Image Slider -->
+    <div class="relative max-w-5xl mx-auto mt-1 overflow-hidden" 
+     x-data="{ currentIndex: 0, images: ['{% static 'images/company3.jpg' %}', '{% static 'images/g1.png' %}', '{% static 'images/g2.png' %}', '{% static 'images/g3.png' %}', '{% static 'images/g4.png' %}', '{% static 'images/g6.png' %}', '{% static 'images/company2.jpg' %}', '{% static 'images/company1.jpg' %}'], interval: null }"
+     x-init="interval = setInterval(() => { currentIndex = (currentIndex + 1) % images.length }, 5000)">
+    
+    <div class="relative flex items-center">
+        <!-- Previous Button -->
+        <button @click="currentIndex = (currentIndex > 0) ? currentIndex - 1 : images.length - 1" 
+            class="absolute left-0 z-10 p-3 bg-black bg-opacity-50 text-white rounded-full shadow-md hover:bg-opacity-80 transition-all">
+            &#10094;
+        </button>
+
+        <div class="w-full h-96 flex items-center justify-center relative">
+            <template x-for="(image, index) in images" :key="index">
+                <img x-show="currentIndex === index" 
+                    x-transition:enter="transform scale-95 opacity-0 transition ease-out duration-500"
+                    x-transition:enter-end="transform scale-100 opacity-100"
+                    x-transition:leave="transform scale-100 opacity-100 transition ease-in duration-500"
+                    x-transition:leave-end="transform scale-95 opacity-0"
+                    :src="image" 
+                    class="absolute inset-0 w-full h-full object-cover rounded-lg shadow-lg fade-mask">
+            </template>
+        </div>
+
+        <!-- Next Button -->
+        <button @click="currentIndex = (currentIndex + 1) % images.length" 
+            class="absolute right-0 z-10 p-3 bg-black bg-opacity-50 text-white rounded-full shadow-md hover:bg-opacity-80 transition-all">
+            &#10095;
+        </button>
+    </div>
+
+    <!-- Indicators -->
+    <div class="absolute bottom-3 left-1/2 transform -translate-x-1/2 flex space-x-2">
+        <template x-for="(image, index) in images" :key="index">
+            <div @click="currentIndex = index" 
+                 class="w-3 h-3 rounded-full cursor-pointer transition-all"
+                 :class="currentIndex === index ? 'bg-white scale-125' : 'bg-gray-500'">
+            </div>
+        </template>
+    </div>
+</div>
+   <!-- About Section -->
+    <div class="py-12 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="lg:text-center">
+                <h2 class="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
+                    About WorksTeamWear
+                </h2>
+                <p class="mt-4 max-w-2xl text-xl text-gray-500 lg:mx-auto">
+                    We're passionate about creating high-quality custom jerseys for teams and individuals.
+                </p>
+            </div>
+
+            <div class="mt-12">
+                <div class="prose prose-lg mx-auto">
+                    <p>
+                        WorksTeamWear was founded in 2010 with a simple mission: to provide high-quality, customizable jerseys for sports teams, events, and individuals. Our team of designers and developers has created an innovative 2D jersey customizer that allows you to see your design in real-time.
+                    </p>
+                    <p class="mt-4">
+                        We use premium materials and state-of-the-art printing technology to ensure that your custom jersey not only looks great but also performs well and lasts for years to come.
+                    </p>
+                    <p class="mt-4">
+                        Our commitment to quality and customer satisfaction has made us a trusted name in the custom apparel industry. We work with teams of all sizes, from local recreational leagues to professional organizations.
+                    </p>
+                    <h3 class="text-xl font-bold mt-8">Our Values</h3>
+                    <ul class="mt-4 list-disc pl-5">
+                        <li>Quality: We use only the best materials and printing techniques.</li>
+                        <li>Innovation: Our 3D customizer provides a unique design experience.</li>
+                        <li>Customer Service: We're dedicated to ensuring your satisfaction.</li>
+                        <li>Sustainability: We strive to minimize our environmental impact.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+        <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-4 mt-0">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col md:flex-row justify-between">
+                <!-- Company Info -->
+                <div class="mb-4 md:mb-0">
+                    <h3 class="text-xl font-bold">WorksTeamWear</h3>
+                    <p class="mt-2 text-gray-400">Custom Jersey Design</p>
+                </div>
+    
+                <!-- Contact Info -->
+                <div>
+                    <h4 class="text-lg font-semibold">Contact Info</h4>
+                    <p class="mt-2 flex items-center text-gray-400">
+                        📞 <span class="ml-2">0998 854 8632</span>
+                    </p>
+                    <p class="mt-2 flex items-center text-gray-400">
+                        ✉️ <span class="ml-2">wtw104dante@gmail.com</span>
+                    </p>
+                </div>
+    
+                <!-- Categories -->
+                <div>
+                    <h4 class="text-lg font-semibold">Categories</h4>
+                    <p class="mt-2 flex items-center text-gray-400">
+                        👕 <span class="ml-2">Clothing (Brand)</span>
+                    </p>
+                </div>
+            </div>
+    
+            <!-- Copyright -->
+            <div class="mt-0 text-center text-gray-400">
+                &copy; 2025 WorksTeamWear. All rights reserved.
+            </div>
+        </div>
+    </footer>
+
+
+<script>
+    const observer = new IntersectionObserver((entries, observer) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('visible');
+            } else {
+                entry.target.classList.remove('visible');
+            }
+        });
+    }, {
+        rootMargin: '0px 0px -100px 0px', // Adjusts when to trigger the intersection
+    });
+
+    document.querySelectorAll('.team-member').forEach(element => {
+        observer.observe(element);
+    });
+</script>
+</body>
+</html>

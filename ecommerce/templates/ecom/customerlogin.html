@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+{% load static %}
+{% load widget_tweaks %}
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <title>WorksTeamWear</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda+SC:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&display=swap" rel="stylesheet">
+    <style media="screen">
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: 'Crimson Text', serif; /* Apply Crimson Text font */
+        background: url('{% static "images/background.jpg" %}') no-repeat center center fixed; /* Use the specified image as background */
+        background-size: cover; /* Ensure the background image covers the entire page */
+      }
+
+      .box {
+        width: 100%;
+        max-width: 400px;
+        padding: 40px;
+        position: relative;
+        margin: 100px auto;
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        text-align: center;
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+      }
+
+      .box:hover {
+        box-shadow: 1px 1px 25px 1px rgba(255, 255, 255, 0.75);
+        -webkit-box-shadow: 1px 1px 25px 1px rgba(255, 255, 255, 0.75);
+        -moz-box-shadow: 1px 1px 25px 1px rgba(255, 255, 255, 0.75);
+      }
+
+      .box input[type="text"],
+      .box input[type="password"] {
+        border: 0;
+        background: none;
+        display: block;
+        margin: 20px auto;
+        text-align: center;
+        border: 2px solid #ffffff;
+        padding: 10px 10px;
+        width: 250px;
+        outline: none;
+        color: white;
+        border-radius: 24px;
+
+      }
+
+      .box h1 {
+        color: white;
+        font-family: 'Bodoni Moda SC', serif;
+        font-weight: 600;
+
+      }
+
+      .box input[type="text"]:focus,
+      .box input[type="password"]:focus {
+        border-color: #d3d3d3;
+      }
+
+      .box input[type="submit"] {
+        border: 0;
+        background: none;
+        display: block;
+        margin: 20px auto;
+        text-align: center;
+        border: 2px solid #2ecc71;
+        padding: 14px 40px;
+        outline: none;
+        color: white;
+        border-radius: 24px;
+        cursor: pointer;
+      }
+
+      .box input[type="submit"]:hover {
+        background: #2ecc71;
+
+      }
+
+      .forgot {
+        text-decoration: underline;
+      }
+
+      ul.social-network {
+        list-style: none;
+        display: inline;
+        margin-left: 0 !important;
+        padding: 0;
+      }
+
+      ul.social-network li {
+        display: inline;
+        margin: 0 5px;
+      }
+
+      .social-network a.icoFacebook:hover {
+        background-color: #3B5998;
+      }
+
+      .social-network a.icoTwitter:hover {
+        background-color: #33ccff;
+      }
+
+      .social-network a.icoGoogle:hover {
+        background-color: #BD3518;
+      }
+
+      .social-network a.icoFacebook:hover i,
+      .social-network a.icoTwitter:hover i,
+      .social-network a.icoGoogle:hover i {
+        color: #fff;
+      }
+
+      a.socialIcon:hover,
+      .socialHoverClass {
+        color: #44BCDD;
+      }
+
+      .social-circle li a {
+        display: inline-block;
+        position: relative;
+        margin: 0 auto 0 auto;
+        border-radius: 50%;
+        text-align: center;
+        width: 50px;
+        height: 50px;
+        font-size: 20px;
+      }
+
+      .social-circle li i {
+        margin: 0;
+        line-height: 50px;
+        text-align: center;
+      }
+
+      .social-circle li a:hover i,
+      .triggeredHover {
+
+      }
+
+      .social-circle i {
+        color: #fff;
+
+      }
+    </style>
+  </head>
+  <body>
+    {% include "ecom/navbar.html" %}
+    <div class="container">
+      <div class="row">
+        <div class="col-md-6">
+          <div class="card">
+            <form class="box" method="post">
+              {% csrf_token %}
+              <h1>Login</h1>
+              {% if form.errors %}
+                <div class="alert alert-danger">
+                  {% for field, error in form.errors.items %}
+                    {% if field == 'username' %}
+                      <p>Account not found, please register</p>
+                    {% else %}
+                      <p>{{ error }}</p>
+                    {% endif %}
+                  {% endfor %}
+                </div>
+              {% endif %}
+              {% render_field form.username class="form-control" placeholder="Username" autocomplete="off" %}
+              {% render_field form.password class="form-control" placeholder="Password" %}
+              <input type="submit" name="" value="Login">
+              <a href="/customersignup" class="btn btn-primary">Don't have an account? Register here!</a>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+    <br><br><br>
+    {% include "ecom/footer.html" %}
+  </body>
+</html>

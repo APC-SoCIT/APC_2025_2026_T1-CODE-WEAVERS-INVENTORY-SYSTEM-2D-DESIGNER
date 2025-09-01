@@ -1,0 +1,33 @@
+<svg width="300" height="400" viewBox="0 0 300 400" xmlns="http://www.w3.org/2000/svg">
+    <!-- Jersey Body -->
+    <path class="jersey-body" d="M75,50 C75,50 100,20 150,20 C200,20 225,50 225,50 
+        L225,350 C225,350 200,370 150,370 C100,370 75,350 75,350 Z" 
+        fill="#ffffff" stroke="#000000" stroke-width="2"/>
+    
+    <!-- Collar -->
+    <path class="jersey-collar" d="M125,50 L175,50 C175,50 170,30 150,30 C130,30 125,50 125,50 Z 
+        M140,50 L160,50 L160,70 C160,75 150,75 150,70 C150,75 140,75 140,70 Z" 
+        fill="#dddddd" stroke="#000000" stroke-width="2"/>
+    
+    <!-- Left Sleeve -->
+    <path class="jersey-sleeve" d="M75,50 C75,50 60,60 40,80 L20,100 L30,140 L75,120 Z" 
+        fill="#dddddd" stroke="#000000" stroke-width="2"/>
+    
+    <!-- Right Sleeve -->
+    <path class="jersey-sleeve" d="M225,50 C225,50 240,60 260,80 L280,100 L270,140 L225,120 Z" 
+        fill="#dddddd" stroke="#000000" stroke-width="2"/>
+    
+    <!-- Seams and Details -->
+    <path class="jersey-seam" d="M150,50 L150,350" stroke="#000000" stroke-width="0.5" stroke-dasharray="2,2"/>
+    <path class="jersey-seam" d="M100,50 C100,60 100,70 100,80" stroke="#000000" stroke-width="0.5"/>
+    <path class="jersey-seam" d="M200,50 C200,60 200,70 200,80" stroke="#000000" stroke-width="0.5"/>
+    
+    <!-- Sleeve Cuffs -->
+    <path class="jersey-cuff" d="M30,140 L75,120" stroke="#000000" stroke-width="3"/>
+    <path class="jersey-cuff" d="M270,140 L225,120" stroke="#000000" stroke-width="3"/>
+    
+    <!-- Bottom Hem -->
+    <path class="jersey-hem" d="M75,350 C75,350 100,370 150,370 C200,370 225,350 225,350" 
+        stroke="#000000" stroke-width="3" fill="none"/>
+</svg>
+

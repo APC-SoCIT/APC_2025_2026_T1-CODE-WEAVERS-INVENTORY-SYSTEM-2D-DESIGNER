@@ -1,0 +1,117 @@
+{% extends "ecom/admin_base.html" %}
+{% load static %}
+
+{% extends "ecom/admin_base.html" %}
+{% load static %}
+{% load custom_filters %}
+
+{% block content %}
+<div class="p-6 bg-white rounded-lg shadow-md">
+    <h1 class="text-2xl font-bold mb-4">Driver Dashboard</h1>
+    <p class="text-gray-600 mb-6">Manage your deliveries and track your progress</p>
+
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div class="flex items-center space-x-4 p-4 border rounded-lg">
+            <div class="bg-blue-100 p-3 rounded-full">
+                <i data-lucide="user" class="h-6 w-6 text-blue-600"></i>
+            </div>
+            <div>
+                <div class="font-semibold">Juan Dela Cruz</div>
+                <div class="text-sm text-gray-500">DRV001</div>
+            </div>
+        </div>
+
+        <div class="flex items-center space-x-4 p-4 border rounded-lg">
+            <div class="bg-purple-100 p-3 rounded-full">
+                <i data-lucide="truck" class="h-6 w-6 text-purple-600"></i>
+            </div>
+            <div>
+                <div class="font-semibold">Vehicle</div>
+                <div class="text-sm text-gray-500">Motorcycle - ABC-1234</div>
+            </div>
+        </div>
+
+        <div class="flex items-center space-x-4 p-4 border rounded-lg">
+            <div class="bg-green-100 p-3 rounded-full">
+                <i data-lucide="check-circle" class="h-6 w-6 text-green-600"></i>
+            </div>
+            <div>
+                <div class="font-semibold">Completed Today</div>
+                <div class="text-lg font-bold">8</div>
+            </div>
+        </div>
+
+        <div class="flex items-center space-x-4 p-4 border rounded-lg">
+            <div class="bg-blue-100 p-3 rounded-full">
+                <i data-lucide="package" class="h-6 w-6 text-blue-600"></i>
+            </div>
+            <div>
+                <div class="font-semibold">Today's Earnings</div>
+                <div class="text-lg font-bold text-green-600">R 2450</div>
+            </div>
+        </div>
+    </div>
+
+    <div>
+<div class="mb-4 flex space-x-4 border-b">
+    <button class="py-2 px-4 border-b-2 border-blue-600 font-semibold text-blue-600">Ready for Pickup ({{ ready_for_pickup_orders.count }})</button>
+    <button class="py-2 px-4 text-gray-600 hover:text-blue-600">Active Deliveries ({{ active_deliveries.count }})</button>
+    <button class="py-2 px-4 text-gray-600 hover:text-blue-600">Completed (0)</button>
+</div>
+
+<div class="bg-white rounded-lg shadow p-4">
+    <h2 class="text-lg font-semibold mb-2">Orders Ready for Pickup</h2>
+    {% for order in ready_for_pickup_orders %}
+    <div class="border rounded p-4 mb-4">
+        <div class="flex justify-between items-center mb-2">
+            <div>
+                <div class="font-semibold">{{ order.order_ref }}</div>
+                <div class="text-sm text-gray-500">Assigned: {{ order.order_date|date:"Y-m-d H:i" }}</div>
+            </div>
+            <span class="text-xs bg-blue-200 text-blue-800 rounded-full px-2 py-0.5">Ready for Pickup</span>
+        </div>
+        <div class="mb-2">
+            <div class="flex items-center space-x-2 text-gray-700">
+                <i data-lucide="user" class="h-4 w-4 text-gray-500"></i>
+                <span>{{ order.customer.user.get_full_name }}</span>
+            </div>
+            <div class="flex items-center space-x-2 text-gray-700">
+                <i data-lucide="phone" class="h-4 w-4 text-gray-500"></i>
+                <span>{{ order.mobile }}</span>
+            </div>
+            <div class="flex items-center space-x-2 text-gray-700">
+                <i data-lucide="map-pin" class="h-4 w-4 text-gray-500"></i>
+                <span>{{ order.address }}</span>
+            </div>
+        </div>
+        <div class="bg-gray-100 rounded p-2 mb-2">
+            {% for item in order.orderitem_set.all %}
+            <div>{{ item.product.name }} ({{ item.size }}) × {{ item.quantity }}</div>
+            {% endfor %}
+            <div class="font-semibold">Total: R {{ order.orderitem_set.all|calc_order_total }}</div>
+        </div>
+        <div class="flex space-x-2">
+            <form method="post" action="{% url 'confirm-pickup' order.id %}">
+                {% csrf_token %}
+                <button type="submit" class="bg-black text-white px-4 py-2 rounded hover:bg-gray-800 flex items-center space-x-2">
+                    <i data-lucide="package" class="h-5 w-5"></i>
+                    <span>Confirm Pickup</span>
+                </button>
+            </form>
+            <button class="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300 flex items-center space-x-2">
+                <i data-lucide="navigation" class="h-5 w-5 text-gray-600"></i>
+                <span>Navigate</span>
+            </button>
+            <button class="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300 flex items-center space-x-2">
+                <i data-lucide="phone" class="h-5 w-5 text-gray-600"></i>
+                <span>Call Customer</span>
+            </button>
+        </div>
+    </div>
+    {% empty %}
+    <p>No orders ready for pickup.</p>
+    {% endfor %}
+</div>
+    </div>
+</div>
+{% endblock %}
