@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.csrf import csrf_exempt, csrf_protect
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
@@ -112,7 +112,7 @@ class ChatbotService:
         return random.choice(responses)
 
 
-@csrf_exempt
+@csrf_protect
 @require_http_methods(["POST"])
 def chat_message(request):
     """Handle incoming chat messages"""
@@ -176,7 +176,7 @@ def chat_message(request):
         return JsonResponse({'error': str(e)}, status=500)
 
 
-@csrf_exempt
+@csrf_protect
 @require_http_methods(["GET"])
 def chat_history(request):
     """Get chat history for a session"""
@@ -211,7 +211,7 @@ def chat_history(request):
         return JsonResponse({'error': str(e)}, status=500)
 
 
-@csrf_exempt
+@csrf_protect
 @require_http_methods(["POST"])
 def chat_feedback(request):
     """Handle user feedback on bot responses"""

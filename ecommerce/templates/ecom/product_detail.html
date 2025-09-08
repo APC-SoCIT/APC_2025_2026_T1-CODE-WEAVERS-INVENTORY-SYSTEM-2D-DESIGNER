@@ -160,7 +160,18 @@
                         <div class="card-body">
                             <h6 class="card-title">{{ related_product.name }}</h6>
                             <p class="card-text text-primary">₱{{ related_product.price }}</p>
-                            <a href="{% url 'product-detail' related_product.id %}" class="btn btn-sm btn-outline-primary">View Details</a>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <a href="{% url 'product-detail' related_product.id %}" class="btn btn-sm btn-outline-primary">View Details</a>
+                                {% if user.is_authenticated %}
+                                <button type="button" class="btn btn-sm btn-outline-danger wishlist-btn-related" data-product-id="{{ related_product.id }}">
+                                    {% if related_product.id in wishlist_product_ids %}
+                                        <i class="fas fa-heart" style="color: #ff6b6b;"></i>
+                                    {% else %}
+                                        <i class="far fa-heart"></i>
+                                    {% endif %}
+                                </button>
+                                {% endif %}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -232,7 +243,7 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .then(response => response.json())
             .then(data => {
-                if (data.status === 'success') {
+                if (data.success) {
                     if (isInWishlist) {
                         this.innerHTML = '<i class="far fa-heart"></i> Add to Wishlist';
                         this.classList.remove('btn-danger');
@@ -251,6 +262,40 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
+
+    // Related products wishlist functionality
+    const relatedWishlistBtns = document.querySelectorAll('.wishlist-btn-related');
+    relatedWishlistBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const productId = this.dataset.productId;
+            const isInWishlist = this.innerHTML.includes('fas fa-heart');
+            const url = isInWishlist ? 
+                `/remove-from-wishlist/${productId}/` : 
+                `/add-to-wishlist/${productId}/`;
+            
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'Content-Type': 'application/json',
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    if (isInWishlist) {
+                        this.innerHTML = '<i class="far fa-heart"></i>';
+                    } else {
+                        this.innerHTML = '<i class="fas fa-heart" style="color: #ff6b6b;"></i>';
+                    }
+                }
+                console.log(data.message);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        });
+    });
 
     // Review form submission
     const reviewForm = document.getElementById('review-form');

@@ -253,6 +253,127 @@
             border-color: var(--primary-color);
         }
 
+        /* Drawing Tools Styles */
+        .drawing-tools-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .tool-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 12px 8px;
+            border: 2px solid #dee2e6;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 12px;
+            color: var(--secondary-color);
+        }
+
+        .tool-btn:hover {
+            border-color: var(--primary-color);
+            background: #f8f9fa;
+            color: var(--primary-color);
+        }
+
+        .tool-btn.active {
+            border-color: var(--primary-color);
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .tool-btn i {
+            font-size: 16px;
+            margin-bottom: 4px;
+        }
+
+        .tool-btn span {
+            font-size: 10px;
+            font-weight: 500;
+        }
+
+        .drawing-controls {
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .drawing-controls .form-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--dark-color);
+            margin-bottom: 5px;
+        }
+
+        .form-control-color {
+            width: 100%;
+            height: 40px;
+            border-radius: 8px;
+        }
+
+        /* Canvas Drawing Styles */
+        .drawing-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            cursor: crosshair;
+        }
+
+        .drawing-canvas.pen-cursor { cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="2" fill="black"/></svg>') 8 8, crosshair; }
+        .drawing-canvas.brush-cursor { cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20"><circle cx="10" cy="10" r="4" fill="black" opacity="0.5"/></svg>') 10 10, crosshair; }
+        .drawing-canvas.eraser-cursor { cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><rect x="4" y="4" width="8" height="8" fill="white" stroke="black" stroke-width="1"/></svg>') 8 8, crosshair; }
+
+        /* Drag and Drop Styles */
+        .design-canvas.drag-over {
+            border: 3px dashed var(--primary-color);
+            background-color: rgba(102, 126, 234, 0.1);
+        }
+
+        .draggable-element {
+            position: absolute;
+            cursor: move;
+            border: 2px solid transparent;
+            transition: border-color 0.2s ease;
+            user-select: none;
+        }
+
+        .draggable-element:hover {
+            border-color: var(--primary-color);
+        }
+
+        .draggable-element.selected {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 10px rgba(102, 126, 234, 0.3);
+        }
+
+        .draggable-element .resize-handle {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: var(--primary-color);
+            border: 1px solid white;
+            border-radius: 50%;
+        }
+
+        .resize-handle.nw { top: -4px; left: -4px; cursor: nw-resize; }
+        .resize-handle.ne { top: -4px; right: -4px; cursor: ne-resize; }
+        .resize-handle.sw { bottom: -4px; left: -4px; cursor: sw-resize; }
+        .resize-handle.se { bottom: -4px; right: -4px; cursor: se-resize; }
+
+        .uploaded-image {
+            max-width: 200px;
+            max-height: 200px;
+            border-radius: 8px;
+        }
+
         @media (max-width: 768px) {
             .designer-workspace {
                 flex-direction: column;
@@ -313,6 +434,43 @@
                         </div>
                     </div>
 
+                    <!-- Drawing Tools -->
+                    <div class="tool-section">
+                        <h6><i class="fas fa-paint-brush"></i> Drawing Tools</h6>
+                        <div class="drawing-tools-grid">
+                            <button class="tool-btn" id="penTool" onclick="selectDrawingTool('pen')">
+                                <i class="fas fa-pen"></i>
+                                <span>Pen</span>
+                            </button>
+                            <button class="tool-btn" id="brushTool" onclick="selectDrawingTool('brush')">
+                                <i class="fas fa-paint-brush"></i>
+                                <span>Brush</span>
+                            </button>
+                            <button class="tool-btn" id="eraserTool" onclick="selectDrawingTool('eraser')">
+                                <i class="fas fa-eraser"></i>
+                                <span>Eraser</span>
+                            </button>
+                            <button class="tool-btn" id="lineTool" onclick="selectDrawingTool('line')">
+                                <i class="fas fa-minus"></i>
+                                <span>Line</span>
+                            </button>
+                            <button class="tool-btn" id="rectangleTool" onclick="selectDrawingTool('rectangle')">
+                                <i class="fas fa-square"></i>
+                                <span>Rectangle</span>
+                            </button>
+                            <button class="tool-btn" id="circleTool" onclick="selectDrawingTool('circle')">
+                                <i class="fas fa-circle"></i>
+                                <span>Circle</span>
+                            </button>
+                        </div>
+                        <div class="drawing-controls mt-3">
+                            <label class="form-label">Brush Size:</label>
+                            <input type="range" class="form-range" id="brushSize" min="1" max="50" value="5">
+                            <label class="form-label mt-2">Drawing Color:</label>
+                            <input type="color" class="form-control form-control-color" id="drawingColor" value="#000000">
+                        </div>
+                    </div>
+
                     <!-- Design Elements -->
                     <div class="tool-section">
                         <h6><i class="fas fa-shapes"></i> Design Elements</h6>
@@ -323,6 +481,11 @@
                         <button class="ai-button" onclick="addImageElement()">
                             <i class="fas fa-image"></i>
                             Add Image
+                        </button>
+                        <input type="file" id="imageUpload" accept="image/*" style="display: none;" onchange="handleImageUpload(event)">
+                        <button class="ai-button" onclick="document.getElementById('imageUpload').click()">
+                            <i class="fas fa-upload"></i>
+                            Upload Image
                         </button>
                         <button class="ai-button" onclick="generateDesignElements()">
                             <i class="fas fa-magic"></i>
@@ -357,7 +520,8 @@
                 <!-- Canvas Area -->
                 <div class="canvas-area">
                     <div class="design-canvas" id="designCanvas">
-                        <div class="text-muted">
+                        <canvas id="drawingCanvas" class="drawing-canvas" width="800" height="600"></canvas>
+                        <div class="text-muted" id="canvasPlaceholder">
                             <i class="fas fa-plus-circle fa-3x mb-3"></i>
                             <p>Start creating your design</p>
                             <small>Use AI tools or drag elements here</small>
@@ -407,6 +571,25 @@
         let designHistory = [];
         let currentHistoryIndex = -1;
         let elementCounter = 0;
+        
+        // Drawing tools variables
+        let currentTool = 'pen';
+        let isDrawing = false;
+        let drawingCanvas = null;
+        let drawingContext = null;
+        let lastX = 0;
+        let lastY = 0;
+        let drawingPaths = [];
+        let currentPath = [];
+        
+        // Drag and drop variables
+        let draggedElement = null;
+        let isDragging = false;
+        let dragOffset = { x: 0, y: 0 };
+        let selectedElement = null;
+        let isResizing = false;
+        let resizeHandle = null;
+        let uploadedImages = [];
 
         // Initialize the designer
         document.addEventListener('DOMContentLoaded', function() {
@@ -414,6 +597,14 @@
         });
 
         function initializeDesigner() {
+            // Initialize drawing canvas
+            drawingCanvas = document.getElementById('drawingCanvas');
+            drawingContext = drawingCanvas.getContext('2d');
+            setupDrawingEvents();
+            
+            // Initialize drag and drop
+            setupDragAndDrop();
+            
             // Add color swatch click handlers
             document.querySelectorAll('.color-swatch').forEach(swatch => {
                 swatch.addEventListener('click', function() {
@@ -434,6 +625,23 @@
             saveToHistory();
         }
 
+        // Helper function to get CSRF token from cookies
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    // Does this cookie string begin with the name we want?
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        
         // AI Template Generation
         async function generateAITemplate() {
             const prompt = document.getElementById('templatePrompt').value;
@@ -449,6 +657,7 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken'),
                     },
                     body: JSON.stringify({
                         prompt: prompt,
@@ -481,6 +690,7 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken'),
                     },
                     body: JSON.stringify({
                         theme: null,
@@ -563,6 +773,7 @@
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken'),
                     }
                 });
                 
@@ -614,6 +825,7 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken'),
                     },
                     body: JSON.stringify({
                         prompt: prompt,
@@ -826,6 +1038,7 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken'),
                     },
                     body: JSON.stringify({
                         design_data: designData,
@@ -939,6 +1152,203 @@
         function hideLoading() {
             const modal = bootstrap.Modal.getInstance(document.getElementById('loadingModal'));
             if (modal) modal.hide();
+        }
+
+        function setupDrawingEvents() {
+            if (!drawingCanvas) return;
+            
+            // Mouse events
+            drawingCanvas.addEventListener('mousedown', startDrawing);
+            drawingCanvas.addEventListener('mousemove', draw);
+            drawingCanvas.addEventListener('mouseup', stopDrawing);
+            drawingCanvas.addEventListener('mouseout', stopDrawing);
+            
+            // Touch events for mobile
+            drawingCanvas.addEventListener('touchstart', handleTouch);
+            drawingCanvas.addEventListener('touchmove', handleTouch);
+            drawingCanvas.addEventListener('touchend', stopDrawing);
+        }
+
+        function startDrawing(e) {
+            if (currentTool === 'select') return;
+            
+            isDrawing = true;
+            const rect = drawingCanvas.getBoundingClientRect();
+            lastX = e.clientX - rect.left;
+            lastY = e.clientY - rect.top;
+            
+            if (currentTool === 'pen' || currentTool === 'brush') {
+                drawingContext.beginPath();
+                drawingContext.moveTo(lastX, lastY);
+                currentPath = [{ x: lastX, y: lastY, tool: currentTool }];
+            }
+        }
+
+        function draw(e) {
+            if (!isDrawing || currentTool === 'select') return;
+            
+            const rect = drawingCanvas.getBoundingClientRect();
+            const currentX = e.clientX - rect.left;
+            const currentY = e.clientY - rect.top;
+            
+            drawingContext.lineWidth = document.getElementById('brushSize').value;
+            drawingContext.lineCap = 'round';
+            drawingContext.strokeStyle = selectedColor;
+            
+            if (currentTool === 'pen' || currentTool === 'brush') {
+                drawingContext.lineTo(currentX, currentY);
+                drawingContext.stroke();
+                currentPath.push({ x: currentX, y: currentY });
+            } else if (currentTool === 'eraser') {
+                drawingContext.globalCompositeOperation = 'destination-out';
+                drawingContext.beginPath();
+                drawingContext.arc(currentX, currentY, document.getElementById('brushSize').value / 2, 0, Math.PI * 2);
+                drawingContext.fill();
+                drawingContext.globalCompositeOperation = 'source-over';
+            }
+            
+            lastX = currentX;
+            lastY = currentY;
+        }
+
+        function stopDrawing() {
+            if (!isDrawing) return;
+            
+            isDrawing = false;
+            
+            if (currentPath && currentPath.length > 0) {
+                drawingPaths.push(currentPath);
+                currentPath = [];
+            }
+        }
+
+        function handleTouch(e) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent(e.type === 'touchstart' ? 'mousedown' : 
+                                            e.type === 'touchmove' ? 'mousemove' : 'mouseup', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            drawingCanvas.dispatchEvent(mouseEvent);
+        }
+
+        function setupDragAndDrop() {
+            const designCanvas = document.getElementById('designCanvas');
+            if (!designCanvas) return;
+            
+            // Drag and drop events for file upload
+            designCanvas.addEventListener('dragover', handleDragOver);
+            designCanvas.addEventListener('dragleave', handleDragLeave);
+            designCanvas.addEventListener('drop', handleFileDrop);
+            
+            // Mouse events for element manipulation
+            designCanvas.addEventListener('mousedown', handleCanvasClick);
+            document.addEventListener('mousemove', handleMouseMove);
+            document.addEventListener('mouseup', handleMouseUp);
+            
+            // Keyboard events
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Delete' && selectedElement) {
+                    selectedElement.remove();
+                    selectedElement = null;
+                }
+            });
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.currentTarget.classList.add('drag-over');
+        }
+
+        function handleDragLeave(e) {
+            e.currentTarget.classList.remove('drag-over');
+        }
+
+        function handleFileDrop(e) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('drag-over');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleImageUpload({ target: { files: files } });
+            }
+        }
+
+        function handleImageUpload(e) {
+            const file = e.target.files[0];
+            if (file && file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    createImageElement(event.target.result, 100, 100);
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function createImageElement(src, x, y) {
+            const img = document.createElement('img');
+            img.src = src;
+            img.className = 'draggable-element uploaded-image';
+            img.style.position = 'absolute';
+            img.style.left = x + 'px';
+            img.style.top = y + 'px';
+            img.style.cursor = 'move';
+            
+            document.getElementById('designCanvas').appendChild(img);
+            uploadedImages.push(img);
+        }
+
+        function handleCanvasClick(e) {
+            const target = e.target;
+            if (target.classList.contains('draggable-element')) {
+                selectElement(target);
+                handleElementMouseDown(e);
+            } else {
+                deselectAllElements();
+            }
+        }
+
+        function selectElement(element) {
+            deselectAllElements();
+            selectedElement = element;
+            element.style.border = '2px solid #007bff';
+        }
+
+        function deselectAllElements() {
+            document.querySelectorAll('.draggable-element').forEach(el => {
+                el.style.border = '1px dashed transparent';
+            });
+            selectedElement = null;
+        }
+
+        function handleElementMouseDown(e) {
+            if (!selectedElement) return;
+            
+            isDragging = true;
+            const rect = selectedElement.getBoundingClientRect();
+            const canvasRect = document.getElementById('designCanvas').getBoundingClientRect();
+            
+            dragOffset = {
+                x: e.clientX - rect.left,
+                y: e.clientY - rect.top
+            };
+        }
+
+        function handleMouseMove(e) {
+            if (!isDragging || !selectedElement) return;
+            
+            const canvasRect = document.getElementById('designCanvas').getBoundingClientRect();
+            const newX = e.clientX - canvasRect.left - dragOffset.x;
+            const newY = e.clientY - canvasRect.top - dragOffset.y;
+            
+            selectedElement.style.left = Math.max(0, Math.min(newX, canvasRect.width - selectedElement.offsetWidth)) + 'px';
+            selectedElement.style.top = Math.max(0, Math.min(newY, canvasRect.height - selectedElement.offsetHeight)) + 'px';
+        }
+
+        function handleMouseUp() {
+            isDragging = false;
+            dragOffset = null;
         }
 
         function showNotification(message, type) {

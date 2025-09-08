@@ -16,7 +16,7 @@ from .forms import CustomerLoginForm
 from .models import Product
 from .models import InventoryItem
 from .models import Orders
-from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.csrf import csrf_exempt, csrf_protect
 import requests
 import json
 import base64
@@ -50,8 +50,11 @@ def user_profile_page(request, user_id):
     for order in orders:
         order_items = order.orderitem_set.all()
         total_price = sum([item.price * item.quantity for item in order_items])
+        # Get first product name for display, or show multiple if needed
+        product_names = [item.product.name for item in order_items]
+        product_name = ', '.join(product_names) if product_names else 'No products'
         transactions.append({
-            'product_name': order.product.name if order.product else '',
+            'product_name': product_name,
             'order_date': order.order_date.strftime('%Y-%m-%d %H:%M') if order.order_date else '',
             'order_ref': order.order_ref or '',
             'amount': total_price,
@@ -89,13 +92,16 @@ def get_transactions_by_month(request):
 
     transactions = []
     for order in orders:
-        if order.product is None:
+        order_items = order.orderitem_set.all()
+        if not order_items.exists():
             continue
+        
+        total_amount = sum(float(item.price) * item.quantity for item in order_items)
         transactions.append({
             'user_name': order.customer.user.username if order.customer and order.customer.user else 'Unknown',
             'order_id': order.order_ref or '',
             'date': order.created_at.strftime('%Y-%m-%d'),
-            'amount': float(order.product.price) * order.quantity if order.product.price else 0,
+            'amount': total_amount,
             'type': 'credit' if order.status == 'Delivered' else 'debit',
         })
 
@@ -412,21 +418,27 @@ def admin_dashboard_view(request):
     product_sales = {}
 
     for order in all_delivered_orders:
-        if not order.product:
-            continue  # Skip orders with missing product
-        order_total = order.product.price * order.quantity
+        order_items = models.OrderItem.objects.filter(order=order)
+        if not order_items.exists():
+            continue  # Skip orders with no items
+        
+        order_total = 0
+        for item in order_items:
+            item_total = item.price * item.quantity
+            order_total += item_total
+            
+            # Track product-wise sales
+            if item.product.id not in product_sales:
+                product_sales[item.product.id] = {
+                    'name': item.product.name,
+                    'quantity_sold': 0,
+                    'total_revenue': 0
+                }
+            product_sales[item.product.id]['quantity_sold'] += item.quantity
+            product_sales[item.product.id]['total_revenue'] += item_total
+        
         total_sales += order_total
-
-        # Track product-wise sales
-        if order.product.id not in product_sales:
-            product_sales[order.product.id] = {
-                'name': order.product.name,
-                'quantity_sold': 0,
-                'total_revenue': 0
-            }
-        product_sales[order.product.id]['quantity_sold'] += order.quantity
-        product_sales[order.product.id]['total_revenue'] += order_total
-
+        
         # Calculate period-specific sales
         order_date = order.created_at
         if order_date >= last_quarter_start:
@@ -435,12 +447,13 @@ def admin_dashboard_view(request):
                 last_month_sales += order_total
 
     for order in delivered_orders:
-        if not order.product:
-            continue  # Skip orders with missing product
-        order.total_price = order.product.price * order.quantity  # Add total_price attribute
-        # Removed recent_orders_products, recent_orders_customers, recent_orders_orders appends
-        # Debug print product image info
-        print(f"Product: {order.product.name}, Image: {order.product.product_image}, Size: {order.size}")
+        order_items = models.OrderItem.objects.filter(order=order)
+        if not order_items.exists():
+            continue  # Skip orders with no items
+        
+        order_total = sum(item.price * item.quantity for item in order_items)
+        order.total_price = order_total  # Add total_price attribute
+        order.order_items = order_items  # Add order_items for template access
 
     # Sort products by sales performance
     sorted_products = sorted(product_sales.values(), key=lambda x: x['quantity_sold'], reverse=True)
@@ -457,13 +470,14 @@ def admin_dashboard_view(request):
     from django.db.models import Sum, F
 
     current_year = current_date.year
-    monthly_sales_qs = models.Orders.objects.filter(
-        status='Delivered',
-        created_at__year=current_year
+    # Get monthly sales by aggregating OrderItem data instead of Orders
+    monthly_sales_qs = models.OrderItem.objects.filter(
+        order__status='Delivered',
+        order__created_at__year=current_year
     ).annotate(
-        month=ExtractMonth('created_at')
+        month=ExtractMonth('order__created_at')
     ).values('month').annotate(
-        total=Sum(F('product__price') * F('quantity'))
+        total=Sum(F('price') * F('quantity'))
     ).order_by('month')
 
     # Initialize list with 12 zeros for each month
@@ -644,7 +658,7 @@ logger = logging.getLogger(__name__)
 
 @login_required(login_url='adminlogin')
 @require_POST
-@csrf_exempt
+@csrf_protect
 def delete_product_view(request, pk):
     try:
         product = models.Product.objects.get(id=pk)
@@ -895,17 +909,19 @@ def update_order_view(request,pk):
                 
                 # Reduce inventory when order is marked as delivered
                 if updated_order.status == 'Delivered':
-                    try:
-                        inventory_item = models.InventoryItem.objects.get(product=updated_order.product)
-                        if inventory_item.quantity >= updated_order.quantity:
-                            inventory_item.quantity -= updated_order.quantity
-                            inventory_item.save()
-                            messages.success(request, f'Inventory updated: {inventory_item.product.name} quantity reduced by {updated_order.quantity}')
-                        else:
-                            messages.error(request, f'Insufficient inventory for {inventory_item.product.name}')
-                            return render(request, 'ecom/update_order.html', {'orderForm': orderForm, 'order': order})
-                    except models.InventoryItem.DoesNotExist:
-                        messages.warning(request, f'No inventory item found for {updated_order.product.name}')
+                    order_items = updated_order.orderitem_set.all()
+                    for order_item in order_items:
+                        try:
+                            inventory_item = models.InventoryItem.objects.get(product=order_item.product)
+                            if inventory_item.quantity >= order_item.quantity:
+                                inventory_item.quantity -= order_item.quantity
+                                inventory_item.save()
+                                messages.success(request, f'Inventory updated: {inventory_item.product.name} quantity reduced by {order_item.quantity}')
+                            else:
+                                messages.error(request, f'Insufficient inventory for {inventory_item.product.name}')
+                                return render(request, 'ecom/update_order.html', {'orderForm': orderForm, 'order': order})
+                        except models.InventoryItem.DoesNotExist:
+                            messages.warning(request, f'No inventory item found for {order_item.product.name}')
             
             updated_order.save()
             messages.success(request, f'Order status updated to {updated_order.get_status_display()}')
@@ -950,18 +966,20 @@ def bulk_update_orders(request):
                 
                 # First pass: Calculate total quantities needed for each product
                 for order in orders:
-                    product = order.product
-                    if product is None:
-                        continue
-                    if product.id in inventory_updates:
-                        inventory_updates[product.id]['quantity_needed'] += order.quantity
-                    else:
-                        inventory_updates[product.id] = {
-                            'quantity_needed': order.quantity,
-                            'orders': [],
-                            'product': product
-                        }
-                    inventory_updates[product.id]['orders'].append(order)
+                    order_items = order.orderitem_set.all()
+                    for order_item in order_items:
+                        product = order_item.product
+                        if product is None:
+                            continue
+                        if product.id in inventory_updates:
+                            inventory_updates[product.id]['quantity_needed'] += order_item.quantity
+                        else:
+                            inventory_updates[product.id] = {
+                                'quantity_needed': order_item.quantity,
+                                'orders': [],
+                                'product': product
+                            }
+                        inventory_updates[product.id]['orders'].append(order)
                 
                 # Second pass: Check inventory availability
                 for product_id, update_info in inventory_updates.items():
@@ -1018,19 +1036,18 @@ def view_feedback_view(request):
 #---------------------------------------------------------------------------------
 @login_required(login_url='customerlogin')
 def pending_orders_view(request):
-    vat_rate = 12
-    vat_multiplier = 1 + (vat_rate / 100)
-    customer = models.Customer.objects.get(user=request.user)
-    region = customer.region if hasattr(customer, 'region') else None
+    try:
+        vat_rate = 12
+        customer = models.Customer.objects.get(user=request.user)
+        region = customer.region if hasattr(customer, 'region') else None
+    except models.Customer.DoesNotExist:
+        messages.error(request, 'Customer profile not found. Please contact support.')
+        return redirect('customer-home')
 
-    if region == 'NCR':
-        delivery_fee = 100
-    elif region == 'CAR':
-        delivery_fee = 159
-    elif region:
-        delivery_fee = 200
-    else:
-        delivery_fee = 0
+    # Use dynamic shipping fee lookup (same as cart)
+    origin_region = "NCR"
+    destination_region = region if region else "NCR"
+    delivery_fee = get_shipping_fee(origin_region, destination_region, weight_kg=0.5)
 
     orders = models.Orders.objects.filter(customer=customer, status='Pending').order_by('-order_date', '-created_at')
     orders_with_items = []
@@ -1040,24 +1057,26 @@ def pending_orders_view(request):
         products = []
         total = Decimal('0.00')
         for item in order_items:
-            unit_price_vat_ex = Decimal(item.price) / Decimal(vat_multiplier)
-            line_total = unit_price_vat_ex * item.quantity
+            # Use VAT-inclusive calculation (same as cart)
+            line_total = Decimal(item.price) * item.quantity
             total += line_total
             products.append({
                 'item': item,
                 'size': item.size,
                 'quantity': item.quantity,
-                'unit_price_vat_ex': unit_price_vat_ex,
                 'line_total': line_total,
             })
 
-        vat_amount = total * Decimal(vat_rate) / Decimal(100)
-        grand_total = total + Decimal(delivery_fee) + vat_amount
+        # Calculate VAT using same method as cart (VAT-inclusive)
+        vat_amount = total * Decimal(12) / Decimal(112)
+        net_subtotal = total - vat_amount
+        grand_total = total + Decimal(delivery_fee)
 
         orders_with_items.append({
             'order': order,
             'products': products,
             'total': total,
+            'net_subtotal': net_subtotal,
             'vat_amount': vat_amount,
             'delivery_fee': delivery_fee,
             'grand_total': grand_total,
@@ -1071,7 +1090,18 @@ def pending_orders_view(request):
 
 @login_required(login_url='customerlogin')
 def to_ship_orders_view(request):
-    customer = models.Customer.objects.get(user_id=request.user.id)
+    try:
+        customer = models.Customer.objects.get(user_id=request.user.id)
+    except models.Customer.DoesNotExist:
+        messages.error(request, 'Customer profile not found. Please contact support.')
+        return redirect('customer-home')
+    region = customer.region if hasattr(customer, 'region') else None
+    
+    # Use dynamic shipping fee lookup (same as cart)
+    origin_region = "NCR"
+    destination_region = region if region else "NCR"
+    delivery_fee = get_shipping_fee(origin_region, destination_region, weight_kg=0.5)
+    
     orders = models.Orders.objects.filter(
         customer=customer,
         status__in=['Processing', 'Order Confirmed']
@@ -1079,64 +1109,173 @@ def to_ship_orders_view(request):
     orders_with_items = []
     for order in orders:
         order_items = models.OrderItem.objects.filter(order=order)
-        total_price = 0
+        products = []
+        total = Decimal('0.00')
         for item in order_items:
-            total_price += item.price * item.quantity
-        order.total = total_price
+            # Use VAT-inclusive calculation (same as cart)
+            line_total = Decimal(item.price) * item.quantity
+            total += line_total
+            products.append({
+                'item': item,
+                'size': item.size,
+                'quantity': item.quantity,
+                'line_total': line_total,
+            })
+        
+        # Calculate VAT using same method as cart (VAT-inclusive)
+        vat_amount = total * Decimal(12) / Decimal(112)
+        net_subtotal = total - vat_amount
+        grand_total = total + Decimal(delivery_fee)
+        
         orders_with_items.append({
             'order': order,
-            'items': order_items
+            'products': products,
+            'total': total,
+            'net_subtotal': net_subtotal,
+            'vat_amount': vat_amount,
+            'delivery_fee': delivery_fee,
+            'grand_total': grand_total,
         })
     return render(request, 'ecom/order_status_page.html', {'orders_with_items': orders_with_items, 'status': 'To Ship', 'title': 'Orders To Ship'})
 
 @login_required(login_url='customerlogin')
 def to_receive_orders_view(request):
-    customer = models.Customer.objects.get(user_id=request.user.id)
+    try:
+        customer = models.Customer.objects.get(user_id=request.user.id)
+        region = customer.region if hasattr(customer, 'region') else None
+    except models.Customer.DoesNotExist:
+        messages.error(request, 'Customer profile not found. Please contact support.')
+        return redirect('customer-home')
+    
+    # Use dynamic shipping fee lookup (same as cart)
+    origin_region = "NCR"
+    destination_region = region if region else "NCR"
+    delivery_fee = get_shipping_fee(origin_region, destination_region, weight_kg=0.5)
+    
     orders = models.Orders.objects.filter(customer=customer, status='Out for Delivery').order_by('-order_date')
     orders_with_items = []
     for order in orders:
         order_items = models.OrderItem.objects.filter(order=order)
-        total_price = 0
+        products = []
+        total = Decimal('0.00')
         for item in order_items:
-            total_price += item.price * item.quantity
-        order.total = total_price
+            # Use VAT-inclusive calculation (same as cart)
+            line_total = Decimal(item.price) * item.quantity
+            total += line_total
+            products.append({
+                'item': item,
+                'size': item.size,
+                'quantity': item.quantity,
+                'line_total': line_total,
+            })
+        
+        # Calculate VAT using same method as cart (VAT-inclusive)
+        vat_amount = total * Decimal(12) / Decimal(112)
+        net_subtotal = total - vat_amount
+        grand_total = total + Decimal(delivery_fee)
+        
         orders_with_items.append({
             'order': order,
-            'items': order_items
+            'products': products,
+            'total': total,
+            'net_subtotal': net_subtotal,
+            'vat_amount': vat_amount,
+            'delivery_fee': delivery_fee,
+            'grand_total': grand_total,
         })
     return render(request, 'ecom/order_status_page.html', {'orders_with_items': orders_with_items, 'status': 'To Receive', 'title': 'Orders To Receive'})
 
 @login_required(login_url='customerlogin')
 def delivered_orders_view(request):
-    customer = models.Customer.objects.get(user_id=request.user.id)
+    try:
+        customer = models.Customer.objects.get(user_id=request.user.id)
+        region = customer.region if hasattr(customer, 'region') else None
+    except models.Customer.DoesNotExist:
+        messages.error(request, 'Customer profile not found. Please contact support.')
+        return redirect('customer-home')
+    
+    # Use dynamic shipping fee lookup (same as cart)
+    origin_region = "NCR"
+    destination_region = region if region else "NCR"
+    delivery_fee = get_shipping_fee(origin_region, destination_region, weight_kg=0.5)
+    
     orders = models.Orders.objects.filter(customer=customer, status='Delivered').order_by('-order_date')
     orders_with_items = []
     for order in orders:
         order_items = models.OrderItem.objects.filter(order=order)
-        total_price = 0
+        products = []
+        total = Decimal('0.00')
         for item in order_items:
-            total_price += item.price * item.quantity
-        order.total = total_price
+            # Use VAT-inclusive calculation (same as cart)
+            line_total = Decimal(item.price) * item.quantity
+            total += line_total
+            products.append({
+                'item': item,
+                'size': item.size,
+                'quantity': item.quantity,
+                'line_total': line_total,
+            })
+        
+        # Calculate VAT using same method as cart (VAT-inclusive)
+        vat_amount = total * Decimal(12) / Decimal(112)
+        net_subtotal = total - vat_amount
+        grand_total = total + Decimal(delivery_fee)
+        
         orders_with_items.append({
             'order': order,
-            'items': order_items
+            'products': products,
+            'total': total,
+            'net_subtotal': net_subtotal,
+            'vat_amount': vat_amount,
+            'delivery_fee': delivery_fee,
+            'grand_total': grand_total,
         })
     return render(request, 'ecom/order_status_page.html', {'orders_with_items': orders_with_items, 'status': 'Delivered', 'title': 'Delivered Orders'})
 
 @login_required(login_url='customerlogin')
 def cancelled_orders_view(request):
-    customer = models.Customer.objects.get(user_id=request.user.id)
+    try:
+        customer = models.Customer.objects.get(user_id=request.user.id)
+    except models.Customer.DoesNotExist:
+        messages.error(request, 'Customer profile not found. Please contact support.')
+        return redirect('customer-home')
+    region = customer.region if hasattr(customer, 'region') else None
+    
+    # Use dynamic shipping fee lookup (same as cart)
+    origin_region = "NCR"
+    destination_region = region if region else "NCR"
+    delivery_fee = get_shipping_fee(origin_region, destination_region, weight_kg=0.5)
+    
     orders = models.Orders.objects.filter(customer=customer, status='Cancelled').order_by('-status_updated_at')
     orders_with_items = []
     for order in orders:
         order_items = models.OrderItem.objects.filter(order=order)
-        total_price = 0
+        products = []
+        total = Decimal('0.00')
         for item in order_items:
-            total_price += item.price * item.quantity
-        order.total = total_price
+            # Use VAT-inclusive calculation (same as cart)
+            line_total = Decimal(item.price) * item.quantity
+            total += line_total
+            products.append({
+                'item': item,
+                'size': item.size,
+                'quantity': item.quantity,
+                'line_total': line_total,
+            })
+        
+        # Calculate VAT using same method as cart (VAT-inclusive)
+        vat_amount = total * Decimal(12) / Decimal(112)
+        net_subtotal = total - vat_amount
+        grand_total = total + Decimal(delivery_fee)
+        
         orders_with_items.append({
             'order': order,
-            'items': order_items
+            'products': products,
+            'total': total,
+            'net_subtotal': net_subtotal,
+            'vat_amount': vat_amount,
+            'delivery_fee': delivery_fee,
+            'grand_total': grand_total,
         })
     return render(request, 'ecom/order_status_page.html', {'orders_with_items': orders_with_items, 'status': 'Cancelled', 'title': 'Cancelled Orders'})
 
@@ -1536,12 +1675,15 @@ def customer_home_view(request):
         max_price=Max('price')
     )
     
-    # Get customer's recent orders for recommendations
+    # Get customer's recent orders for recommendations and wishlist items
     recent_orders = []
+    wishlist_product_ids = []
     if request.user.is_authenticated:
         try:
             customer = models.Customer.objects.get(user=request.user)
             recent_orders = models.Orders.objects.filter(customer=customer).order_by('-created_at')[:5]
+            # Get wishlist product IDs for current customer
+            wishlist_product_ids = list(models.Wishlist.objects.filter(customer=customer).values_list('product_id', flat=True))
         except models.Customer.DoesNotExist:
             pass
     
@@ -1564,6 +1706,7 @@ def customer_home_view(request):
         'total_products': paginator.count,
         'product_count_in_cart': product_count_in_cart,
         'recent_orders': recent_orders,
+        'wishlist_product_ids': wishlist_product_ids,
     }
     
     return render(request, 'ecom/customer_home.html', context)
@@ -1639,7 +1782,12 @@ def customer_address_view(request):
 @login_required(login_url='customerlogin')
 def payment_success_view(request):
     import uuid
-    customer = models.Customer.objects.get(user_id=request.user.id)
+    try:
+        customer = models.Customer.objects.get(user_id=request.user.id)
+    except models.Customer.DoesNotExist:
+        messages.error(request, 'Customer profile not found. Please contact support.')
+        return redirect('customer-home')
+    
     products = []
     payment_method = request.GET.get('method', 'cod')  # Default to COD if not specified
 
@@ -1812,7 +1960,11 @@ def cancel_order_view(request, order_id):
 @login_required(login_url='customerlogin')
 @user_passes_test(is_customer)
 def my_order_view(request):
-    customer = models.Customer.objects.get(user_id=request.user.id)
+    try:
+        customer = models.Customer.objects.get(user_id=request.user.id)
+    except models.Customer.DoesNotExist:
+        messages.error(request, 'Customer profile not found. Please contact support.')
+        return redirect('customer-home')
     orders = models.Orders.objects.filter(customer=customer).order_by('-order_date')
     orders_with_items = []
     for order in orders:
@@ -1832,7 +1984,8 @@ def my_order_view(request):
 def my_order_view_pk(request, pk):
     customer = models.Customer.objects.get(user_id=request.user.id)
     order = get_object_or_404(models.Orders, id=pk, customer=customer)
-    return render(request, 'ecom/order_detail.html', {'order': order, 'product': order.product})
+    order_items = order.orderitem_set.all()
+    return render(request, 'ecom/order_detail.html', {'order': order, 'order_items': order_items})
 
 def my_view(request):
     facebook_url = reverse('facebook')
@@ -1915,14 +2068,22 @@ def pre_order(request):
 @login_required(login_url='customerlogin')
 @user_passes_test(is_customer)
 def my_profile_view(request):
-    customer=models.Customer.objects.get(user_id=request.user.id)
-    return render(request,'ecom/my_profile.html',{'customer':customer})
+    try:
+        customer=models.Customer.objects.get(user_id=request.user.id)
+        return render(request,'ecom/my_profile.html',{'customer':customer})
+    except models.Customer.DoesNotExist:
+        messages.error(request, 'Customer profile not found. Please contact support.')
+        return redirect('customer-home')
 
 
 @user_passes_test(is_customer)
 def edit_profile_view(request):
-    customer = models.Customer.objects.get(user_id=request.user.id)
-    user = models.User.objects.get(id=customer.user_id)
+    try:
+        customer = models.Customer.objects.get(user_id=request.user.id)
+        user = models.User.objects.get(id=customer.user_id)
+    except (models.Customer.DoesNotExist, models.User.DoesNotExist):
+        messages.error(request, 'Profile not found. Please contact support.')
+        return redirect('customer-home')
     
     if request.method == 'POST':
         userForm = forms.CustomerUserForm(request.POST, instance=user)
@@ -2124,7 +2285,7 @@ def get_transactions_by_month(request):
             'user_name': f"{order.customer.user.first_name} {order.customer.user.last_name}" if order.customer and order.customer.user else 'Unknown',
             'order_id': order.order_ref,
             'date': order.order_date.strftime('%Y-%m-%d'),
-            'amount': float(order.product.price) * order.quantity if order.product and order.product.price else 0.0,
+            'amount': sum(float(item.product.price) * item.quantity for item in order.orderitem_set.all() if item.product and item.product.price),
             'type': 'credit'  # Assuming all delivered orders are credits
         })
 
@@ -2224,8 +2385,24 @@ def save_new_address(request):
                 is_default=not SavedAddress.objects.filter(customer=customer).exists()  # Make first address default
             )
             address.save()
-            messages.success(request, 'New address saved successfully!')
-            return JsonResponse({'status': 'success', 'message': 'Address saved successfully'})
+            
+            # Check if request came from cart page via HTTP_REFERER
+            referer = request.META.get('HTTP_REFERER', '')
+            if 'cart' in referer:
+                # Return JSON response for cart page (AJAX handling)
+                return JsonResponse({
+                    'status': 'success', 
+                    'message': 'Address saved successfully!',
+                    'redirect': False  # Don't redirect, stay on cart
+                })
+            else:
+                # For manage-addresses page, return success for page reload
+                messages.success(request, 'New address saved successfully!')
+                return JsonResponse({
+                    'status': 'success', 
+                    'message': 'Address saved successfully',
+                    'redirect': True  # Allow page reload
+                })
         except Customer.DoesNotExist:
             return JsonResponse({'status': 'error', 'message': 'Customer profile not found'}, status=404)
     return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=400)
@@ -2291,6 +2468,18 @@ def delete_address(request, address_id):
             return JsonResponse({'status': 'error', 'message': 'Address not found'}, status=404)
     return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=400)
 
+
+@login_required(login_url='customerlogin')
+@user_passes_test(is_customer)
+def manage_addresses_view(request):
+    """View for managing customer addresses on a dedicated page"""
+    customer = Customer.objects.get(user=request.user)
+    saved_addresses = SavedAddress.objects.filter(customer=customer).order_by('-is_default', '-updated_at')
+    
+    context = {
+        'saved_addresses': saved_addresses,
+    }
+    return render(request, 'ecom/manage_addresses.html', context)
 
 # AI Designer View
 def ai_designer_view(request):

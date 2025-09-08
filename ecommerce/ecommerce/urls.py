@@ -126,6 +126,7 @@ urlpatterns = [
     path('get-saved-addresses/', views.get_saved_addresses, name='get-saved-addresses'),
     path('set-default-address/<int:address_id>/', views.set_default_address, name='set-default-address'),
     path('delete-address/<int:address_id>/', views.delete_address, name='delete-address'),
+    path('manage-addresses/', views.manage_addresses_view, name='manage-addresses'),
     
     # Wishlist functionality
     path('add-to-wishlist/<int:product_id>/', wishlist_views.add_to_wishlist, name='add-to-wishlist'),
@@ -147,10 +148,13 @@ urlpatterns = [
     path('api/chatbot/send-message/', chatbot_views.chat_message, name='chatbot-send-message'),
     path('api/chatbot/history/', chatbot_views.chat_history, name='chatbot-history'),
     path('api/chatbot/feedback/', chatbot_views.chat_feedback, name='chatbot-feedback'),
+    
+    # AI Designer
+    path('ai-designer/', views.ai_designer_view, name='ai-designer'),
 
-] + static(settings.MEDIA_URL, document_root=settings.STATIC_ROOT) if settings.DEBUG else []
-
+]
 
 # Serve media files during development
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

@@ -3,7 +3,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.http import JsonResponse
 from django.contrib import messages
-from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.csrf import csrf_protect, csrf_exempt
 from django.views.decorators.http import require_GET
 from django.db.models import Q, Avg
 from . import models
@@ -14,6 +14,7 @@ def is_customer(user):
 # Wishlist functionality
 @login_required
 @user_passes_test(is_customer)
+@csrf_protect
 def add_to_wishlist(request, product_id):
     if request.method == 'POST':
         try:
@@ -26,28 +27,29 @@ def add_to_wishlist(request, product_id):
             )
             
             if created:
-                return JsonResponse({'status': 'success', 'message': 'Product added to wishlist'})
+                return JsonResponse({'success': True, 'message': 'Product added to wishlist'})
             else:
-                return JsonResponse({'status': 'info', 'message': 'Product already in wishlist'})
+                return JsonResponse({'success': True, 'message': 'Product already in wishlist'})
                 
         except (models.Customer.DoesNotExist, models.Product.DoesNotExist):
-            return JsonResponse({'status': 'error', 'message': 'Product or customer not found'}, status=404)
+            return JsonResponse({'success': False, 'message': 'Product or customer not found'}, status=404)
     
-    return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=400)
+    return JsonResponse({'success': False, 'message': 'Invalid request method'}, status=400)
 
 @login_required
 @user_passes_test(is_customer)
+@csrf_protect
 def remove_from_wishlist(request, product_id):
     if request.method == 'POST':
         try:
             customer = models.Customer.objects.get(user=request.user)
             wishlist_item = models.Wishlist.objects.get(customer=customer, product_id=product_id)
             wishlist_item.delete()
-            return JsonResponse({'status': 'success', 'message': 'Product removed from wishlist'})
+            return JsonResponse({'success': True, 'message': 'Product removed from wishlist'})
         except (models.Customer.DoesNotExist, models.Wishlist.DoesNotExist):
-            return JsonResponse({'status': 'error', 'message': 'Wishlist item not found'}, status=404)
+            return JsonResponse({'success': False, 'message': 'Wishlist item not found'}, status=404)
     
-    return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=400)
+    return JsonResponse({'success': False, 'message': 'Invalid request method'}, status=400)
 
 @login_required
 @user_passes_test(is_customer)
@@ -141,10 +143,14 @@ def product_detail_view(request, product_id):
         # Check if current user has this product in wishlist
         in_wishlist = False
         user_review = None
+        wishlist_product_ids = []
         if request.user.is_authenticated and is_customer(request.user):
             try:
                 customer = models.Customer.objects.get(user=request.user)
                 in_wishlist = models.Wishlist.objects.filter(customer=customer, product=product).exists()
+                # Get all wishlist product IDs for related products
+                wishlist_items = models.Wishlist.objects.filter(customer=customer)
+                wishlist_product_ids = [item.product.id for item in wishlist_items]
                 try:
                     user_review = models.ProductReview.objects.get(customer=customer, product=product)
                 except models.ProductReview.DoesNotExist:
@@ -172,6 +178,7 @@ def product_detail_view(request, product_id):
             'user_review': user_review,
             'product_count_in_cart': product_count_in_cart,
             'related_products': related_products,
+            'wishlist_product_ids': wishlist_product_ids,
         }
         return render(request, 'ecom/product_detail.html', context)
         
@@ -180,7 +187,7 @@ def product_detail_view(request, product_id):
         return redirect('customer-home')
 
 # Newsletter functionality
-@csrf_exempt
+@csrf_protect
 def newsletter_signup(request):
     if request.method == 'POST':
         email = request.POST.get('email')

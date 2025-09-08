@@ -1096,8 +1096,8 @@
         
         <!-- Wishlist Button -->
         {% if user.is_authenticated %}
-        <div class="product-wishlist" onclick="toggleWishlist(this, event, '{{ product.id }}')">
-          <i class="fa fa-heart-o" id="wishlist-icon-{{ product.id }}"></i>
+        <div class="product-wishlist" onclick="toggleWishlist(this, event, '{{ product.id }}')" {% if product.id in wishlist_product_ids %}style="color: #ff6b6b;"{% endif %}>
+          <i class="fa {% if product.id in wishlist_product_ids %}fa-heart{% else %}fa-heart-o{% endif %}" id="wishlist-icon-{{ product.id }}"></i>
         </div>
         {% endif %}
         
@@ -1534,7 +1534,7 @@
     
     // Determine the action and URL
     const action = isInWishlist ? 'remove' : 'add';
-    const url = isInWishlist ? '/remove-from-wishlist/' : '/add-to-wishlist/';
+    const url = isInWishlist ? `/remove-from-wishlist/${productId}/` : `/add-to-wishlist/${productId}/`;
     
     // Show loading state
     element.style.opacity = '0.5';
@@ -1546,10 +1546,7 @@
       headers: {
         'Content-Type': 'application/json',
         'X-CSRFToken': getCookie('csrftoken'),
-      },
-      body: JSON.stringify({
-        'product_id': productId
-      })
+      }
     })
     .then(response => response.json())
     .then(data => {

@@ -123,9 +123,18 @@ class Product(models.Model):
         return json.dumps(self.get_size_stock())
 
 class CartItem(models.Model):
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     size = models.CharField(max_length=5, choices=Product.SIZE_CHOICES)
     quantity = models.PositiveIntegerField(default=1)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        unique_together = ('customer', 'product', 'size')
+    
+    def __str__(self):
+        return f"{self.customer.user.username} - {self.product.name} ({self.size})"
 
 
 
@@ -145,19 +154,23 @@ class Orders(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, help_text='When the order was created')
     updated_at = models.DateTimeField(auto_now=True, help_text='When the order was last updated')
     customer = models.ForeignKey('Customer', on_delete=models.CASCADE, null=True)
-    product = models.ForeignKey('Product', on_delete=models.CASCADE, null=True)
     email = models.CharField(max_length=50, null=True)
     address = models.CharField(max_length=500, null=True)
     mobile = models.CharField(max_length=20, null=True)
     order_date = models.DateField(auto_now_add=True, null=True, help_text='Date when order was placed')
     status = models.CharField(max_length=50, null=True, choices=STATUS, default='Pending', help_text='Current status of the order')
     status_updated_at = models.DateTimeField(null=True, blank=True, help_text='When the status was last changed')
-    size = models.CharField(max_length=20)
-    quantity = models.IntegerField(default=1)
     estimated_delivery_date = models.DateField(null=True, blank=True, help_text='Estimated delivery date')
     notes = models.TextField(blank=True, null=True, help_text='Additional notes about the order')
     payment_method = models.CharField(max_length=10, choices=PAYMENT_METHODS, default='cod', help_text='Payment method for the order')
     order_ref = models.CharField(max_length=12, unique=True, null=True, blank=True, help_text='Unique short order reference ID')
+    
+    def __str__(self):
+        return f"Order {self.order_ref or self.id} - {self.customer.user.username if self.customer else 'No Customer'}"
+    
+    def get_total_amount(self):
+        """Calculate total amount from all order items"""
+        return sum(item.price * item.quantity for item in self.orderitem_set.all())
 
 class OrderItem(models.Model):
     order = models.ForeignKey(Orders, on_delete=models.CASCADE)
@@ -165,6 +178,13 @@ class OrderItem(models.Model):
     quantity = models.IntegerField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
     size = models.CharField(max_length=5, choices=Product.SIZE_CHOICES, null=True, blank=True)
+    
+    def __str__(self):
+        return f"{self.product.name} ({self.size}) x{self.quantity} - Order {self.order.order_ref or self.order.id}"
+    
+    def get_total_price(self):
+        """Calculate total price for this order item"""
+        return self.price * self.quantity
 
 
 class Feedback(models.Model):

@@ -43,12 +43,11 @@ class OrderItemInline(admin.TabularInline):
 
 class OrderAdmin(admin.ModelAdmin):
     list_display = (
-        'order_ref', 'customer', 'product', 'quantity', 'size', 'status',
-        'payment_method', 'address', 'mobile', 'email', 'order_date',
-        'created_at', 'estimated_delivery_date'
+        'order_ref', 'customer', 'status', 'payment_method', 'address', 
+        'mobile', 'email', 'order_date', 'created_at', 'estimated_delivery_date'
     )
     list_filter = ('status', 'created_at', 'payment_method')
-    search_fields = ('order_ref', 'customer__user__first_name', 'customer__user__last_name', 'product__name', 'mobile', 'email', 'address')
+    search_fields = ('order_ref', 'customer__user__first_name', 'customer__user__last_name', 'mobile', 'email', 'address')
     inlines = [OrderItemInline]
 
 admin.site.register(Orders, OrderAdmin)
@@ -85,3 +84,8 @@ class ChatbotKnowledgeAdmin(admin.ModelAdmin):
     list_filter = ['category', 'is_active', 'created_at']
     search_fields = ['question', 'answer', 'keywords']
     readonly_fields = ['created_at', 'updated_at']
+
+# Customize Django Admin Site
+admin.site.site_header = "WorksTeamWear Administration"
+admin.site.site_title = "WorksTeamWear Admin Portal"
+admin.site.index_title = "Welcome to WorksTeamWear Administration"

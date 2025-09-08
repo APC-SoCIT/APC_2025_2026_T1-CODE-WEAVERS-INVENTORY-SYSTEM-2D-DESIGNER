@@ -481,6 +481,134 @@
     }
     
 
+    }
+    
+    .drawing-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+    }
+    
+    .action-btn {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    
+    .clear-btn {
+        background: #dc3545;
+        color: white;
+    }
+    
+    .clear-btn:hover {
+        background: #c82333;
+    }
+    
+    .toggle-drawing-btn {
+        background: #28a745;
+        color: white;
+    }
+    
+    .toggle-drawing-btn:hover {
+        background: #218838;
+    }
+    
+    .toggle-drawing-btn.active {
+        background: #ffc107;
+        color: #212529;
+    }
+    
+    /* Draggable Elements Styles */
+    .draggable-element {
+        position: absolute;
+        cursor: move;
+        border: 2px dashed transparent;
+        transition: all 0.3s ease;
+        z-index: 5;
+    }
+    
+    .draggable-element:hover {
+        border-color: #007bff;
+    }
+    
+    .draggable-element.selected {
+        border-color: #007bff;
+        box-shadow: 0 0 10px rgba(0, 123, 255, 0.3);
+    }
+    
+    .draggable-element.resizing {
+        border-color: #28a745;
+    }
+    
+    .resize-handle {
+        position: absolute;
+        width: 10px;
+        height: 10px;
+        background: #007bff;
+        border: 2px solid white;
+        border-radius: 50%;
+        cursor: nw-resize;
+    }
+    
+    .resize-handle.top-left {
+        top: -5px;
+        left: -5px;
+        cursor: nw-resize;
+    }
+    
+    .resize-handle.top-right {
+        top: -5px;
+        right: -5px;
+        cursor: ne-resize;
+    }
+    
+    .resize-handle.bottom-left {
+        bottom: -5px;
+        left: -5px;
+        cursor: sw-resize;
+    }
+    
+    .resize-handle.bottom-right {
+        bottom: -5px;
+        right: -5px;
+        cursor: se-resize;
+    }
+    
+    .text-element {
+        font-family: Arial, sans-serif;
+        font-weight: bold;
+        color: #000;
+        background: rgba(255, 255, 255, 0.8);
+        padding: 5px 10px;
+        border-radius: 5px;
+        min-width: 50px;
+        text-align: center;
+    }
+    
+    .shape-element {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+    }
+    
+    .drop-zone {
+        border: 2px dashed #ccc;
+        border-radius: 10px;
+        padding: 20px;
+        text-align: center;
+        color: #666;
+        transition: all 0.3s ease;
+    }
+    
+    .drop-zone.drag-over {
+        border-color: #007bff;
+        background: rgba(0, 123, 255, 0.1);
+        color: #007bff;
+    }
 
     </style>
 </head>
@@ -774,6 +902,66 @@
                                         </button>
                                         <button class="btn btn-outline-secondary btn-sm" id="randomizePromptBtn">Random Design Idea</button>
                                     </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+
+                        
+                        <!-- Drag & Drop Elements Panel -->
+                        <div class="drawing-tools">
+                            <h5>🎯 Design Elements</h5>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Upload Images</label>
+                                <input type="file" class="form-control" id="imageUpload" accept="image/*" multiple>
+                                <div class="form-text">Upload logos, graphics, or design elements</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Add Text Element</label>
+                                <div class="d-flex gap-2">
+                                    <input type="text" class="form-control" id="textInput" placeholder="Enter text">
+                                    <button class="btn btn-primary" id="addTextBtn">Add</button>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Quick Shapes</label>
+                                <div class="tool-group">
+                                    <button class="tool-btn" data-shape="circle">⭕ Circle</button>
+                                    <button class="tool-btn" data-shape="square">⬜ Square</button>
+                                    <button class="tool-btn" data-shape="triangle">🔺 Triangle</button>
+                                    <button class="tool-btn" data-shape="star">⭐ Star</button>
+                                    <button class="tool-btn" data-shape="line">📏 Line</button>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Shape Color</label>
+                                <div class="d-flex gap-2 align-items-center">
+                                    <input type="color" class="form-control form-control-color" id="shapeColor" value="#007bff" title="Choose shape color">
+                                    <button class="btn btn-sm btn-outline-primary" id="applyShapeColor">Apply to Selected</button>
+                                </div>
+                            </div>
+                            
+                            <div class="drawing-actions">
+                                <button class="action-btn clear-btn" id="clearElements">Clear All Elements</button>
+                            </div>
+                        </div>
+                        
+                        <!-- Layer Management Panel -->
+                        <div class="control-section">
+                            <h5>Layer Management</h5>
+                            <div class="layer-panel">
+                                <div class="layer-controls">
+                                    <button id="moveLayerUp" class="btn btn-sm btn-outline-primary" title="Move Layer Up">↑</button>
+                                    <button id="moveLayerDown" class="btn btn-sm btn-outline-primary" title="Move Layer Down">↓</button>
+                                    <button id="duplicateLayer" class="btn btn-sm btn-outline-success" title="Duplicate Layer">📋</button>
+                                    <button id="deleteLayer" class="btn btn-sm btn-outline-danger" title="Delete Layer">🗑️</button>
+                                </div>
+                                <div id="layerList" class="layer-list">
+                                    <!-- Layers will be dynamically added here -->
                                 </div>
                             </div>
                         </div>
@@ -1108,6 +1296,33 @@
             });
             
             // Functions
+            function adjustElementsForApparelType(type) {
+                const elements = document.querySelectorAll('.draggable-element');
+                elements.forEach(element => {
+                    const currentTop = parseInt(element.style.top) || 0;
+                    const currentLeft = parseInt(element.style.left) || 0;
+                    
+                    if (type === 'shorts') {
+                        // Adjust positioning for shorts (shorter height, different proportions)
+                        // Scale down vertical position and adjust for shorts dimensions
+                        const scaledTop = Math.max(50, currentTop * 0.6 + 100); // Scale and offset for shorts
+                        element.style.top = scaledTop + 'px';
+                        
+                        // Ensure elements stay within shorts bounds
+                        if (scaledTop > 250) {
+                            element.style.top = '250px';
+                        }
+                    } else {
+                        // Restore original positioning for jersey
+                        // If element was adjusted for shorts, restore it
+                        if (currentTop <= 250) {
+                            const restoredTop = Math.max(50, (currentTop - 100) / 0.6);
+                            element.style.top = restoredTop + 'px';
+                        }
+                    }
+                });
+            }
+            
             function setApparelType(type) {
                 currentApparelType = type;
                 apparelTypeText.textContent = type.charAt(0).toUpperCase() + type.slice(1);
@@ -1140,6 +1355,9 @@
                 
                 // Update colors
                 updateColors();
+                
+                // Adjust draggable elements positioning for different apparel types
+                adjustElementsForApparelType(type);
             }
             
             function updateRotation() {
@@ -1723,20 +1941,26 @@
             const randomizePromptBtn = document.getElementById('randomizePromptBtn');
             const aiLoadingSpinner = document.getElementById('aiLoadingSpinner');
             
-            // Enhanced random design prompts with more variety
+            // Enhanced random design prompts with sports templates and team styles
             const randomPrompts = [
+                "Create a professional football jersey with navy blue and red colors, classic stripes, and team emblem",
+                "Design a college basketball jersey with bold school colors, energetic patterns, and dynamic layout",
+                "Make a premier soccer jersey with sophisticated diagonal patterns and elegant color scheme",
+                "Generate a major league baseball jersey with traditional pinstripes and classic team colors",
+                "Create a professional hockey jersey with aggressive black and red design and sharp patterns",
+                "Design a competitive esports jersey with futuristic neon colors and digital patterns",
+                "Make an elegant team jersey with refined gold and navy colors and sophisticated patterns",
+                "Generate an energetic youth football jersey with vibrant colors and dynamic effects",
+                "Create a retro basketball jersey with vintage colors and nostalgic heritage patterns",
+                "Design a modern baseball jersey with sleek tech patterns and contemporary layout",
+                "Make a streetball jersey with urban graffiti patterns and bold neon colors",
+                "Generate a natural outdoor sports jersey with earth tones and organic patterns",
                 "Create a futuristic cyberpunk jersey with neon blue and purple gradients, circuit patterns, and a tech logo",
                 "Design a vintage sports jersey with classic red and white stripes, retro typography, and team emblem",
                 "Make a nature-inspired jersey with forest green base, leaf patterns, and mountain logo in earth tones",
                 "Generate an ocean-themed design with wave patterns, blue-to-teal gradient, and anchor symbol",
                 "Create a fire-themed jersey with flame patterns, red-orange gradient, and phoenix logo",
-                "Design a space-themed jersey with galaxy patterns, dark blue to purple gradient, and rocket logo",
-                "Make a minimalist modern jersey with geometric patterns, monochrome colors, and abstract logo",
-                "Generate a tropical design with palm leaf patterns, sunset gradient, and sun logo",
-                "Create a winter sports jersey with snowflake patterns, ice blue gradient, and mountain peak logo",
-                "Design an urban street style jersey with graffiti patterns, bold colors, and city skyline logo",
-                "Make a royal themed jersey with gold accents, crown patterns, and heraldic logo",
-                "Generate a lightning storm design with electric patterns, storm cloud gradient, and bolt logo"
+                "Design a space-themed jersey with galaxy patterns, dark blue to purple gradient, and rocket logo"
             ];
             
             // Enhanced AI knowledge base for better understanding
@@ -1754,6 +1978,50 @@
                     'urban': { colors: ['#ff1493', '#00ff00', '#ffff00'], patterns: ['graffiti', 'street', 'urban'] },
                     'royal': { colors: ['#4b0082', '#ffd700', '#8b0000'], patterns: ['crown', 'royal', 'elegant'] },
                     'storm': { colors: ['#2f4f4f', '#ffff00', '#9370db'], patterns: ['lightning', 'storm', 'electric'] }
+                },
+                // Professional design templates for different sports and team styles
+                sportsTemplates: {
+                    'football': {
+                        'professional': { colors: ['#002244', '#ffffff', '#c60c30'], patterns: ['stripes', 'geometric'], layout: 'classic', intensity: 'medium' },
+                        'college': { colors: ['#8b0000', '#ffd700', '#ffffff'], patterns: ['tribal', 'bold'], layout: 'dynamic', intensity: 'high' },
+                        'youth': { colors: ['#0066cc', '#ffffff', '#ff6600'], patterns: ['fun', 'playful'], layout: 'simple', intensity: 'medium' }
+                    },
+                    'basketball': {
+                        'professional': { colors: ['#000000', '#ffffff', '#ffd700'], patterns: ['mesh', 'clean'], layout: 'modern', intensity: 'low' },
+                        'streetball': { colors: ['#ff1493', '#00ff00', '#ffff00'], patterns: ['graffiti', 'urban'], layout: 'bold', intensity: 'high' },
+                        'classic': { colors: ['#8b0000', '#ffffff', '#000000'], patterns: ['retro', 'vintage'], layout: 'traditional', intensity: 'medium' }
+                    },
+                    'soccer': {
+                        'premier': { colors: ['#003366', '#ffffff', '#ff0000'], patterns: ['diagonal', 'elegant'], layout: 'sophisticated', intensity: 'medium' },
+                        'national': { colors: ['#228b22', '#ffd700', '#ffffff'], patterns: ['flag', 'patriotic'], layout: 'bold', intensity: 'high' },
+                        'club': { colors: ['#4b0082', '#ffd700', '#ffffff'], patterns: ['crest', 'traditional'], layout: 'classic', intensity: 'medium' }
+                    },
+                    'baseball': {
+                        'major_league': { colors: ['#002244', '#ffffff', '#c60c30'], patterns: ['pinstripes', 'classic'], layout: 'traditional', intensity: 'low' },
+                        'vintage': { colors: ['#8b4513', '#f5deb3', '#000000'], patterns: ['retro', 'heritage'], layout: 'nostalgic', intensity: 'medium' },
+                        'modern': { colors: ['#1e90ff', '#ffffff', '#ff4500'], patterns: ['tech', 'sleek'], layout: 'contemporary', intensity: 'medium' }
+                    },
+                    'hockey': {
+                        'professional': { colors: ['#000000', '#ffffff', '#c8102e'], patterns: ['ice', 'sharp'], layout: 'aggressive', intensity: 'high' },
+                        'college': { colors: ['#003366', '#ffd700', '#ffffff'], patterns: ['frost', 'collegiate'], layout: 'spirited', intensity: 'medium' },
+                        'youth': { colors: ['#0066cc', '#ffffff', '#ff6600'], patterns: ['fun', 'energetic'], layout: 'playful', intensity: 'medium' }
+                    },
+                    'esports': {
+                        'competitive': { colors: ['#00ffff', '#ff00ff', '#000000'], patterns: ['digital', 'neon'], layout: 'futuristic', intensity: 'high' },
+                        'streaming': { colors: ['#7b68ee', '#00ff7f', '#ff1493'], patterns: ['glow', 'electric'], layout: 'vibrant', intensity: 'high' },
+                        'team': { colors: ['#4169e1', '#ffffff', '#ffd700'], patterns: ['tech', 'modern'], layout: 'professional', intensity: 'medium' }
+                    }
+                },
+                // Team style categories
+                teamStyles: {
+                    'aggressive': { colors: ['#8b0000', '#000000', '#ff4500'], patterns: ['sharp', 'angular'], effects: ['shadow', 'bold'], intensity: 'high' },
+                    'elegant': { colors: ['#000080', '#ffd700', '#ffffff'], patterns: ['flowing', 'sophisticated'], effects: ['subtle', 'refined'], intensity: 'low' },
+                    'energetic': { colors: ['#ff6347', '#32cd32', '#1e90ff'], patterns: ['dynamic', 'vibrant'], effects: ['glow', 'motion'], intensity: 'high' },
+                    'classic': { colors: ['#8b0000', '#ffffff', '#000080'], patterns: ['traditional', 'timeless'], effects: ['clean', 'simple'], intensity: 'medium' },
+                    'modern': { colors: ['#2f4f4f', '#ffffff', '#ff6600'], patterns: ['geometric', 'minimalist'], effects: ['sleek', 'contemporary'], intensity: 'medium' },
+                    'retro': { colors: ['#daa520', '#8b4513', '#f5deb3'], patterns: ['vintage', 'nostalgic'], effects: ['aged', 'classic'], intensity: 'medium' },
+                    'futuristic': { colors: ['#00ffff', '#ff00ff', '#7fff00'], patterns: ['tech', 'digital'], effects: ['neon', 'holographic'], intensity: 'high' },
+                    'natural': { colors: ['#228b22', '#8fbc8f', '#654321'], patterns: ['organic', 'earth'], effects: ['textured', 'natural'], intensity: 'medium' }
                 },
                 emotions: {
                     'aggressive': { colors: ['#ff0000', '#000000', '#ff4500'], intensity: 'high' },
@@ -1809,14 +2077,59 @@
                     'neon': '#39ff14', 'electric': '#7df9ff', 'glow': '#ffff33'
                 };
                 
-                // Intelligent theme detection
-                Object.keys(aiKnowledgeBase.themes).forEach(theme => {
-                    if (words.some(word => word.includes(theme) || theme.includes(word))) {
-                        design.theme = theme;
-                        design.colors = [...aiKnowledgeBase.themes[theme].colors];
-                        design.patterns = [...aiKnowledgeBase.themes[theme].patterns];
+                // Sports template detection
+                Object.keys(aiKnowledgeBase.sportsTemplates).forEach(sport => {
+                    if (words.some(word => word.includes(sport) || sport.includes(word))) {
+                        design.sport = sport;
+                        // Detect specific template within sport
+                        Object.keys(aiKnowledgeBase.sportsTemplates[sport]).forEach(template => {
+                            if (words.some(word => word.includes(template) || template.includes(word))) {
+                                const templateData = aiKnowledgeBase.sportsTemplates[sport][template];
+                                design.template = template;
+                                design.colors = [...templateData.colors];
+                                design.patterns = [...templateData.patterns];
+                                design.layout = templateData.layout;
+                                design.intensity = templateData.intensity;
+                            }
+                        });
+                        // If no specific template found, use professional as default
+                        if (!design.template && aiKnowledgeBase.sportsTemplates[sport]['professional']) {
+                            const templateData = aiKnowledgeBase.sportsTemplates[sport]['professional'];
+                            design.template = 'professional';
+                            design.colors = [...templateData.colors];
+                            design.patterns = [...templateData.patterns];
+                            design.layout = templateData.layout;
+                            design.intensity = templateData.intensity;
+                        }
                     }
                 });
+                
+                // Team style detection
+                Object.keys(aiKnowledgeBase.teamStyles).forEach(style => {
+                    if (words.some(word => word.includes(style) || style.includes(word))) {
+                        const styleData = aiKnowledgeBase.teamStyles[style];
+                        design.teamStyle = style;
+                        if (!design.colors || design.colors.length === 0) {
+                            design.colors = [...styleData.colors];
+                        }
+                        if (!design.patterns || design.patterns.length === 0) {
+                            design.patterns = [...styleData.patterns];
+                        }
+                        design.effects = [...styleData.effects];
+                        design.intensity = styleData.intensity;
+                    }
+                });
+                
+                // Intelligent theme detection (fallback if no sports template found)
+                if (!design.sport && !design.teamStyle) {
+                    Object.keys(aiKnowledgeBase.themes).forEach(theme => {
+                        if (words.some(word => word.includes(theme) || theme.includes(word))) {
+                            design.theme = theme;
+                            design.colors = [...aiKnowledgeBase.themes[theme].colors];
+                            design.patterns = [...aiKnowledgeBase.themes[theme].patterns];
+                        }
+                    });
+                }
                 
                 // Emotion detection
                 Object.keys(aiKnowledgeBase.emotions).forEach(emotion => {
@@ -1895,17 +2208,20 @@
                 return design;
             }
             
-            // Generate color harmony based on color theory
+            // Generate advanced color harmony based on sophisticated color theory
             function generateColorHarmony(theme, emotion) {
                 const harmonies = {
                     complementary: (base) => [base, getComplementaryColor(base)],
                     triadic: (base) => [base, rotateHue(base, 120), rotateHue(base, 240)],
                     analogous: (base) => [base, rotateHue(base, 30), rotateHue(base, -30)],
-                    monochromatic: (base) => [base, adjustBrightness(base, 0.3), adjustBrightness(base, -0.3)]
+                    monochromatic: (base) => [base, adjustBrightness(base, 0.3), adjustBrightness(base, -0.3)],
+                    splitComplementary: (base) => [base, rotateHue(base, 150), rotateHue(base, 210)],
+                    tetradic: (base) => [base, rotateHue(base, 90), rotateHue(base, 180), rotateHue(base, 270)],
+                    compound: (base) => [base, rotateHue(base, 60), getComplementaryColor(base), rotateHue(getComplementaryColor(base), 60)]
                 };
                 
                 if (theme && aiKnowledgeBase.themes[theme]) {
-                    return aiKnowledgeBase.themes[theme].colors.slice(0, 2);
+                    return enhanceThemeColors(aiKnowledgeBase.themes[theme].colors.slice(0, 2), emotion);
                 }
                 
                 if (emotion && aiKnowledgeBase.emotions[emotion]) {
@@ -2006,6 +2322,118 @@
                 }
                 
                 return { r: Math.round(r * 255), g: Math.round(g * 255), b: Math.round(b * 255) };
+            }
+            
+            // Advanced color theory helper functions
+            function getComplementaryColor(hexColor) {
+                const hsl = hexToHsl(hexColor);
+                return hslToHex((hsl.h + 180) % 360, hsl.s, hsl.l);
+            }
+            
+            function rotateHue(hexColor, degrees) {
+                const hsl = hexToHsl(hexColor);
+                return hslToHex((hsl.h + degrees + 360) % 360, hsl.s, hsl.l);
+            }
+            
+            function adjustBrightness(hexColor, amount) {
+                const hsl = hexToHsl(hexColor);
+                const newL = Math.max(0, Math.min(1, hsl.l + amount));
+                return hslToHex(hsl.h, hsl.s, newL);
+            }
+            
+            function adjustSaturation(hexColor, amount) {
+                const hsl = hexToHsl(hexColor);
+                const newS = Math.max(0, Math.min(1, hsl.s + amount));
+                return hslToHex(hsl.h, newS, hsl.l);
+            }
+            
+            function enhanceThemeColors(baseColors, emotion) {
+                if (!baseColors || baseColors.length === 0) return ['#0066cc', '#ffffff'];
+                
+                const enhanced = [...baseColors];
+                
+                // Apply emotion-based color adjustments
+                switch (emotion) {
+                    case 'energetic':
+                    case 'aggressive':
+                        return enhanced.map(color => adjustSaturation(adjustBrightness(color, 0.1), 0.2));
+                    case 'calm':
+                    case 'peaceful':
+                        return enhanced.map(color => adjustSaturation(adjustBrightness(color, -0.1), -0.2));
+                    case 'elegant':
+                    case 'sophisticated':
+                        return enhanced.map(color => adjustSaturation(color, -0.1));
+                    case 'playful':
+                    case 'fun':
+                        return enhanced.map(color => adjustSaturation(color, 0.3));
+                    default:
+                        return enhanced;
+                }
+            }
+            
+            function generateAdvancedColorPalette(baseColor, theme, emotion, complexity = 'medium') {
+                const palettes = [];
+                
+                // Generate different harmony types based on complexity
+                const harmonyTypes = complexity === 'high' 
+                    ? ['complementary', 'triadic', 'splitComplementary', 'tetradic']
+                    : complexity === 'low'
+                    ? ['complementary', 'analogous']
+                    : ['complementary', 'triadic', 'analogous'];
+                
+                harmonyTypes.forEach(harmonyType => {
+                    switch (harmonyType) {
+                        case 'complementary':
+                            palettes.push([baseColor, getComplementaryColor(baseColor)]);
+                            break;
+                        case 'triadic':
+                            palettes.push([baseColor, rotateHue(baseColor, 120), rotateHue(baseColor, 240)]);
+                            break;
+                        case 'analogous':
+                            palettes.push([rotateHue(baseColor, -30), baseColor, rotateHue(baseColor, 30)]);
+                            break;
+                        case 'splitComplementary':
+                            palettes.push([baseColor, rotateHue(baseColor, 150), rotateHue(baseColor, 210)]);
+                            break;
+                        case 'tetradic':
+                            palettes.push([baseColor, rotateHue(baseColor, 90), rotateHue(baseColor, 180), rotateHue(baseColor, 270)]);
+                            break;
+                    }
+                });
+                
+                // Select best palette based on theme and emotion
+                const bestPalette = selectOptimalPalette(palettes, theme, emotion);
+                return enhanceThemeColors(bestPalette, emotion);
+            }
+            
+            function selectOptimalPalette(palettes, theme, emotion) {
+                if (!palettes || palettes.length === 0) return ['#0066cc', '#ffffff'];
+                
+                // Theme-based palette selection
+                const themePreferences = {
+                    'futuristic': 'complementary',
+                    'tech': 'complementary',
+                    'nature': 'analogous',
+                    'ocean': 'analogous',
+                    'fire': 'triadic',
+                    'space': 'tetradic',
+                    'minimal': 'complementary',
+                    'royal': 'splitComplementary'
+                };
+                
+                const preferredType = themePreferences[theme] || 'complementary';
+                
+                // Return palette that matches preference or first available
+                return palettes.find(palette => {
+                    switch (preferredType) {
+                        case 'complementary': return palette.length === 2;
+                        case 'triadic': return palette.length === 3;
+                        case 'analogous': return palette.length === 3;
+                        case 'splitComplementary': return palette.length === 3;
+                        case 'tetradic': return palette.length === 4;
+                        default: return true;
+                    }
+                }) || palettes[0] || ['#0066cc', '#ffffff'];
             }
             
             function applyAiDesign(design) {
@@ -2134,6 +2562,22 @@
                         return createLeafPattern(patternDiv, opacity, index);
                     case 'lightning':
                         return createLightningPattern(patternDiv, opacity, index);
+                    case 'hexagonal':
+                        return createHexagonalPattern(patternDiv, opacity, index);
+                    case 'tribal':
+                        return createTribalPattern(patternDiv, opacity, index);
+                    case 'tech':
+                        return createTechPattern(patternDiv, opacity, index);
+                    case 'organic':
+                        return createOrganicPattern(patternDiv, opacity, index);
+                    case 'diamond':
+                        return createDiamondPattern(patternDiv, opacity, index);
+                    case 'spiral':
+                        return createSpiralPattern(patternDiv, opacity, index);
+                    case 'mesh':
+                        return createMeshPattern(patternDiv, opacity, index);
+                    case 'carbon':
+                        return createCarbonPattern(patternDiv, opacity, index);
                     default:
                         return createGeometricPattern(patternDiv, opacity, index);
                 }
@@ -2280,6 +2724,176 @@
                             </pattern>
                         </defs>
                         <rect width="100%" height="100%" fill="url(#lightning-${index})"/>
+                    </svg>
+                `;
+                container.style.top = '0';
+                container.style.left = '0';
+                container.style.width = '100%';
+                container.style.height = '100%';
+                return container;
+            }
+            
+            function createHexagonalPattern(container, opacity, index) {
+                container.innerHTML = `
+                    <svg width="100%" height="100%" style="opacity: ${opacity}">
+                        <defs>
+                            <pattern id="hexagonal-${index}" x="0" y="0" width="60" height="52" patternUnits="userSpaceOnUse">
+                                <polygon points="30,4 45,15 45,35 30,46 15,35 15,15" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"/>
+                                <polygon points="0,26 15,17 15,35" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+                                <polygon points="60,26 45,17 45,35" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+                            </pattern>
+                        </defs>
+                        <rect width="100%" height="100%" fill="url(#hexagonal-${index})"/>
+                    </svg>
+                `;
+                container.style.top = '0';
+                container.style.left = '0';
+                container.style.width = '100%';
+                container.style.height = '100%';
+                return container;
+            }
+            
+            function createTribalPattern(container, opacity, index) {
+                container.innerHTML = `
+                    <svg width="100%" height="100%" style="opacity: ${opacity}">
+                        <defs>
+                            <pattern id="tribal-${index}" x="0" y="0" width="80" height="80" patternUnits="userSpaceOnUse">
+                                <path d="M40,10 Q50,20 40,30 Q30,20 40,10" fill="rgba(255,255,255,0.3)"/>
+                                <path d="M20,40 Q30,50 20,60 Q10,50 20,40" fill="rgba(255,255,255,0.25)"/>
+                                <path d="M60,40 Q70,50 60,60 Q50,50 60,40" fill="rgba(255,255,255,0.25)"/>
+                                <path d="M40,70 Q50,60 40,50 Q30,60 40,70" fill="rgba(255,255,255,0.3)"/>
+                                <circle cx="40" cy="40" r="3" fill="rgba(255,255,255,0.4)"/>
+                            </pattern>
+                        </defs>
+                        <rect width="100%" height="100%" fill="url(#tribal-${index})"/>
+                    </svg>
+                `;
+                container.style.top = '0';
+                container.style.left = '0';
+                container.style.width = '100%';
+                container.style.height = '100%';
+                return container;
+            }
+            
+            function createTechPattern(container, opacity, index) {
+                container.innerHTML = `
+                    <svg width="100%" height="100%" style="opacity: ${opacity}">
+                        <defs>
+                            <pattern id="tech-${index}" x="0" y="0" width="50" height="50" patternUnits="userSpaceOnUse">
+                                <rect x="10" y="10" width="30" height="30" fill="none" stroke="rgba(0,255,255,0.4)" stroke-width="1"/>
+                                <rect x="15" y="15" width="20" height="20" fill="none" stroke="rgba(0,255,255,0.3)" stroke-width="1"/>
+                                <circle cx="25" cy="25" r="5" fill="none" stroke="rgba(0,255,255,0.5)" stroke-width="1"/>
+                                <line x1="0" y1="25" x2="10" y2="25" stroke="rgba(0,255,255,0.4)" stroke-width="1"/>
+                                <line x1="40" y1="25" x2="50" y2="25" stroke="rgba(0,255,255,0.4)" stroke-width="1"/>
+                                <line x1="25" y1="0" x2="25" y2="10" stroke="rgba(0,255,255,0.4)" stroke-width="1"/>
+                                <line x1="25" y1="40" x2="25" y2="50" stroke="rgba(0,255,255,0.4)" stroke-width="1"/>
+                            </pattern>
+                        </defs>
+                        <rect width="100%" height="100%" fill="url(#tech-${index})"/>
+                    </svg>
+                `;
+                container.style.top = '0';
+                container.style.left = '0';
+                container.style.width = '100%';
+                container.style.height = '100%';
+                return container;
+            }
+            
+            function createOrganicPattern(container, opacity, index) {
+                container.innerHTML = `
+                    <svg width="100%" height="100%" style="opacity: ${opacity}">
+                        <defs>
+                            <pattern id="organic-${index}" x="0" y="0" width="70" height="70" patternUnits="userSpaceOnUse">
+                                <path d="M35,10 Q50,25 35,40 Q20,25 35,10" fill="rgba(0,200,100,0.3)" stroke="rgba(0,150,75,0.4)" stroke-width="1"/>
+                                <path d="M10,35 Q25,50 40,35 Q25,20 10,35" fill="rgba(0,200,100,0.25)" stroke="rgba(0,150,75,0.3)" stroke-width="1"/>
+                                <path d="M60,35 Q45,20 30,35 Q45,50 60,35" fill="rgba(0,200,100,0.25)" stroke="rgba(0,150,75,0.3)" stroke-width="1"/>
+                                <circle cx="35" cy="35" r="2" fill="rgba(0,180,90,0.5)"/>
+                            </pattern>
+                        </defs>
+                        <rect width="100%" height="100%" fill="url(#organic-${index})"/>
+                    </svg>
+                `;
+                container.style.top = '0';
+                container.style.left = '0';
+                container.style.width = '100%';
+                container.style.height = '100%';
+                return container;
+            }
+            
+            function createDiamondPattern(container, opacity, index) {
+                container.innerHTML = `
+                    <svg width="100%" height="100%" style="opacity: ${opacity}">
+                        <defs>
+                            <pattern id="diamond-${index}" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
+                                <polygon points="20,5 35,20 20,35 5,20" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"/>
+                                <polygon points="20,10 30,20 20,30 10,20" fill="rgba(255,255,255,0.2)"/>
+                            </pattern>
+                        </defs>
+                        <rect width="100%" height="100%" fill="url(#diamond-${index})"/>
+                    </svg>
+                `;
+                container.style.top = '0';
+                container.style.left = '0';
+                container.style.width = '100%';
+                container.style.height = '100%';
+                return container;
+            }
+            
+            function createSpiralPattern(container, opacity, index) {
+                container.innerHTML = `
+                    <svg width="100%" height="100%" style="opacity: ${opacity}">
+                        <defs>
+                            <pattern id="spiral-${index}" x="0" y="0" width="60" height="60" patternUnits="userSpaceOnUse">
+                                <path d="M30,10 Q45,15 40,30 Q35,45 20,40 Q5,35 10,20 Q15,5 30,10" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="2"/>
+                                <circle cx="30" cy="30" r="3" fill="rgba(255,255,255,0.3)"/>
+                            </pattern>
+                        </defs>
+                        <rect width="100%" height="100%" fill="url(#spiral-${index})"/>
+                    </svg>
+                `;
+                container.style.top = '0';
+                container.style.left = '0';
+                container.style.width = '100%';
+                container.style.height = '100%';
+                return container;
+            }
+            
+            function createMeshPattern(container, opacity, index) {
+                container.innerHTML = `
+                    <svg width="100%" height="100%" style="opacity: ${opacity}">
+                        <defs>
+                            <pattern id="mesh-${index}" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
+                                <line x1="0" y1="0" x2="20" y2="0" stroke="rgba(255,255,255,0.3)" stroke-width="0.5"/>
+                                <line x1="0" y1="0" x2="0" y2="20" stroke="rgba(255,255,255,0.3)" stroke-width="0.5"/>
+                                <line x1="0" y1="10" x2="20" y2="10" stroke="rgba(255,255,255,0.2)" stroke-width="0.5"/>
+                                <line x1="10" y1="0" x2="10" y2="20" stroke="rgba(255,255,255,0.2)" stroke-width="0.5"/>
+                            </pattern>
+                        </defs>
+                        <rect width="100%" height="100%" fill="url(#mesh-${index})"/>
+                    </svg>
+                `;
+                container.style.top = '0';
+                container.style.left = '0';
+                container.style.width = '100%';
+                container.style.height = '100%';
+                return container;
+            }
+            
+            function createCarbonPattern(container, opacity, index) {
+                container.innerHTML = `
+                    <svg width="100%" height="100%" style="opacity: ${opacity}">
+                        <defs>
+                            <pattern id="carbon-${index}" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
+                                <rect width="40" height="40" fill="rgba(50,50,50,0.2)"/>
+                                <circle cx="10" cy="10" r="8" fill="none" stroke="rgba(100,100,100,0.4)" stroke-width="1"/>
+                                <circle cx="30" cy="10" r="8" fill="none" stroke="rgba(100,100,100,0.4)" stroke-width="1"/>
+                                <circle cx="20" cy="30" r="8" fill="none" stroke="rgba(100,100,100,0.4)" stroke-width="1"/>
+                                <line x1="18" y1="10" x2="22" y2="10" stroke="rgba(120,120,120,0.5)" stroke-width="1"/>
+                                <line x1="10" y1="18" x2="10" y2="22" stroke="rgba(120,120,120,0.5)" stroke-width="1"/>
+                                <line x1="30" y1="18" x2="30" y2="22" stroke="rgba(120,120,120,0.5)" stroke-width="1"/>
+                            </pattern>
+                        </defs>
+                        <rect width="100%" height="100%" fill="url(#carbon-${index})"/>
                     </svg>
                 `;
                 container.style.top = '0';
@@ -2498,6 +3112,10 @@
                     if (jerseyBack) addGradientAccents(jerseyBack, design.colors, design.gradientDirection);
                 }
                 
+                // Apply advanced visual effects
+                applyAdvancedVisualEffects(jerseyFront, design);
+                if (jerseyBack) applyAdvancedVisualEffects(jerseyBack, design);
+                
                 // Apply color-based visual enhancements
                 applyColorBasedEnhancements(jerseyFront, design.colors, design.theme);
                 if (jerseyBack) applyColorBasedEnhancements(jerseyBack, design.colors, design.theme);
@@ -2581,6 +3199,215 @@
                 }
                 
                 container.appendChild(accent);
+            }
+            
+            // Apply advanced visual effects like shadows, glows, and layering
+            function applyAdvancedVisualEffects(container, design) {
+                const primaryColor = design.colors[0] || '#0066cc';
+                const secondaryColor = design.colors[1] || primaryColor;
+                
+                // Remove existing effect layers
+                const existingEffects = container.querySelectorAll('.visual-effect');
+                existingEffects.forEach(effect => effect.remove());
+                
+                // Apply theme-specific visual effects
+                switch (design.theme) {
+                    case 'futuristic':
+                    case 'tech':
+                        applyNeonGlowEffect(container, primaryColor);
+                        applyDigitalScanLines(container);
+                        break;
+                    case 'fire':
+                        applyGlowEffect(container, '#ff4500', 'flame');
+                        applyFlickerEffect(container);
+                        break;
+                    case 'ocean':
+                    case 'water':
+                        applyShimmerEffect(container, primaryColor);
+                        applyWaveDistortion(container);
+                        break;
+                    case 'lightning':
+                    case 'electric':
+                        applyElectricGlow(container, '#ffff00');
+                        applySparkEffect(container);
+                        break;
+                    case 'galaxy':
+                    case 'space':
+                        applyCosmicGlow(container, primaryColor);
+                        applyStarField(container);
+                        break;
+                    case 'carbon':
+                        applyCarbonTexture(container);
+                        applyMetallicShine(container);
+                        break;
+                    default:
+                        // Apply subtle shadow for depth
+                        applySubtleShadow(container, primaryColor);
+                }
+                
+                // Apply intensity-based effects
+                if (design.intensity === 'high') {
+                    applyHighIntensityEffects(container, primaryColor);
+                } else if (design.intensity === 'low') {
+                    applyLowIntensityEffects(container);
+                }
+            }
+            
+            // Neon glow effect for futuristic themes
+            function applyNeonGlowEffect(container, color) {
+                const glowLayer = document.createElement('div');
+                glowLayer.className = 'visual-effect neon-glow';
+                glowLayer.style.cssText = `
+                    position: absolute;
+                    top: -5px;
+                    left: -5px;
+                    right: -5px;
+                    bottom: -5px;
+                    background: ${color};
+                    filter: blur(8px);
+                    opacity: 0.3;
+                    z-index: -1;
+                    border-radius: inherit;
+                    animation: neonPulse 2s ease-in-out infinite alternate;
+                `;
+                container.appendChild(glowLayer);
+                
+                // Add CSS animation if not exists
+                if (!document.querySelector('#neonAnimation')) {
+                    const style = document.createElement('style');
+                    style.id = 'neonAnimation';
+                    style.textContent = `
+                        @keyframes neonPulse {
+                            0% { opacity: 0.2; transform: scale(1); }
+                            100% { opacity: 0.4; transform: scale(1.02); }
+                        }
+                    `;
+                    document.head.appendChild(style);
+                }
+            }
+            
+            // Digital scan lines effect
+            function applyDigitalScanLines(container) {
+                const scanLines = document.createElement('div');
+                scanLines.className = 'visual-effect scan-lines';
+                scanLines.style.cssText = `
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: repeating-linear-gradient(
+                        0deg,
+                        transparent,
+                        transparent 2px,
+                        rgba(0, 255, 255, 0.1) 2px,
+                        rgba(0, 255, 255, 0.1) 4px
+                    );
+                    pointer-events: none;
+                    z-index: 3;
+                    animation: scanMove 3s linear infinite;
+                `;
+                container.appendChild(scanLines);
+                
+                if (!document.querySelector('#scanAnimation')) {
+                    const style = document.createElement('style');
+                    style.id = 'scanAnimation';
+                    style.textContent = `
+                        @keyframes scanMove {
+                            0% { transform: translateY(-100%); }
+                            100% { transform: translateY(100%); }
+                        }
+                    `;
+                    document.head.appendChild(style);
+                }
+            }
+            
+            // Shimmer effect for water themes
+            function applyShimmerEffect(container, color) {
+                const shimmer = document.createElement('div');
+                shimmer.className = 'visual-effect shimmer';
+                shimmer.style.cssText = `
+                    position: absolute;
+                    top: 0;
+                    left: -100%;
+                    width: 100%;
+                    height: 100%;
+                    background: linear-gradient(
+                        90deg,
+                        transparent,
+                        rgba(255, 255, 255, 0.4),
+                        transparent
+                    );
+                    pointer-events: none;
+                    z-index: 2;
+                    animation: shimmerMove 3s ease-in-out infinite;
+                `;
+                container.appendChild(shimmer);
+                
+                if (!document.querySelector('#shimmerAnimation')) {
+                    const style = document.createElement('style');
+                    style.id = 'shimmerAnimation';
+                    style.textContent = `
+                        @keyframes shimmerMove {
+                            0% { left: -100%; }
+                            50% { left: 100%; }
+                            100% { left: 100%; }
+                        }
+                    `;
+                    document.head.appendChild(style);
+                }
+            }
+            
+            // Electric glow effect
+            function applyElectricGlow(container, color) {
+                const electricGlow = document.createElement('div');
+                electricGlow.className = 'visual-effect electric-glow';
+                electricGlow.style.cssText = `
+                    position: absolute;
+                    top: -3px;
+                    left: -3px;
+                    right: -3px;
+                    bottom: -3px;
+                    background: ${color};
+                    filter: blur(6px);
+                    opacity: 0.6;
+                    z-index: -1;
+                    border-radius: inherit;
+                    animation: electricFlicker 0.1s ease-in-out infinite alternate;
+                `;
+                container.appendChild(electricGlow);
+                
+                if (!document.querySelector('#electricAnimation')) {
+                    const style = document.createElement('style');
+                    style.id = 'electricAnimation';
+                    style.textContent = `
+                        @keyframes electricFlicker {
+                            0% { opacity: 0.4; }
+                            25% { opacity: 0.7; }
+                            50% { opacity: 0.5; }
+                            75% { opacity: 0.8; }
+                            100% { opacity: 0.6; }
+                        }
+                    `;
+                    document.head.appendChild(style);
+                }
+            }
+            
+            // Subtle shadow for depth
+            function applySubtleShadow(container, color) {
+                container.style.boxShadow = `0 4px 8px rgba(0, 0, 0, 0.2), 0 0 20px ${color}20`;
+            }
+            
+            // High intensity effects
+            function applyHighIntensityEffects(container, color) {
+                container.style.filter = 'brightness(1.1) contrast(1.2) saturate(1.3)';
+                container.style.boxShadow = `0 0 30px ${color}60, inset 0 0 20px ${color}20`;
+            }
+            
+            // Low intensity effects
+            function applyLowIntensityEffects(container) {
+                container.style.filter = 'brightness(0.95) contrast(1.05) saturate(0.9)';
+                container.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.1)';
             }
             
             // Apply color-based visual enhancements
@@ -2697,6 +3524,23 @@
                 logoImg.src = url;
             }
             
+            // Helper function to get CSRF token from cookies
+            function getCookie(name) {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        // Does this cookie string begin with the name we want?
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
+            
             // Event listeners for AI features
             generateAiDesignBtn.addEventListener('click', async function() {
                 const prompt = aiPrompt.value.trim();
@@ -2717,6 +3561,7 @@
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
+                            'X-CSRFToken': getCookie('csrftoken'),
                         },
                         body: JSON.stringify({ prompt: prompt })
                     });
@@ -2787,7 +3632,410 @@
                 aiPrompt.value = randomPrompt;
             });
             
-            // Initialize
+
+             
+             // Drag and Drop functionality
+             let draggedElement = null;
+             let isDragging = false;
+             let dragOffset = { x: 0, y: 0 };
+             let selectedElement = null;
+             let isResizing = false;
+             let resizeHandle = null;
+             let elementCounter = 0;
+             
+             function createDraggableElement(type, content, options = {}) {
+                 elementCounter++;
+                 const element = document.createElement('div');
+                 element.className = 'draggable-element';
+                 element.id = `element-${elementCounter}`;
+                 element.style.left = options.x || '50px';
+                 element.style.top = options.y || '50px';
+                 element.style.width = options.width || 'auto';
+                 element.style.height = options.height || 'auto';
+                 
+                 switch (type) {
+                     case 'image':
+                         const img = document.createElement('img');
+                         img.src = content;
+                         img.style.maxWidth = '100px';
+                         img.style.maxHeight = '100px';
+                         img.style.width = '100%';
+                         img.style.height = '100%';
+                         img.style.objectFit = 'contain';
+                         element.appendChild(img);
+                         break;
+                     case 'text':
+                         element.className += ' text-element';
+                         element.textContent = content;
+                         element.style.fontSize = options.fontSize || '16px';
+                         break;
+                     case 'shape':
+                         element.className += ' shape-element';
+                         element.dataset.shape = content;
+                         const shapeColor = options.color || document.getElementById('shapeColor').value;
+                         element.dataset.color = shapeColor;
+                         element.innerHTML = getShapeHTML(content, shapeColor);
+                         element.style.width = options.width || '50px';
+                         element.style.height = options.height || '50px';
+                         break;
+                 }
+                 
+                 // Add event listeners
+                 element.addEventListener('mousedown', handleElementMouseDown);
+                 element.addEventListener('click', function(e) {
+                     e.stopPropagation();
+                     selectElement(element);
+                 });
+                 
+                 // Add to apparel container
+                 const container = document.getElementById('apparelContainer');
+                 container.appendChild(element);
+                 
+                 // Adjust positioning based on current apparel type
+                 if (currentApparelType === 'shorts') {
+                     const currentTop = parseInt(element.style.top) || 0;
+                     const scaledTop = Math.max(50, currentTop * 0.6 + 100);
+                     element.style.top = Math.min(scaledTop, 250) + 'px';
+                 }
+                 
+                 // Update layer list
+                 updateLayerList();
+                 
+                 return element;
+             }
+             
+             function getShapeHTML(shape, color = '#007bff') {
+                 const shapes = {
+                     circle: `<div style="width: 100%; height: 100%; border-radius: 50%; background: ${color};"></div>`,
+                     square: `<div style="width: 100%; height: 100%; background: ${color};"></div>`,
+                     triangle: `<div style="width: 0; height: 0; border-left: 25px solid transparent; border-right: 25px solid transparent; border-bottom: 43px solid ${color}; margin: auto;"></div>`,
+                     star: `<div style="font-size: 40px; color: ${color}; text-align: center; line-height: 50px;">⭐</div>`,
+                     line: `<div style="width: 100%; height: 4px; background: ${color}; margin-top: 23px;"></div>`
+                 };
+                 return shapes[shape] || shapes.circle;
+             }
+             
+             function handleElementMouseDown(e) {
+                 e.preventDefault();
+                 e.stopPropagation();
+                 
+                 const element = e.currentTarget;
+                 selectElement(element);
+                 
+                 if (e.target.classList.contains('resize-handle')) {
+                     isResizing = true;
+                     resizeHandle = e.target.classList[1]; // get handle position
+                     return;
+                 }
+                 
+                 isDragging = true;
+                 draggedElement = element;
+                 
+                 const rect = element.getBoundingClientRect();
+                 const containerRect = document.getElementById('apparelContainer').getBoundingClientRect();
+                 
+                 dragOffset.x = e.clientX - rect.left;
+                 dragOffset.y = e.clientY - rect.top;
+             }
+             
+             function handleMouseMove(e) {
+                 if (isDragging && draggedElement) {
+                     const containerRect = document.getElementById('apparelContainer').getBoundingClientRect();
+                     const newX = e.clientX - containerRect.left - dragOffset.x;
+                     const newY = e.clientY - containerRect.top - dragOffset.y;
+                     
+                     draggedElement.style.left = Math.max(0, Math.min(newX, containerRect.width - draggedElement.offsetWidth)) + 'px';
+                     draggedElement.style.top = Math.max(0, Math.min(newY, containerRect.height - draggedElement.offsetHeight)) + 'px';
+                 }
+                 
+                 if (isResizing && selectedElement) {
+                     const containerRect = document.getElementById('apparelContainer').getBoundingClientRect();
+                     const elementRect = selectedElement.getBoundingClientRect();
+                     
+                     const mouseX = e.clientX - containerRect.left;
+                     const mouseY = e.clientY - containerRect.top;
+                     
+                     const elementLeft = parseInt(selectedElement.style.left);
+                     const elementTop = parseInt(selectedElement.style.top);
+                     
+                     switch (resizeHandle) {
+                         case 'bottom-right':
+                             const newWidth = mouseX - elementLeft;
+                             const newHeight = mouseY - elementTop;
+                             selectedElement.style.width = Math.max(20, newWidth) + 'px';
+                             selectedElement.style.height = Math.max(20, newHeight) + 'px';
+                             break;
+                     }
+                 }
+             }
+             
+             function handleMouseUp() {
+                 isDragging = false;
+                 isResizing = false;
+                 draggedElement = null;
+                 resizeHandle = null;
+             }
+             
+             function selectElement(element) {
+                 // Remove selection from all elements
+                 document.querySelectorAll('.draggable-element').forEach(el => {
+                     el.classList.remove('selected');
+                     el.querySelectorAll('.resize-handle').forEach(handle => handle.remove());
+                 });
+                 
+                 // Select new element
+                 selectedElement = element;
+                 element.classList.add('selected');
+                 
+                 // Add resize handles
+                 const handles = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
+                 handles.forEach(position => {
+                     const handle = document.createElement('div');
+                     handle.className = `resize-handle ${position}`;
+                     element.appendChild(handle);
+                 });
+                 
+                 // Update layer list to reflect selection
+                 updateLayerList();
+             }
+             
+             function deselectAllElements() {
+                 document.querySelectorAll('.draggable-element').forEach(el => {
+                     el.classList.remove('selected');
+                     el.querySelectorAll('.resize-handle').forEach(handle => handle.remove());
+                 });
+                 selectedElement = null;
+             }
+             
+             function handleImageUpload(files) {
+                 Array.from(files).forEach(file => {
+                     if (file.type.startsWith('image/')) {
+                         const reader = new FileReader();
+                         reader.onload = function(e) {
+                             createDraggableElement('image', e.target.result, {
+                                 x: Math.random() * 200 + 50 + 'px',
+                                 y: Math.random() * 200 + 50 + 'px'
+                             });
+                         };
+                         reader.readAsDataURL(file);
+                     }
+                 });
+             }
+             
+             function addTextElement(text) {
+                 if (text.trim()) {
+                     createDraggableElement('text', text, {
+                         x: Math.random() * 200 + 50 + 'px',
+                         y: Math.random() * 200 + 50 + 'px'
+                     });
+                 }
+             }
+             
+             function addShapeElement(shape) {
+                 createDraggableElement('shape', shape, {
+                     x: Math.random() * 200 + 50 + 'px',
+                     y: Math.random() * 200 + 50 + 'px',
+                     width: '50px',
+                     height: '50px'
+                 });
+             }
+             
+             function clearAllElements() {
+                 document.querySelectorAll('.draggable-element').forEach(el => el.remove());
+                 selectedElement = null;
+                 updateLayerList();
+             }
+             
+             // Layer Management Functions
+             function updateLayerList() {
+                 const layerList = document.getElementById('layerList');
+                 const elements = document.querySelectorAll('.draggable-element');
+                 
+                 layerList.innerHTML = '';
+                 
+                 if (elements.length === 0) {
+                     layerList.innerHTML = '<div class="layer-empty">No elements added yet</div>';
+                     return;
+                 }
+                 
+                 elements.forEach((element, index) => {
+                     const layerItem = document.createElement('div');
+                     layerItem.className = 'layer-item';
+                     if (element === selectedElement) {
+                         layerItem.classList.add('selected');
+                     }
+                     
+                     const preview = document.createElement('div');
+                     preview.className = 'layer-preview';
+                     
+                     const info = document.createElement('div');
+                     info.className = 'layer-info';
+                     
+                     if (element.classList.contains('text-element')) {
+                         preview.textContent = 'T';
+                         info.textContent = `Text: ${element.textContent.substring(0, 20)}...`;
+                     } else if (element.classList.contains('shape-element')) {
+                         preview.textContent = '◆';
+                         info.textContent = `Shape: ${element.dataset.shape || 'Unknown'}`;
+                     } else {
+                         preview.textContent = '🖼';
+                         info.textContent = 'Image';
+                     }
+                     
+                     const visibility = document.createElement('div');
+                     visibility.className = 'layer-visibility';
+                     visibility.innerHTML = '👁';
+                     visibility.onclick = () => toggleElementVisibility(element);
+                     
+                     layerItem.appendChild(preview);
+                     layerItem.appendChild(info);
+                     layerItem.appendChild(visibility);
+                     
+                     layerItem.onclick = () => selectElement(element);
+                     
+                     layerList.appendChild(layerItem);
+                 });
+             }
+             
+             function moveLayerUp() {
+                 if (!selectedElement) return;
+                 
+                 const container = document.getElementById('apparelContainer');
+                 const elements = Array.from(container.querySelectorAll('.draggable-element'));
+                 const currentIndex = elements.indexOf(selectedElement);
+                 
+                 if (currentIndex < elements.length - 1) {
+                     const nextElement = elements[currentIndex + 1];
+                     container.insertBefore(selectedElement, nextElement.nextSibling);
+                     updateLayerList();
+                 }
+             }
+             
+             function moveLayerDown() {
+                 if (!selectedElement) return;
+                 
+                 const container = document.getElementById('apparelContainer');
+                 const elements = Array.from(container.querySelectorAll('.draggable-element'));
+                 const currentIndex = elements.indexOf(selectedElement);
+                 
+                 if (currentIndex > 0) {
+                     const prevElement = elements[currentIndex - 1];
+                     container.insertBefore(selectedElement, prevElement);
+                     updateLayerList();
+                 }
+             }
+             
+             function duplicateLayer() {
+                 if (!selectedElement) return;
+                 
+                 const clone = selectedElement.cloneNode(true);
+                 clone.style.left = (parseInt(selectedElement.style.left) + 20) + 'px';
+                 clone.style.top = (parseInt(selectedElement.style.top) + 20) + 'px';
+                 
+                 // Remove resize handles from clone
+                 clone.querySelectorAll('.resize-handle').forEach(handle => handle.remove());
+                 clone.classList.remove('selected');
+                 
+                 // Add event listeners to clone
+                 clone.addEventListener('mousedown', function(e) {
+                     if (e.target.classList.contains('resize-handle')) {
+                         isResizing = true;
+                         resizeHandle = e.target.classList[1];
+                         return;
+                     }
+                     selectElement(clone);
+                     handleElementMouseDown(e, clone);
+                 });
+                 
+                 document.getElementById('apparelContainer').appendChild(clone);
+                 selectElement(clone);
+                 updateLayerList();
+             }
+             
+             function deleteLayer() {
+                 if (!selectedElement) return;
+                 
+                 selectedElement.remove();
+                 selectedElement = null;
+                 updateLayerList();
+             }
+             
+             function toggleElementVisibility(element) {
+                 if (element.style.display === 'none') {
+                     element.style.display = 'block';
+                 } else {
+                     element.style.display = 'none';
+                 }
+                 updateLayerList();
+             }
+                 
+                 // Global mouse events for drag and drop
+                 document.addEventListener('mousemove', handleMouseMove);
+                 document.addEventListener('mouseup', handleMouseUp);
+                 
+                 // Click outside to deselect
+                 document.getElementById('apparelContainer').addEventListener('click', function(e) {
+                     if (e.target === this) {
+                         deselectAllElements();
+                     }
+                 });
+                 
+                 // Image upload
+                 document.getElementById('imageUpload').addEventListener('change', function(e) {
+                     handleImageUpload(e.target.files);
+                 });
+                 
+                 // Add text button
+                 document.getElementById('addTextBtn').addEventListener('click', function() {
+                     const textInput = document.getElementById('textInput');
+                     addTextElement(textInput.value);
+                     textInput.value = '';
+                 });
+                 
+                 // Text input enter key
+                 document.getElementById('textInput').addEventListener('keypress', function(e) {
+                     if (e.key === 'Enter') {
+                         addTextElement(this.value);
+                         this.value = '';
+                     }
+                 });
+                 
+                 // Shape buttons
+                 document.querySelectorAll('[data-shape]').forEach(btn => {
+                     btn.addEventListener('click', function() {
+                         addShapeElement(this.dataset.shape);
+                     });
+                 });
+                 
+                 // Clear elements button
+                 document.getElementById('clearElements').addEventListener('click', clearAllElements);
+                 
+                 // Shape color controls
+                 document.getElementById('applyShapeColor').addEventListener('click', function() {
+                     if (selectedElement && selectedElement.classList.contains('shape-element')) {
+                         const newColor = document.getElementById('shapeColor').value;
+                         const shape = selectedElement.dataset.shape;
+                         selectedElement.dataset.color = newColor;
+                         selectedElement.innerHTML = getShapeHTML(shape, newColor);
+                     }
+                 });
+                 
+                 // Delete selected element with Delete key
+                 document.addEventListener('keydown', function(e) {
+                     if (e.key === 'Delete' && selectedElement) {
+                         selectedElement.remove();
+                         selectedElement = null;
+                         updateLayerList();
+                     }
+                 });
+                 
+                 // Layer management buttons
+                 document.getElementById('moveLayerUp').addEventListener('click', moveLayerUp);
+                 document.getElementById('moveLayerDown').addEventListener('click', moveLayerDown);
+                 document.getElementById('duplicateLayer').addEventListener('click', duplicateLayer);
+                 document.getElementById('deleteLayer').addEventListener('click', deleteLayer);
+             
+             // Initialize
             updateRotation();
             updatePlayerName();
             updatePlayerNumber();
