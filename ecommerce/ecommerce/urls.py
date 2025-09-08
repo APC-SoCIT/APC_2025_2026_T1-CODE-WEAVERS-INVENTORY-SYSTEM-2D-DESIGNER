@@ -126,7 +126,6 @@ urlpatterns = [
     path('get-saved-addresses/', views.get_saved_addresses, name='get-saved-addresses'),
     path('set-default-address/<int:address_id>/', views.set_default_address, name='set-default-address'),
     path('delete-address/<int:address_id>/', views.delete_address, name='delete-address'),
-    path('manage-addresses/', views.manage_addresses_view, name='manage-addresses'),
     
     # Wishlist functionality
     path('add-to-wishlist/<int:product_id>/', wishlist_views.add_to_wishlist, name='add-to-wishlist'),

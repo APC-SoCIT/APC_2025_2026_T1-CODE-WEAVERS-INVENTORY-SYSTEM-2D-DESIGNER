@@ -582,8 +582,13 @@
   // Initialize address cascading when page loads
   document.addEventListener('DOMContentLoaded', function() {
     // Initialize the address cascade functionality
-    if (typeof initializeAddressCascade === 'function') {
-      initializeAddressCascade();
+    if (window.initPHAddressCascadeAPI) {
+      window.initPHAddressCascadeAPI({
+        region: 'region-select',
+        province: 'province-select',
+        citymun: 'citymun-select',
+        barangay: 'barangay-select'
+      });
     }
   });
 </script>

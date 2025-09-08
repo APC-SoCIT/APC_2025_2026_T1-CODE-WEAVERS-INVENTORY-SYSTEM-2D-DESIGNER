@@ -164,6 +164,7 @@ class Orders(models.Model):
     notes = models.TextField(blank=True, null=True, help_text='Additional notes about the order')
     payment_method = models.CharField(max_length=10, choices=PAYMENT_METHODS, default='cod', help_text='Payment method for the order')
     order_ref = models.CharField(max_length=12, unique=True, null=True, blank=True, help_text='Unique short order reference ID')
+    delivery_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, help_text='Delivery fee for this order')
     
     def __str__(self):
         return f"Order {self.order_ref or self.id} - {self.customer.user.username if self.customer else 'No Customer'}"

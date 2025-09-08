@@ -1039,15 +1039,9 @@ def pending_orders_view(request):
     try:
         vat_rate = 12
         customer = models.Customer.objects.get(user=request.user)
-        region = customer.region if hasattr(customer, 'region') else None
     except models.Customer.DoesNotExist:
         messages.error(request, 'Customer profile not found. Please contact support.')
         return redirect('customer-home')
-
-    # Use dynamic shipping fee lookup (same as cart)
-    origin_region = "NCR"
-    destination_region = region if region else "NCR"
-    delivery_fee = get_shipping_fee(origin_region, destination_region, weight_kg=0.5)
 
     orders = models.Orders.objects.filter(customer=customer, status='Pending').order_by('-order_date', '-created_at')
     orders_with_items = []
@@ -1070,6 +1064,8 @@ def pending_orders_view(request):
         # Calculate VAT using same method as cart (VAT-inclusive)
         vat_amount = total * Decimal(12) / Decimal(112)
         net_subtotal = total - vat_amount
+        # Use stored delivery fee from order
+        delivery_fee = order.delivery_fee
         grand_total = total + Decimal(delivery_fee)
 
         orders_with_items.append({
@@ -1095,12 +1091,6 @@ def to_ship_orders_view(request):
     except models.Customer.DoesNotExist:
         messages.error(request, 'Customer profile not found. Please contact support.')
         return redirect('customer-home')
-    region = customer.region if hasattr(customer, 'region') else None
-    
-    # Use dynamic shipping fee lookup (same as cart)
-    origin_region = "NCR"
-    destination_region = region if region else "NCR"
-    delivery_fee = get_shipping_fee(origin_region, destination_region, weight_kg=0.5)
     
     orders = models.Orders.objects.filter(
         customer=customer,
@@ -1125,6 +1115,8 @@ def to_ship_orders_view(request):
         # Calculate VAT using same method as cart (VAT-inclusive)
         vat_amount = total * Decimal(12) / Decimal(112)
         net_subtotal = total - vat_amount
+        # Use stored delivery fee from order
+        delivery_fee = order.delivery_fee
         grand_total = total + Decimal(delivery_fee)
         
         orders_with_items.append({
@@ -1142,15 +1134,9 @@ def to_ship_orders_view(request):
 def to_receive_orders_view(request):
     try:
         customer = models.Customer.objects.get(user_id=request.user.id)
-        region = customer.region if hasattr(customer, 'region') else None
     except models.Customer.DoesNotExist:
         messages.error(request, 'Customer profile not found. Please contact support.')
         return redirect('customer-home')
-    
-    # Use dynamic shipping fee lookup (same as cart)
-    origin_region = "NCR"
-    destination_region = region if region else "NCR"
-    delivery_fee = get_shipping_fee(origin_region, destination_region, weight_kg=0.5)
     
     orders = models.Orders.objects.filter(customer=customer, status='Out for Delivery').order_by('-order_date')
     orders_with_items = []
@@ -1172,6 +1158,8 @@ def to_receive_orders_view(request):
         # Calculate VAT using same method as cart (VAT-inclusive)
         vat_amount = total * Decimal(12) / Decimal(112)
         net_subtotal = total - vat_amount
+        # Use stored delivery fee from order
+        delivery_fee = order.delivery_fee
         grand_total = total + Decimal(delivery_fee)
         
         orders_with_items.append({
@@ -1189,15 +1177,9 @@ def to_receive_orders_view(request):
 def delivered_orders_view(request):
     try:
         customer = models.Customer.objects.get(user_id=request.user.id)
-        region = customer.region if hasattr(customer, 'region') else None
     except models.Customer.DoesNotExist:
         messages.error(request, 'Customer profile not found. Please contact support.')
         return redirect('customer-home')
-    
-    # Use dynamic shipping fee lookup (same as cart)
-    origin_region = "NCR"
-    destination_region = region if region else "NCR"
-    delivery_fee = get_shipping_fee(origin_region, destination_region, weight_kg=0.5)
     
     orders = models.Orders.objects.filter(customer=customer, status='Delivered').order_by('-order_date')
     orders_with_items = []
@@ -1219,6 +1201,8 @@ def delivered_orders_view(request):
         # Calculate VAT using same method as cart (VAT-inclusive)
         vat_amount = total * Decimal(12) / Decimal(112)
         net_subtotal = total - vat_amount
+        # Use stored delivery fee from order
+        delivery_fee = order.delivery_fee
         grand_total = total + Decimal(delivery_fee)
         
         orders_with_items.append({
@@ -1239,12 +1223,6 @@ def cancelled_orders_view(request):
     except models.Customer.DoesNotExist:
         messages.error(request, 'Customer profile not found. Please contact support.')
         return redirect('customer-home')
-    region = customer.region if hasattr(customer, 'region') else None
-    
-    # Use dynamic shipping fee lookup (same as cart)
-    origin_region = "NCR"
-    destination_region = region if region else "NCR"
-    delivery_fee = get_shipping_fee(origin_region, destination_region, weight_kg=0.5)
     
     orders = models.Orders.objects.filter(customer=customer, status='Cancelled').order_by('-status_updated_at')
     orders_with_items = []
@@ -1266,6 +1244,8 @@ def cancelled_orders_view(request):
         # Calculate VAT using same method as cart (VAT-inclusive)
         vat_amount = total * Decimal(12) / Decimal(112)
         net_subtotal = total - vat_amount
+        # Use stored delivery fee from order
+        delivery_fee = order.delivery_fee
         grand_total = total + Decimal(delivery_fee)
         
         orders_with_items.append({
@@ -1460,9 +1440,16 @@ def cart_view(request):
                                 'size': size,
                                 'quantity': quantity
                             })
+    # Use VAT-inclusive calculation like orders
     vat_amount = total * 12 / 112
     net_subtotal = total - vat_amount
     grand_total = total + delivery_fee
+    
+    # Get saved addresses for the current user
+    saved_addresses = []
+    if request.user.is_authenticated and customer:
+        saved_addresses = SavedAddress.objects.filter(customer=customer).order_by('-is_default', '-updated_at')
+    
     response = render(request, 'ecom/cart.html', {
         'products': products,
         'total': total,
@@ -1474,6 +1461,7 @@ def cart_view(request):
         'product_count_in_cart': product_count_in_cart,
         'user_address': customer,
         'region_choices': region_choices,
+        'saved_addresses': saved_addresses,
     })
     return response
 
@@ -1541,24 +1529,21 @@ def remove_from_cart_view(request, pk):
             customer = None
             region = None
 
-    # Set delivery fee based on region
-    if region == 'NCR':
-        delivery_fee = 49
-    elif region == 'CAR':
-        delivery_fee = 59
-    elif region:
-        delivery_fee = 69
-    else:
-        delivery_fee = 0
+    # Use dynamic shipping fee lookup (same as orders)
+    origin_region = "NCR"
+    destination_region = region if region else "NCR"
+    delivery_fee = get_shipping_fee(origin_region, destination_region, weight_kg=0.5)
 
+    # Calculate VAT using same method as orders (VAT-inclusive)
     vat_rate = 12
-    vat_multiplier = 1 + (vat_rate / 100)
-    vat_amount = total * (vat_rate / 100)
-    grand_total = total + delivery_fee + vat_amount
+    vat_amount = total * Decimal(vat_rate) / Decimal(112)
+    net_subtotal = total - vat_amount
+    grand_total = total + Decimal(delivery_fee)
 
     response = render(request, 'ecom/cart.html', {
         'products': products,
         'total': total,
+        'net_subtotal': net_subtotal,
         'delivery_fee': delivery_fee,
         'vat_rate': vat_rate,
         'vat_amount': vat_amount,
@@ -1822,7 +1807,13 @@ def payment_success_view(request):
 
     order_ref = generate_order_ref()
 
-    # Create the parent order entry with order_ref
+    # Calculate delivery fee using same logic as cart
+    region = customer.region if hasattr(customer, 'region') else None
+    origin_region = "NCR"
+    destination_region = region if region else "NCR"
+    delivery_fee = get_shipping_fee(origin_region, destination_region, weight_kg=0.5)
+
+    # Create the parent order entry with order_ref and delivery_fee
     initial_status = 'Processing' if payment_method == 'paypal' else 'Pending'
     parent_order = models.Orders.objects.create(
         customer=customer,
@@ -1830,13 +1821,12 @@ def payment_success_view(request):
         email=email,
         mobile=mobile,
         address=address,
-        size='',
-        quantity=0,
         payment_method=payment_method,
         order_date=timezone.now(),
         status_updated_at=timezone.now(),
         notes=f"Order Group ID: {order_ref}",
-        order_ref=order_ref
+        order_ref=order_ref,
+        delivery_fee=delivery_fee
     )
 
     # Create order items linked to the parent order
@@ -2018,16 +2008,11 @@ def download_invoice_view(request, order_id):
     order_items = models.OrderItem.objects.filter(order=order)
     customer = order.customer
 
-    # Delivery fee logic (same as pending_orders_view)
+    # Use dynamic shipping fee lookup (same as pending_orders_view)
     region = customer.region if hasattr(customer, 'region') else None
-    if region == 'NCR':
-        delivery_fee = Decimal('100')
-    elif region == 'CAR':
-        delivery_fee = Decimal('159')
-    elif region:
-        delivery_fee = Decimal('200')
-    else:
-        delivery_fee = Decimal('0')
+    origin_region = "NCR"
+    destination_region = region if region else "NCR"
+    delivery_fee = Decimal(str(get_shipping_fee(origin_region, destination_region, weight_kg=0.5)))
 
     subtotal = Decimal('0.00')
     products = []
@@ -2358,16 +2343,49 @@ def admin_manage_inventory_view(request):
 
 def get_shipping_fee(origin_region, destination_region, weight_kg=0.5):
     from .models import ShippingFee
+    
+    # Region mapping from customer format to shipping fee format
+    region_mapping = {
+        'Region R1': 'Region I',
+        'Region R2': 'Region II', 
+        'Region R3': 'Region III',
+        'Region R4A': 'Region IV-A',
+        'Region R4B': 'Region IV-B',
+        'Region R5': 'Region V',
+        'Region R6': 'Region VI',
+        'Region R7': 'Region VII',
+        'Region R8': 'Region VIII',
+        'Region R9': 'Region IX',
+        'Region R10': 'Region X',
+        'Region R11': 'Region XI',
+        'Region R12': 'Region XII',
+        'Region R13': 'Region XIII',
+        'NCR': 'NCR',
+        'CAR': 'CAR',
+        'BARMM': 'BARMM'
+    }
+    
+    # Map regions to proper format
+    mapped_origin = region_mapping.get(origin_region, origin_region)
+    mapped_destination = region_mapping.get(destination_region, destination_region)
+    
     try:
-        fee = ShippingFee.objects.get(
-            courier="J&T Express",
-            origin_region=origin_region,
-            destination_region=destination_region,
-            weight_kg=weight_kg
-        )
-        return float(fee.price_php)
-    except ShippingFee.DoesNotExist:
-        return 0
+        # Find the shipping fee with weight greater than or equal to the requested weight
+        fee = ShippingFee.objects.filter(
+            courier="Standard",
+            origin_region=mapped_origin,
+            destination_region=mapped_destination,
+            weight_kg__gte=weight_kg
+        ).order_by('weight_kg').first()
+        
+        if fee:
+            return float(fee.price_php)
+        else:
+            # Default fee if no matching record found
+            return 50.0
+    except Exception as e:
+        print(f"Error getting shipping fee: {e}")
+        return 50.0
 
 @login_required
 def save_new_address(request):
