@@ -64,6 +64,7 @@
             <button class="quick-action-btn" data-message="Tell me about customization options">
                 <i class="fa fa-paint-brush"></i> Customization
             </button>
+            <button class="chat-support-btn" id="chat-support-btn">Talk to a Chat Support</button>
         </div>
         
         <!-- Chat Input -->
@@ -83,7 +84,7 @@
     position: fixed;
     bottom: 20px;
     right: 20px;
-    z-index: 1000;
+    z-index: 9998;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
@@ -405,6 +406,33 @@
     font-size: 10px;
 }
 
+.chat-support-btn {
+    background: #28a745;
+    border: 1px solid #28a745;
+    color: white;
+    padding: 10px 16px;
+    margin: 8px 4px;
+    border-radius: 20px;
+    font-size: 0.9em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    box-shadow: 0 2px 4px rgba(40, 167, 69, 0.2);
+}
+
+.chat-support-btn:hover {
+    background: #218838;
+    border-color: #1e7e34;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
+}
+
+.chat-support-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(40, 167, 69, 0.2);
+}
+
 .chat-input-container {
     padding: 15px;
     background: white;
@@ -548,6 +576,14 @@
                 sendMessage();
             });
         });
+        
+        // Chat support button
+        const chatSupportBtn = document.getElementById('chat-support-btn');
+        if (chatSupportBtn) {
+            chatSupportBtn.addEventListener('click', function() {
+                requestChatSupport();
+            });
+        }
         
         // Generate session ID
         chatSession = generateSessionId();
@@ -792,6 +828,47 @@
                 }
             });
         }
+    }
+    
+    function requestChatSupport() {
+        // Add system message indicating support request
+        addMessage('Requesting chat support...', 'system');
+        
+        // Send a message that will trigger handover
+        const supportMessage = 'I need to speak with a human agent for support';
+        
+        if (!chatSession) {
+            chatSession = generateSessionId();
+        }
+        
+        fetch('/api/chatbot/send-message/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                message: supportMessage,
+                session_id: chatSession
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                addMessage(data.bot_response, 'bot');
+                
+                // Force handover status update
+                handoverStatus = 'requested';
+                updateChatStatus('Support Requested', 'Connecting you with an agent...');
+                startStatusChecking();
+            } else {
+                addMessage('Sorry, there was an error requesting support. Please try again.', 'system');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            addMessage('Sorry, there was an error requesting support. Please try again.', 'system');
+        });
     }
     
     function getCookie(name) {

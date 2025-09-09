@@ -1,0 +1,900 @@
+<!-- Admin Support Widget -->
+<div id="admin-support-widget" class="admin-support-widget">
+    <!-- Support Toggle Button -->
+    <div id="support-toggle" class="support-toggle">
+        <i class="fa fa-headset" id="support-icon"></i>
+        <i class="fa fa-times" id="close-support-icon" style="display: none;"></i>
+        <div class="support-notification" id="support-notification">0</div>
+    </div>
+    
+    <!-- Support Window -->
+    <div id="support-window" class="support-window">
+        <!-- Support Header -->
+        <div class="support-header">
+            <div class="support-header-info">
+                <div class="admin-avatar">
+                    <i class="fa fa-headset"></i>
+                </div>
+                <div class="admin-info">
+                    <h4 id="support-title">Chat Support Requests</h4>
+                    <span id="support-status" class="admin-status">Online</span>
+                </div>
+            </div>
+            <button id="minimize-support" class="minimize-btn">
+                <i class="fa fa-minus"></i>
+            </button>
+        </div>
+        
+        <!-- Support Requests List -->
+        <div id="support-requests" class="support-requests">
+            <div class="no-requests" id="no-requests">
+                <div class="no-requests-content">
+                    <i class="fa fa-inbox"></i>
+                    <p>No pending support requests</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Support Actions -->
+        <div class="support-actions">
+            <button class="refresh-btn" onclick="refreshSupportRequests()">
+                <i class="fa fa-refresh"></i> Refresh
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Chat Modal for Admin -->
+<div id="admin-chat-modal" class="admin-chat-modal" style="display: none;">
+    <div class="chat-modal-content">
+        <div class="chat-modal-header">
+            <h3 id="modal-customer-name">Customer Chat</h3>
+            <div class="chat-modal-actions">
+                <button onclick="resolveHandover()" class="resolve-btn">
+                    <i class="fa fa-check"></i> Resolve
+                </button>
+                <button onclick="closeChatModal()" class="close-modal-btn">
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+        </div>
+        <div class="chat-modal-messages" id="modal-chat-messages">
+            <!-- Messages will be loaded here -->
+        </div>
+        <div class="chat-modal-input">
+            <div class="input-wrapper">
+                <input type="text" id="admin-message-input" placeholder="Type your message..." />
+                <button onclick="sendAdminMessage()" class="send-message-btn">
+                    <i class="fa fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Admin Support Widget Styles */
+.admin-support-widget {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.support-toggle {
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, #10b981, #059669);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.support-toggle:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.6);
+}
+
+.support-toggle i {
+    font-size: 24px;
+    color: white;
+    transition: all 0.3s ease;
+}
+
+.support-notification {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: #ef4444;
+    color: white;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: bold;
+    border: 2px solid white;
+}
+
+.support-window {
+    width: 380px;
+    height: 500px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    display: none;
+    flex-direction: column;
+    position: absolute;
+    bottom: 80px;
+    right: 0;
+    overflow: hidden;
+    border: 1px solid #e0e0e0;
+}
+
+.support-window.active {
+    display: flex;
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.support-header {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+    padding: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.support-header-info {
+    display: flex;
+    align-items: center;
+}
+
+.admin-avatar {
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 10px;
+}
+
+.admin-avatar i {
+    font-size: 18px;
+    color: white;
+}
+
+.admin-info h4 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.admin-status {
+    font-size: 12px;
+    opacity: 0.8;
+}
+
+.minimize-btn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 3px;
+    transition: background 0.3s ease;
+}
+
+.minimize-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.support-requests {
+    flex: 1;
+    padding: 15px;
+    overflow-y: auto;
+    background: #f8f9fa;
+}
+
+.no-requests {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    text-align: center;
+    color: #6b7280;
+}
+
+.no-requests-content i {
+    font-size: 48px;
+    margin-bottom: 10px;
+    opacity: 0.5;
+}
+
+.no-requests-content p {
+    margin: 0;
+    font-size: 14px;
+}
+
+.support-request-item {
+    background: white;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 10px;
+    border: 1px solid #e5e7eb;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.support-request-item:hover {
+    border-color: #10b981;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.1);
+}
+
+.request-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.customer-name {
+    font-weight: 600;
+    color: #1f2937;
+    font-size: 14px;
+}
+
+.request-time {
+    font-size: 12px;
+    color: #6b7280;
+}
+
+.request-reason {
+    font-size: 13px;
+    color: #4b5563;
+    margin-bottom: 8px;
+}
+
+.request-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.take-over-btn {
+    background: #10b981;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.take-over-btn:hover {
+    background: #059669;
+}
+
+.support-actions {
+    padding: 15px;
+    background: white;
+    border-top: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: center;
+}
+
+.refresh-btn {
+    background: #f3f4f6;
+    border: 1px solid #d1d5db;
+    color: #374151;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.refresh-btn:hover {
+    background: #e5e7eb;
+    border-color: #9ca3af;
+}
+
+/* Chat Modal Styles */
+.admin-chat-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.chat-modal-content {
+    background: white;
+    border-radius: 12px;
+    width: 600px;
+    height: 500px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+.chat-modal-header {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.chat-modal-header h3 {
+    margin: 0;
+    font-size: 18px;
+}
+
+.chat-modal-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.resolve-btn, .close-modal-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.2s ease;
+}
+
+.resolve-btn:hover, .close-modal-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.chat-modal-messages {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+    background: #f8f9fa;
+}
+
+.chat-modal-input {
+    padding: 15px 20px;
+    background: white;
+    border-top: 1px solid #e0e0e0;
+}
+
+.input-wrapper {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+#admin-message-input {
+    flex: 1;
+    padding: 10px 15px;
+    border: 1px solid #d1d5db;
+    border-radius: 25px;
+    outline: none;
+    font-size: 14px;
+}
+
+#admin-message-input:focus {
+    border-color: #10b981;
+}
+
+.send-message-btn {
+    background: #10b981;
+    border: none;
+    color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s ease;
+}
+
+.send-message-btn:hover {
+    background: #059669;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .admin-support-widget {
+        bottom: 10px;
+        right: 10px;
+    }
+    
+    .support-window {
+        width: 320px;
+        height: 450px;
+        bottom: 70px;
+    }
+    
+    .support-toggle {
+        width: 50px;
+        height: 50px;
+    }
+    
+    .support-toggle i {
+        font-size: 20px;
+    }
+    
+    .chat-modal-content {
+        width: 90%;
+        height: 80%;
+        margin: 20px;
+    }
+}
+
+/* Scrollbar Styling */
+.support-requests::-webkit-scrollbar,
+.chat-modal-messages::-webkit-scrollbar {
+    width: 4px;
+}
+
+.support-requests::-webkit-scrollbar-track,
+.chat-modal-messages::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.support-requests::-webkit-scrollbar-thumb,
+.chat-modal-messages::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 2px;
+}
+
+.support-requests::-webkit-scrollbar-thumb:hover,
+.chat-modal-messages::-webkit-scrollbar-thumb:hover {
+    background: #a1a1a1;
+}
+</style>
+
+<script>
+// Admin Support Widget JavaScript
+(function() {
+    let supportWidget = null;
+    let supportWindow = null;
+    let isWidgetOpen = false;
+    let currentChatSession = null;
+    let chatModal = null;
+    let refreshInterval = null;
+    let chatPollInterval = null;
+    let lastMessageId = 0;
+    let displayedMessageIds = new Set();
+    
+    // Initialize widget when DOM is loaded
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeSupportWidget();
+        startAutoRefresh();
+    });
+    
+    function initializeSupportWidget() {
+        supportWidget = document.getElementById('admin-support-widget');
+        supportWindow = document.getElementById('support-window');
+        
+        if (!supportWidget) return;
+        
+        // Toggle widget
+        document.getElementById('support-toggle').addEventListener('click', toggleSupportWidget);
+        
+        // Minimize widget
+        document.getElementById('minimize-support').addEventListener('click', closeSupportWidget);
+        
+        // Initial load of support requests
+        refreshSupportRequests();
+    }
+    
+    function toggleSupportWidget() {
+        if (isWidgetOpen) {
+            closeSupportWidget();
+        } else {
+            openSupportWidget();
+        }
+    }
+    
+    function openSupportWidget() {
+        supportWindow.classList.add('active');
+        document.getElementById('support-icon').style.display = 'none';
+        document.getElementById('close-support-icon').style.display = 'block';
+        isWidgetOpen = true;
+        refreshSupportRequests();
+    }
+    
+    function closeSupportWidget() {
+        supportWindow.classList.remove('active');
+        document.getElementById('support-icon').style.display = 'block';
+        document.getElementById('close-support-icon').style.display = 'none';
+        isWidgetOpen = false;
+    }
+    
+    window.refreshSupportRequests = function() {
+        // Add visual feedback
+        const refreshBtn = document.querySelector('.refresh-btn');
+        const originalText = refreshBtn.innerHTML;
+        refreshBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Refreshing...';
+        refreshBtn.disabled = true;
+        
+        fetch('/api/admin/pending-handovers/')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    updateSupportRequestsList(data.pending_handovers);
+                    updateNotificationCount(data.pending_handovers.length);
+                } else {
+                    console.error('API returned error:', data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching support requests:', error);
+            })
+            .finally(() => {
+                // Restore button state
+                const refreshBtn = document.querySelector('.refresh-btn');
+                refreshBtn.innerHTML = '<i class="fa fa-refresh"></i> Refresh';
+                refreshBtn.disabled = false;
+            });
+    }
+    
+    function updateSupportRequestsList(requests) {
+        const container = document.getElementById('support-requests');
+        const noRequests = document.getElementById('no-requests');
+        
+        if (requests.length === 0) {
+            noRequests.style.display = 'flex';
+            // Remove any existing request items
+            const existingItems = container.querySelectorAll('.support-request-item');
+            existingItems.forEach(item => item.remove());
+            return;
+        }
+        
+        noRequests.style.display = 'none';
+        
+        // Clear existing items
+        const existingItems = container.querySelectorAll('.support-request-item');
+        existingItems.forEach(item => item.remove());
+        
+        // Add new items
+        requests.forEach(request => {
+            const requestElement = createRequestElement(request);
+            container.appendChild(requestElement);
+        });
+    }
+    
+    function createRequestElement(request) {
+        const div = document.createElement('div');
+        div.className = 'support-request-item';
+        div.innerHTML = `
+            <div class="request-header">
+                <span class="customer-name">${request.customer_name}</span>
+                <span class="request-time">${new Date(request.handover_requested_at).toLocaleString()}</span>
+            </div>
+            <div class="request-reason">${request.handover_reason}</div>
+            <div class="request-actions">
+                <button class="take-over-btn" onclick="takeOverChat('${request.session_id}', '${request.customer_name}')">
+                    <i class="fa fa-comments"></i> Take Over
+                </button>
+            </div>
+        `;
+        return div;
+    }
+    
+    function updateNotificationCount(count) {
+        const notification = document.getElementById('support-notification');
+        notification.textContent = count;
+        notification.style.display = count > 0 ? 'flex' : 'none';
+    }
+    
+    window.takeOverChat = function(sessionId, customerName) {
+        currentChatSession = sessionId;
+        
+        // Take over the chat session
+        fetch('/api/admin/take-handover/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                session_id: sessionId
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                openChatModal(sessionId, customerName);
+                refreshSupportRequests(); // Refresh to remove taken over request
+            } else {
+                alert('Error taking over chat: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error taking over chat:', error);
+            alert('Error taking over chat');
+        });
+    }
+    
+    function openChatModal(sessionId, customerName) {
+        chatModal = document.getElementById('admin-chat-modal');
+        document.getElementById('modal-customer-name').textContent = `Chat with ${customerName}`;
+        chatModal.style.display = 'flex';
+        
+        currentChatSession = sessionId;
+        // Clear displayed message IDs for new session
+        displayedMessageIds.clear();
+        lastMessageId = 0;
+        
+        loadChatHistory(sessionId);
+        startChatPolling();
+        
+        // Remove existing event listeners and add new one
+        const messageInput = document.getElementById('admin-message-input');
+        // Clone the input to remove all event listeners
+        const newInput = messageInput.cloneNode(true);
+        messageInput.parentNode.replaceChild(newInput, messageInput);
+        
+        // Add single keypress event listener
+        newInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendAdminMessage();
+            }
+        });
+    }
+    
+    window.closeChatModal = function() {
+        if (chatModal) {
+            chatModal.style.display = 'none';
+            currentChatSession = null;
+            stopChatPolling();
+        }
+    }
+    
+    function loadChatHistory(sessionId) {
+        fetch(`/api/support/chat-history/?session_id=${sessionId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    displayChatMessages(data.messages);
+                    // Track all loaded message IDs and update last message ID
+                    if (data.messages.length > 0) {
+                        const messageIds = data.messages.map(msg => msg.id).filter(id => id && !isNaN(id));
+                        messageIds.forEach(id => displayedMessageIds.add(id));
+                        if (messageIds.length > 0) {
+                            lastMessageId = Math.max(...messageIds);
+                        } else {
+                            lastMessageId = 0;
+                        }
+                    } else {
+                        lastMessageId = 0;
+                    }
+                }
+            })
+            .catch(error => console.error('Error loading chat history:', error));
+    }
+    
+    function displayChatMessages(messages) {
+        const chatMessages = document.getElementById('modal-chat-messages');
+        if (messages.length === 0) {
+            chatMessages.innerHTML = '<div class="text-center text-gray-500">No messages yet</div>';
+            return;
+        }
+        
+        chatMessages.innerHTML = messages.map(msg => {
+            const isAdmin = msg.message_type === 'admin';
+            const isSystem = msg.message_type === 'system';
+            const messageClass = isAdmin ? 'bg-blue-100 ml-8' : isSystem ? 'bg-yellow-100' : 'bg-white mr-8';
+            const sender = msg.sender_name || (isAdmin ? 'Admin' : isSystem ? 'System' : 'Customer');
+            
+            return `
+                <div class="mb-3 p-3 rounded ${messageClass}">
+                    <div class="text-xs text-gray-500 mb-1">${sender} - ${new Date(msg.timestamp).toLocaleString()}</div>
+                    <div class="text-sm">${msg.content}</div>
+                </div>
+            `;
+        }).join('');
+        
+        // Scroll to bottom
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+    
+    function appendMessageToChat(msg) {
+        const chatMessages = document.getElementById('modal-chat-messages');
+        
+        // Remove "No messages yet" placeholder if it exists
+        const placeholder = chatMessages.querySelector('.text-center.text-gray-500');
+        if (placeholder) {
+            placeholder.remove();
+        }
+        
+        const isAdmin = msg.message_type === 'admin';
+        const isSystem = msg.message_type === 'system';
+        const messageClass = isAdmin ? 'bg-blue-100 ml-8' : isSystem ? 'bg-yellow-100' : 'bg-white mr-8';
+        
+        // Show 'You' for current admin user's messages, otherwise use sender_name
+        let sender = msg.sender_name || (isAdmin ? 'Admin' : isSystem ? 'System' : 'Customer');
+        if (isAdmin && msg.admin_user) {
+            // Check if this is the current user's message by comparing with current user info
+            // For now, we'll show the sender name as provided by the backend
+            sender = msg.sender_name;
+        }
+        
+        const messageElement = document.createElement('div');
+        messageElement.className = `mb-3 p-3 rounded ${messageClass}`;
+        messageElement.innerHTML = `
+            <div class="text-xs text-gray-500 mb-1">${sender} - ${new Date(msg.timestamp).toLocaleString()}</div>
+            <div class="text-sm">${msg.content}</div>
+        `;
+        
+        chatMessages.appendChild(messageElement);
+        
+        // Scroll to bottom
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+    
+    window.sendAdminMessage = function() {
+        const input = document.getElementById('admin-message-input');
+        const message = input.value.trim();
+        
+        if (!message || !currentChatSession) return;
+        
+        fetch('/api/admin/send-message/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                session_id: currentChatSession,
+                message: message
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                input.value = '';
+                // Don't append immediately - let polling handle it for real-time sync
+                // Just trigger an immediate poll to get the message faster
+                setTimeout(checkForNewMessages, 100);
+            } else {
+                alert('Error sending message: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error sending message:', error);
+            alert('Error sending message');
+        });
+    }
+    
+    window.resolveHandover = function() {
+        if (!currentChatSession) return;
+        
+        fetch('/api/admin/resolve-handover/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                session_id: currentChatSession
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                closeChatModal();
+                refreshSupportRequests();
+            } else {
+                alert('Error resolving handover: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error resolving handover:', error);
+            alert('Error resolving handover');
+        });
+    }
+    
+    function startAutoRefresh() {
+        refreshInterval = setInterval(refreshSupportRequests, 30000); // Refresh every 30 seconds
+    }
+    
+    function startChatPolling() {
+        if (chatPollInterval) {
+            clearInterval(chatPollInterval);
+        }
+        chatPollInterval = setInterval(checkForNewMessages, 1000); // Poll every 1 second for real-time feel
+    }
+    
+    function stopChatPolling() {
+        if (chatPollInterval) {
+            clearInterval(chatPollInterval);
+            chatPollInterval = null;
+        }
+    }
+    
+    function checkForNewMessages() {
+        if (!currentChatSession) return;
+        
+        const lastId = lastMessageId && !isNaN(lastMessageId) ? lastMessageId : 0;
+        fetch(`/api/support/new-messages/?session_id=${currentChatSession}&last_id=${lastId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.messages.length > 0) {
+                    data.messages.forEach(msg => {
+                        // Only append if we haven't displayed this message yet
+                        if (msg.id && !displayedMessageIds.has(msg.id)) {
+                            appendMessageToChat(msg);
+                            displayedMessageIds.add(msg.id);
+                            if (!isNaN(msg.id)) {
+                                lastMessageId = Math.max(lastMessageId || 0, parseInt(msg.id));
+                            }
+                        }
+                    });
+                }
+            })
+            .catch(error => console.error('Error checking for new messages:', error));
+    }
+    
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    
+    // Close modal when clicking outside
+    document.addEventListener('click', function(e) {
+        if (e.target === chatModal) {
+            closeChatModal();
+        }
+    });
+    
+})();
+</script>

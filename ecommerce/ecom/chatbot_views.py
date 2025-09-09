@@ -8,6 +8,7 @@ from django.views import View
 import json
 import uuid
 from datetime import datetime
+from django.utils import timezone
 from .models import ChatSession, ChatMessage, ChatbotKnowledge, Customer
 from django.db.models import Q
 import re
@@ -246,6 +247,264 @@ def chat_message(request):
         return JsonResponse({'error': str(e)}, status=500)
 
 
+# Customer Support Chat API Endpoints
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def support_start_session(request):
+    """Start a new customer support chat session"""
+    try:
+        data = json.loads(request.body)
+        session_id = data.get('session_id')
+        
+        if not session_id:
+            return JsonResponse({'error': 'Session ID is required'}, status=400)
+        
+        # Get or create customer if user is authenticated
+        customer = None
+        if request.user.is_authenticated:
+            try:
+                customer = Customer.objects.get(user=request.user)
+            except Customer.DoesNotExist:
+                pass
+        
+        # Get or create chat session
+        session, created = ChatSession.objects.get_or_create(
+            session_id=session_id,
+            defaults={
+                'customer': customer,
+                'handover_status': 'requested',  # Start as support request
+                'handover_requested_at': timezone.now(),
+                'handover_reason': 'Customer initiated support chat'
+            }
+        )
+        
+        if created:
+            # Create welcome message
+            ChatMessage.objects.create(
+                session=session,
+                message_type='system',
+                content='Welcome to customer support! An agent will be with you shortly.'
+            )
+        
+        return JsonResponse({
+            'success': True,
+            'session_id': session_id,
+            'status': session.handover_status
+        })
+        
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON data'}, status=400)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def support_send_message(request):
+    """Send a message in customer support chat"""
+    try:
+        data = json.loads(request.body)
+        session_id = data.get('session_id')
+        message = data.get('message', '').strip()
+        message_type = data.get('message_type', 'user')
+        
+        if not session_id or not message:
+            return JsonResponse({'error': 'Session ID and message are required'}, status=400)
+        
+        # Get chat session
+        try:
+            session = ChatSession.objects.get(session_id=session_id)
+        except ChatSession.DoesNotExist:
+            return JsonResponse({'error': 'Chat session not found'}, status=404)
+        
+        # Determine admin user for admin messages
+        admin_user = None
+        if message_type == 'admin' and request.user.is_authenticated and request.user.is_staff:
+            admin_user = request.user
+            # Update session to show admin is handling
+            if session.handover_status == 'requested':
+                session.handover_status = 'admin'
+                session.admin_user = admin_user
+                session.admin_joined_at = timezone.now()
+                session.save()
+        
+        # Create message
+        chat_message = ChatMessage.objects.create(
+            session=session,
+            message_type=message_type,
+            content=message,
+            admin_user=admin_user
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'message_id': chat_message.id,
+            'timestamp': chat_message.timestamp.isoformat()
+        })
+        
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON data'}, status=400)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@csrf_protect
+@require_http_methods(["POST"])
+def support_request_new_agent(request):
+    """Request a new agent for support chat"""
+    try:
+        data = json.loads(request.body)
+        session_id = data.get('session_id')
+        
+        if not session_id:
+            return JsonResponse({'error': 'Session ID is required'}, status=400)
+        
+        try:
+            session = ChatSession.objects.get(session_id=session_id)
+        except ChatSession.DoesNotExist:
+            return JsonResponse({'error': 'Chat session not found'}, status=404)
+        
+        # Reset admin assignment and request new handover
+        session.admin_user = None
+        session.admin_joined_at = None
+        session.handover_status = 'requested'
+        session.save()
+        
+        # Create system message
+        ChatMessage.objects.create(
+            session=session,
+            message_type='system',
+            content='A new agent has been requested. Please wait while we connect you with another support representative.'
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'New agent requested successfully'
+        })
+        
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON data'}, status=400)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@require_http_methods(["GET"])
+def support_chat_history(request):
+    """Get chat history for a support session"""
+    try:
+        session_id = request.GET.get('session_id')
+        
+        if not session_id:
+            return JsonResponse({'error': 'Session ID is required'}, status=400)
+        
+        try:
+            session = ChatSession.objects.get(session_id=session_id)
+        except ChatSession.DoesNotExist:
+            return JsonResponse({'error': 'Chat session not found'}, status=404)
+        
+        # Get messages
+        messages = ChatMessage.objects.filter(session=session).order_by('timestamp')
+        
+        messages_data = []
+        for msg in messages:
+            # Determine sender name based on message type
+            sender_name = 'System'  # Default
+            if msg.message_type == 'user':
+                if session.customer:
+                    sender_name = f"{session.customer.user.first_name} {session.customer.user.last_name}".strip() or session.customer.user.username
+                else:
+                    sender_name = 'Customer'
+            elif msg.message_type == 'admin':
+                if msg.admin_user:
+                    sender_name = f"{msg.admin_user.first_name} {msg.admin_user.last_name}".strip() or msg.admin_user.username
+                else:
+                    sender_name = 'Support Agent'
+            elif msg.message_type == 'bot':
+                sender_name = 'Bot Assistant'
+            
+            messages_data.append({
+                'id': msg.id,
+                'message_type': msg.message_type,
+                'content': msg.content,
+                'timestamp': msg.timestamp.isoformat(),
+                'sender_name': sender_name,
+                'admin_user': msg.admin_user.username if msg.admin_user else None
+            })
+        
+        return JsonResponse({
+            'success': True,
+            'messages': messages_data,
+            'session_status': session.handover_status
+        })
+        
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@require_http_methods(["GET"])
+def support_new_messages(request):
+    """Get new messages since last check"""
+    try:
+        session_id = request.GET.get('session_id')
+        last_id_param = request.GET.get('last_id', '0')
+        
+        # Handle NaN and invalid values
+        try:
+            last_id = int(last_id_param) if last_id_param and last_id_param != 'NaN' else 0
+        except (ValueError, TypeError):
+            last_id = 0
+        
+        if not session_id:
+            return JsonResponse({'error': 'Session ID is required'}, status=400)
+        
+        try:
+            session = ChatSession.objects.get(session_id=session_id)
+        except ChatSession.DoesNotExist:
+            return JsonResponse({'error': 'Chat session not found'}, status=404)
+        
+        # Get new messages
+        messages = ChatMessage.objects.filter(
+            session=session,
+            id__gt=last_id
+        ).order_by('timestamp')
+        
+        messages_data = []
+        for msg in messages:
+            # Determine sender name based on message type
+            sender_name = 'System'  # Default
+            if msg.message_type == 'user':
+                if session.customer:
+                    sender_name = f"{session.customer.user.first_name} {session.customer.user.last_name}".strip() or session.customer.user.username
+                else:
+                    sender_name = 'Customer'
+            elif msg.message_type == 'admin':
+                if msg.admin_user:
+                    sender_name = f"{msg.admin_user.first_name} {msg.admin_user.last_name}".strip() or msg.admin_user.username
+                else:
+                    sender_name = 'Support Agent'
+            elif msg.message_type == 'bot':
+                sender_name = 'Bot Assistant'
+            
+            messages_data.append({
+                'id': msg.id,
+                'message_type': msg.message_type,
+                'content': msg.content,
+                'timestamp': msg.timestamp.isoformat(),
+                'sender_name': sender_name,
+                'admin_user': msg.admin_user.username if msg.admin_user else None
+            })
+        
+        return JsonResponse({
+            'success': True,
+            'messages': messages_data,
+            'session_status': session.handover_status
+        })
+        
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
 @csrf_protect
 @require_http_methods(["GET"])
 def chat_history(request):
@@ -265,10 +524,30 @@ def chat_history(request):
         
         message_data = []
         for msg in messages:
+            # Determine sender name based on message type
+            sender_name = 'System'
+            if msg.message_type == 'user':
+                if chat_session.customer and chat_session.customer.user:
+                    sender_name = f"{chat_session.customer.user.first_name} {chat_session.customer.user.last_name}".strip()
+                    if not sender_name:
+                        sender_name = chat_session.customer.user.username
+                else:
+                    sender_name = 'Customer'
+            elif msg.message_type == 'admin':
+                if msg.admin_user:
+                    sender_name = f"{msg.admin_user.first_name} {msg.admin_user.last_name}".strip()
+                    if not sender_name:
+                        sender_name = msg.admin_user.username
+                else:
+                    sender_name = 'Admin'
+            elif msg.message_type == 'bot':
+                sender_name = 'Bot Assistant'
+            
             message_data.append({
-                'type': msg.message_type,
+                'message_type': msg.message_type,
                 'content': msg.content,
-                'timestamp': msg.timestamp.isoformat()
+                'timestamp': msg.timestamp.isoformat(),
+                'sender_name': sender_name
             })
         
         return JsonResponse({
@@ -334,29 +613,36 @@ def admin_pending_handovers(request):
         
         sessions_data = []
         for session in pending_sessions:
-            # Get latest messages for context
-            latest_messages = session.messages.order_by('-timestamp')[:5]
-            messages_data = []
-            for msg in reversed(latest_messages):
-                messages_data.append({
-                    'type': msg.message_type,
-                    'content': msg.content,
-                    'timestamp': msg.timestamp.isoformat()
-                })
-            
-            customer_name = 'Anonymous'
-            if session.customer and session.customer.user:
-                customer_name = f"{session.customer.user.first_name} {session.customer.user.last_name}".strip()
-                if not customer_name:
-                    customer_name = session.customer.user.username
-            
-            sessions_data.append({
-                'session_id': session.session_id,
-                'customer_name': customer_name,
-                'handover_requested_at': session.handover_requested_at.isoformat(),
-                'handover_reason': session.handover_reason,
-                'recent_messages': messages_data
-            })
+            try:
+                # Get latest messages for context
+                latest_messages = session.messages.order_by('-timestamp')[:5]
+                messages_data = []
+                for msg in reversed(latest_messages):
+                    messages_data.append({
+                        'type': msg.message_type,
+                        'content': msg.content,
+                        'timestamp': msg.timestamp.isoformat()
+                    })
+                
+                customer_name = 'Anonymous'
+                if session.customer and session.customer.user:
+                    customer_name = f"{session.customer.user.first_name} {session.customer.user.last_name}".strip()
+                    if not customer_name:
+                        customer_name = session.customer.user.username
+                
+                session_data = {
+                    'session_id': session.session_id,
+                    'customer_name': customer_name,
+                    'handover_requested_at': session.handover_requested_at.isoformat() if session.handover_requested_at else None,
+                    'handover_reason': session.handover_reason or 'No reason provided',
+                    'recent_messages': messages_data
+                }
+                
+                sessions_data.append(session_data)
+                
+            except Exception as e:
+                # Log the error but continue processing other sessions
+                continue
         
         return JsonResponse({
             'success': True,

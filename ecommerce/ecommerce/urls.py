@@ -154,6 +154,13 @@ urlpatterns = [
     path('api/admin/send-message/', chatbot_views.admin_send_message, name='admin-send-message'),
     path('api/admin/resolve-handover/', chatbot_views.admin_resolve_handover, name='admin-resolve-handover'),
     
+    # Customer Support Chat URLs
+    path('api/support/start-session/', chatbot_views.support_start_session, name='support-start-session'),
+    path('api/support/send-message/', chatbot_views.support_send_message, name='support-send-message'),
+    path('api/support/chat-history/', chatbot_views.support_chat_history, name='support-chat-history'),
+    path('api/support/new-messages/', chatbot_views.support_new_messages, name='support-new-messages'),
+    path('api/support/request-new-agent/', chatbot_views.support_request_new_agent, name='support-request-new-agent'),
+    
     # AI Designer
     path('ai-designer/', views.ai_designer_view, name='ai-designer'),
 
