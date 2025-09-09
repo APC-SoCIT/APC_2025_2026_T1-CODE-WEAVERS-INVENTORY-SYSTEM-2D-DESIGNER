@@ -686,6 +686,14 @@ def admin_take_handover(request):
             content=f'Admin {request.user.first_name or request.user.username} has joined the conversation.'
         )
         
+        # Create automated message when admin takes over
+        ChatMessage.objects.create(
+            session=session,
+            message_type='admin',
+            content='Thank you for contacting WorksTeamWear.\n\nPlease note that this conversation may be recorded or monitored for training and quality assurance purposes. This helps us improve our service and ensure your experience is as smooth and helpful as possible.\nIf you have any concerns, feel free to let us know.',
+            admin_user=request.user
+        )
+        
         return JsonResponse({
             'success': True,
             'message': 'Successfully took over the conversation'
