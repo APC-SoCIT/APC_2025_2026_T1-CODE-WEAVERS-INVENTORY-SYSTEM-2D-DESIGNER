@@ -154,34 +154,31 @@
   </head>
   <body>
     {% include "ecom/navbar.html" %}
-    <div class="container">
-      <div class="row">
-        <div class="col-md-6">
-          <div class="card">
-            <form class="box" method="post">
-              {% csrf_token %}
-              <h1>Login</h1>
-              {% if form.errors %}
-                <div class="alert alert-danger">
-                  {% for field, error in form.errors.items %}
-                    {% if field == 'username' %}
-                      <p>Account not found, please register</p>
-                    {% else %}
-                      <p>{{ error }}</p>
-                    {% endif %}
-                  {% endfor %}
-                </div>
-              {% endif %}
-              {% render_field form.username class="form-control" placeholder="Username" autocomplete="off" %}
-              {% render_field form.password class="form-control" placeholder="Password" %}
-              <input type="submit" name="" value="Login">
-              <a href="/customersignup" class="btn btn-primary">Don't have an account? Register here!</a>
-            </form>
-          </div>
+    <div class="container-fluid d-flex justify-content-center align-items-center" style="min-height: 80vh;">
+      <div class="row justify-content-center">
+        <div class="col-12 col-md-6 col-lg-4">
+          <form class="box" method="post">
+            {% csrf_token %}
+            <h1>Login</h1>
+            {% if form.errors %}
+              <div class="alert alert-danger">
+                {% for field, error in form.errors.items %}
+                  {% if field == 'username' %}
+                    <p>Account not found, please register</p>
+                  {% else %}
+                    <p>{{ error }}</p>
+                  {% endif %}
+                {% endfor %}
+              </div>
+            {% endif %}
+            {% render_field form.username class="form-control" placeholder="Username" autocomplete="off" %}
+            {% render_field form.password class="form-control" placeholder="Password" %}
+            <input type="submit" name="" value="Login">
+            <a href="/customersignup" class="btn btn-primary">Don't have an account? Register here!</a>
+          </form>
         </div>
       </div>
     </div>
-    <br><br><br>
     {% include "ecom/footer.html" %}
   </body>
 </html>
