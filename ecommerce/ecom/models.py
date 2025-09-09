@@ -289,20 +289,34 @@ class Newsletter(models.Model):
 
 
 class ChatSession(models.Model):
+    HANDOVER_STATUS_CHOICES = (
+        ('bot', 'Bot Handling'),
+        ('requested', 'Admin Help Requested'),
+        ('admin', 'Admin Handling'),
+        ('resolved', 'Resolved'),
+    )
+    
     session_id = models.CharField(max_length=100, unique=True)
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)
+    handover_status = models.CharField(max_length=20, choices=HANDOVER_STATUS_CHOICES, default='bot')
+    admin_user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='handled_chats')
+    handover_requested_at = models.DateTimeField(null=True, blank=True)
+    admin_joined_at = models.DateTimeField(null=True, blank=True)
+    handover_reason = models.TextField(blank=True, null=True)
 
     def __str__(self):
-        return f"Chat Session {self.session_id}"
+        return f"Chat Session {self.session_id} ({self.handover_status})"
 
 
 class ChatMessage(models.Model):
     MESSAGE_TYPES = (
         ('user', 'User Message'),
         ('bot', 'Bot Response'),
+        ('admin', 'Admin Response'),
+        ('system', 'System Message'),
     )
     
     session = models.ForeignKey(ChatSession, on_delete=models.CASCADE, related_name='messages')
@@ -310,6 +324,7 @@ class ChatMessage(models.Model):
     content = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
     is_helpful = models.BooleanField(null=True, blank=True)  # User feedback on bot responses
+    admin_user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='admin_messages')
 
     class Meta:
         ordering = ['timestamp']

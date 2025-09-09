@@ -54,6 +54,10 @@ class ChatbotService:
         if contextual_response:
             return contextual_response
         
+        # Check if admin help is needed
+        if self._needs_admin_help(user_message_lower, session_id):
+            return self._request_admin_help(session_id, user_message)
+        
         # Default response
         return self._get_random_response('default')
     
@@ -110,6 +114,71 @@ class ChatbotService:
         import random
         responses = self.default_responses.get(response_type, self.default_responses['default'])
         return random.choice(responses)
+    
+    def _needs_admin_help(self, message, session_id):
+        """Determine if the message requires admin intervention"""
+        # Keywords that indicate complex queries needing human help
+        admin_help_keywords = [
+            'speak to human', 'talk to person', 'human agent', 'customer service',
+            'complaint', 'refund', 'cancel order', 'problem with order',
+            'billing issue', 'payment problem', 'technical issue', 'bug',
+            'not working', 'error', 'broken', 'defective', 'damaged',
+            'urgent', 'emergency', 'escalate', 'manager', 'supervisor'
+        ]
+        
+        # Check if message contains admin help keywords
+        if any(keyword in message for keyword in admin_help_keywords):
+            return True
+        
+        # Check if this is a complex query that bot couldn't handle
+        # (multiple failed attempts or very specific technical questions)
+        if session_id:
+            try:
+                session = ChatSession.objects.get(session_id=session_id)
+                recent_messages = session.messages.filter(message_type='bot').order_by('-timestamp')[:3]
+                
+                # If last 3 bot responses were default responses, escalate
+                default_responses_count = 0
+                for msg in recent_messages:
+                    if any(default_phrase in msg.content.lower() for default_phrase in 
+                          ['sorry, i don\'t understand', 'i\'m not sure', 'could you please rephrase']):
+                        default_responses_count += 1
+                
+                if default_responses_count >= 2:
+                    return True
+                    
+            except ChatSession.DoesNotExist:
+                pass
+        
+        return False
+    
+    def _request_admin_help(self, session_id, user_message):
+        """Request admin help and update session status"""
+        from django.utils import timezone
+        
+        try:
+            session = ChatSession.objects.get(session_id=session_id)
+            if session.handover_status == 'bot':
+                session.handover_status = 'requested'
+                session.handover_requested_at = timezone.now()
+                session.handover_reason = f"User query: {user_message[:200]}"
+                session.save()
+                
+                # Create system message about handover
+                ChatMessage.objects.create(
+                    session=session,
+                    message_type='system',
+                    content='Admin help has been requested for this conversation.'
+                )
+                
+                return ("I understand you need additional assistance. I'm connecting you with one of our "
+                       "customer service representatives who will be able to help you better. Please wait "
+                       "a moment while I transfer your conversation.")
+        except ChatSession.DoesNotExist:
+            pass
+        
+        return ("I'd like to connect you with a human agent for better assistance. "
+               "Please wait while I transfer your conversation.")
 
 
 @csrf_protect
@@ -166,8 +235,9 @@ def chat_message(request):
         return JsonResponse({
             'success': True,
             'session_id': session_id,
-            'response': bot_response,
-            'timestamp': bot_message.timestamp.isoformat()
+            'bot_response': bot_response,
+            'timestamp': bot_message.timestamp.isoformat(),
+            'handover_requested': chat_session.handover_status == 'requested'
         })
         
     except json.JSONDecodeError:
@@ -204,7 +274,9 @@ def chat_history(request):
         return JsonResponse({
             'success': True,
             'session_id': session_id,
-            'messages': message_data
+            'messages': message_data,
+            'handover_status': chat_session.handover_status,
+            'is_active': chat_session.is_active
         })
         
     except Exception as e:
@@ -244,3 +316,184 @@ def chat_feedback(request):
 def chatbot_widget(request):
     """Render the chatbot widget template"""
     return render(request, 'ecom/chatbot_widget.html')
+
+
+@login_required
+@csrf_protect
+@require_http_methods(["GET"])
+def admin_pending_handovers(request):
+    """Get list of chat sessions pending admin handover"""
+    try:
+        if not request.user.is_staff:
+            return JsonResponse({'error': 'Unauthorized'}, status=403)
+        
+        pending_sessions = ChatSession.objects.filter(
+            handover_status='requested',
+            is_active=True
+        ).select_related('customer__user').order_by('handover_requested_at')
+        
+        sessions_data = []
+        for session in pending_sessions:
+            # Get latest messages for context
+            latest_messages = session.messages.order_by('-timestamp')[:5]
+            messages_data = []
+            for msg in reversed(latest_messages):
+                messages_data.append({
+                    'type': msg.message_type,
+                    'content': msg.content,
+                    'timestamp': msg.timestamp.isoformat()
+                })
+            
+            customer_name = 'Anonymous'
+            if session.customer and session.customer.user:
+                customer_name = f"{session.customer.user.first_name} {session.customer.user.last_name}".strip()
+                if not customer_name:
+                    customer_name = session.customer.user.username
+            
+            sessions_data.append({
+                'session_id': session.session_id,
+                'customer_name': customer_name,
+                'handover_requested_at': session.handover_requested_at.isoformat(),
+                'handover_reason': session.handover_reason,
+                'recent_messages': messages_data
+            })
+        
+        return JsonResponse({
+            'success': True,
+            'pending_handovers': sessions_data
+        })
+        
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@login_required
+@csrf_protect
+@require_http_methods(["POST"])
+def admin_take_handover(request):
+    """Admin takes over a chat session"""
+    try:
+        if not request.user.is_staff:
+            return JsonResponse({'error': 'Unauthorized'}, status=403)
+        
+        data = json.loads(request.body)
+        session_id = data.get('session_id')
+        
+        if not session_id:
+            return JsonResponse({'error': 'Session ID is required'}, status=400)
+        
+        session = ChatSession.objects.get(session_id=session_id)
+        
+        if session.handover_status != 'requested':
+            return JsonResponse({'error': 'Session is not pending handover'}, status=400)
+        
+        from django.utils import timezone
+        session.handover_status = 'admin'
+        session.admin_user = request.user
+        session.admin_joined_at = timezone.now()
+        session.save()
+        
+        # Create system message about admin takeover
+        ChatMessage.objects.create(
+            session=session,
+            message_type='system',
+            content=f'Admin {request.user.first_name or request.user.username} has joined the conversation.'
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Successfully took over the conversation'
+        })
+        
+    except ChatSession.DoesNotExist:
+        return JsonResponse({'error': 'Chat session not found'}, status=404)
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON data'}, status=400)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@login_required
+@csrf_protect
+@require_http_methods(["POST"])
+def admin_send_message(request):
+    """Admin sends a message in a chat session"""
+    try:
+        if not request.user.is_staff:
+            return JsonResponse({'error': 'Unauthorized'}, status=403)
+        
+        data = json.loads(request.body)
+        session_id = data.get('session_id')
+        message_content = data.get('message', '').strip()
+        
+        if not session_id or not message_content:
+            return JsonResponse({'error': 'Session ID and message are required'}, status=400)
+        
+        session = ChatSession.objects.get(session_id=session_id)
+        
+        if session.handover_status != 'admin' or session.admin_user != request.user:
+            return JsonResponse({'error': 'You are not handling this conversation'}, status=403)
+        
+        # Create admin message
+        admin_message = ChatMessage.objects.create(
+            session=session,
+            message_type='admin',
+            content=message_content,
+            admin_user=request.user
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'message_id': admin_message.id,
+            'timestamp': admin_message.timestamp.isoformat()
+        })
+        
+    except ChatSession.DoesNotExist:
+        return JsonResponse({'error': 'Chat session not found'}, status=404)
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON data'}, status=400)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@login_required
+@csrf_protect
+@require_http_methods(["POST"])
+def admin_resolve_handover(request):
+    """Mark a handover as resolved"""
+    try:
+        if not request.user.is_staff:
+            return JsonResponse({'error': 'Unauthorized'}, status=403)
+        
+        data = json.loads(request.body)
+        session_id = data.get('session_id')
+        
+        if not session_id:
+            return JsonResponse({'error': 'Session ID is required'}, status=400)
+        
+        session = ChatSession.objects.get(session_id=session_id)
+        
+        if session.admin_user != request.user:
+            return JsonResponse({'error': 'You are not handling this conversation'}, status=403)
+        
+        session.handover_status = 'resolved'
+        session.save()
+        
+        # Create system message about resolution
+        ChatMessage.objects.create(
+            session=session,
+            message_type='system',
+            content='This conversation has been resolved by admin.'
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Conversation marked as resolved'
+        })
+        
+    except ChatSession.DoesNotExist:
+        return JsonResponse({'error': 'Chat session not found'}, status=404)
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON data'}, status=400)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)

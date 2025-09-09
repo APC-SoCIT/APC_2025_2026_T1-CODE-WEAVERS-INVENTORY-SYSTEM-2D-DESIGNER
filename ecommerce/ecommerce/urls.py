@@ -148,6 +148,12 @@ urlpatterns = [
     path('api/chatbot/history/', chatbot_views.chat_history, name='chatbot-history'),
     path('api/chatbot/feedback/', chatbot_views.chat_feedback, name='chatbot-feedback'),
     
+    # Chatbot Admin Handover URLs
+    path('api/admin/pending-handovers/', chatbot_views.admin_pending_handovers, name='admin-pending-handovers'),
+    path('api/admin/take-handover/', chatbot_views.admin_take_handover, name='admin-take-handover'),
+    path('api/admin/send-message/', chatbot_views.admin_send_message, name='admin-send-message'),
+    path('api/admin/resolve-handover/', chatbot_views.admin_resolve_handover, name='admin-resolve-handover'),
+    
     # AI Designer
     path('ai-designer/', views.ai_designer_view, name='ai-designer'),
 

@@ -16,8 +16,8 @@
                     <i class="fa fa-robot"></i>
                 </div>
                 <div class="bot-info">
-                    <h4>WorksTeamWear Assistant</h4>
-                    <span class="bot-status">Online</span>
+                    <h4 id="chat-title">WorksTeamWear Assistant</h4>
+                    <span id="chat-status" class="bot-status">Online</span>
                 </div>
             </div>
             <button id="minimize-chat" class="minimize-btn">
@@ -260,11 +260,47 @@
     flex-direction: row-reverse;
 }
 
-.user-message .message-avatar {
-    background: #28a745;
+.user-message .message-content {
+    background: #0066cc;
     color: white;
-    margin-right: 0;
+    margin-left: 0;
+    margin-right: 10px;
+}
+
+.admin-message {
+    flex-direction: row;
+}
+
+.admin-message .message-content {
+    background: #10b981;
+    color: white;
     margin-left: 10px;
+    margin-right: 0;
+}
+
+.admin-message .message-avatar {
+    background: #059669;
+}
+
+.system-message {
+    justify-content: center;
+    margin: 10px 0;
+}
+
+.system-message .message-content {
+    background: #fbbf24;
+    color: #92400e;
+    margin: 0;
+    font-style: italic;
+    text-align: center;
+    border-radius: 20px;
+    padding: 8px 16px;
+    font-size: 0.9em;
+}
+
+.system-message .message-avatar {
+    background: #f59e0b;
+    color: white;
 }
 
 .message-content {
@@ -466,6 +502,8 @@
 (function() {
     let chatSession = null;
     let isTyping = false;
+    let handoverStatus = 'none'; // none, requested, active, resolved
+    let statusCheckInterval = null;
     
     // Initialize chatbot
     function initChatbot() {
@@ -579,8 +617,15 @@
             hideTypingIndicator();
             
             if (data.success) {
-                addMessage(data.response, 'bot');
+                addMessage(data.bot_response, 'bot');
                 chatSession = data.session_id;
+                
+                // Check if handover was requested
+                if (data.handover_requested) {
+                    handoverStatus = 'requested';
+                    updateChatStatus('Support requested', 'Connecting you with an agent...');
+                    startStatusChecking();
+                }
             } else {
                 addMessage('Sorry, I encountered an error. Please try again.', 'bot');
             }
@@ -599,7 +644,24 @@
         
         const avatarDiv = document.createElement('div');
         avatarDiv.className = 'message-avatar';
-        avatarDiv.innerHTML = type === 'bot' ? '<i class="fa fa-robot"></i>' : '<i class="fa fa-user"></i>';
+        
+        // Set appropriate icon based on message type
+        switch(type) {
+            case 'bot':
+                avatarDiv.innerHTML = '<i class="fa fa-robot"></i>';
+                break;
+            case 'user':
+                avatarDiv.innerHTML = '<i class="fa fa-user"></i>';
+                break;
+            case 'admin':
+                avatarDiv.innerHTML = '<i class="fa fa-user-tie"></i>';
+                break;
+            case 'system':
+                avatarDiv.innerHTML = '<i class="fa fa-info-circle"></i>';
+                break;
+            default:
+                avatarDiv.innerHTML = '<i class="fa fa-robot"></i>';
+        }
         
         const contentDiv = document.createElement('div');
         contentDiv.className = 'message-content';
@@ -648,6 +710,88 @@
     
     function generateSessionId() {
         return 'chat_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    }
+    
+    function updateChatStatus(title, status) {
+        const chatTitle = document.getElementById('chat-title');
+        const chatStatus = document.getElementById('chat-status');
+        
+        if (chatTitle) chatTitle.textContent = title;
+        if (chatStatus) chatStatus.textContent = status;
+    }
+    
+    function startStatusChecking() {
+        if (statusCheckInterval) {
+            clearInterval(statusCheckInterval);
+        }
+        
+        statusCheckInterval = setInterval(checkHandoverStatus, 5000); // Check every 5 seconds
+    }
+    
+    function stopStatusChecking() {
+        if (statusCheckInterval) {
+            clearInterval(statusCheckInterval);
+            statusCheckInterval = null;
+        }
+    }
+    
+    function checkHandoverStatus() {
+        if (!chatSession || handoverStatus === 'none') return;
+        
+        fetch(`/api/chatbot/history/?session_id=${chatSession}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.handover_status) {
+                    const newStatus = data.handover_status;
+                    
+                    if (newStatus !== handoverStatus) {
+                        handoverStatus = newStatus;
+                        
+                        switch (newStatus) {
+                            case 'requested':
+                                updateChatStatus('Support requested', 'Waiting for agent...');
+                                break;
+                            case 'active':
+                                updateChatStatus('Live Support', 'Connected with agent');
+                                addMessage('An agent has joined the conversation and will assist you shortly.', 'system');
+                                break;
+                            case 'resolved':
+                                updateChatStatus('WorksTeamWear Assistant', 'Online');
+                                addMessage('The support session has been resolved. I\'m back to help you with any other questions!', 'bot');
+                                stopStatusChecking();
+                                handoverStatus = 'none';
+                                break;
+                        }
+                    }
+                    
+                    // Load any new messages
+                    if (data.messages && data.messages.length > 0) {
+                        loadNewMessages(data.messages);
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error checking handover status:', error);
+            });
+    }
+    
+    function loadNewMessages(messages) {
+        const messagesContainer = document.getElementById('chat-messages');
+        const existingMessages = messagesContainer.querySelectorAll('.message');
+        const existingCount = existingMessages.length;
+        
+        // Add only new messages
+        if (messages.length > existingCount) {
+            const newMessages = messages.slice(existingCount);
+            
+            newMessages.forEach(msg => {
+                if (msg.message_type === 'admin') {
+                    addMessage(msg.content, 'admin');
+                } else if (msg.message_type === 'system') {
+                    addMessage(msg.content, 'system');
+                }
+            });
+        }
     }
     
     function getCookie(name) {

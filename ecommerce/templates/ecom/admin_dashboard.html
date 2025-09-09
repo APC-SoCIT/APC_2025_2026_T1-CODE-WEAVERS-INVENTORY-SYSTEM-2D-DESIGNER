@@ -147,6 +147,29 @@
             </div>
         </div>
     </div>
+    
+    <!-- Chatbot Handover Management -->
+    <div class="mb-8">
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-medium text-gray-900">Chatbot Support Requests</h3>
+                <div class="flex items-center space-x-2">
+                    <span id="pending-count" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">0 Pending</span>
+                    <button onclick="refreshHandovers()" class="text-gray-400 hover:text-gray-600">
+                        <i data-lucide="refresh-cw" class="h-4 w-4"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div id="handover-list" class="space-y-3">
+                <div class="text-center py-8 text-gray-500">
+                    <i data-lucide="message-circle" class="h-12 w-12 mx-auto mb-2 text-gray-300"></i>
+                    <p>No pending support requests</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
     <!-- Charts and Recent Transactions -->
     <div class="grid grid-cols-1 lg:grid-cols-7 gap-6">
         <div class="lg:col-span-4 bg-white rounded-lg shadow p-9" style="height: 600px; overflow-y: hidden;">
@@ -263,6 +286,264 @@
                 }
             });
         });
+        
+        // Chatbot Handover Management
+        let currentChatSession = null;
+        let chatModal = null;
+        
+        function refreshHandovers() {
+            fetch('/api/admin/pending-handovers/')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        updateHandoverList(data.handovers);
+                        document.getElementById('pending-count').textContent = data.handovers.length + ' Pending';
+                    }
+                })
+                .catch(error => console.error('Error fetching handovers:', error));
+        }
+        
+        function updateHandoverList(handovers) {
+            const handoverList = document.getElementById('handover-list');
+            
+            if (handovers.length === 0) {
+                handoverList.innerHTML = `
+                    <div class="text-center py-8 text-gray-500">
+                        <i data-lucide="message-circle" class="h-12 w-12 mx-auto mb-2 text-gray-300"></i>
+                        <p>No pending support requests</p>
+                    </div>
+                `;
+            } else {
+                handoverList.innerHTML = handovers.map(handover => `
+                    <div class="border rounded-lg p-4 hover:bg-gray-50">
+                        <div class="flex items-center justify-between">
+                            <div class="flex-1">
+                                <div class="flex items-center space-x-2 mb-2">
+                                    <span class="text-sm font-medium text-gray-900">
+                                        ${handover.customer_name || 'Anonymous'}
+                                    </span>
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                        ${handover.status}
+                                    </span>
+                                </div>
+                                <p class="text-sm text-gray-600 mb-2">
+                                    Reason: ${handover.reason || 'Customer needs assistance'}
+                                </p>
+                                <p class="text-xs text-gray-500">
+                                    Requested: ${new Date(handover.requested_at).toLocaleString()}
+                                </p>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button onclick="takeHandover('${handover.session_id}')" 
+                                        class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
+                                    Take Over
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+            lucide.createIcons();
+        }
+        
+        function takeHandover(sessionId) {
+            fetch('/api/admin/take-handover/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({ session_id: sessionId })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    currentChatSession = sessionId;
+                    openChatModal(sessionId);
+                    refreshHandovers();
+                } else {
+                    alert('Error taking handover: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error taking handover:', error);
+                alert('Error taking handover');
+            });
+        }
+        
+        function openChatModal(sessionId) {
+            // Create modal HTML
+            const modalHTML = `
+                <div id="chat-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+                    <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-medium text-gray-900">Live Chat Support</h3>
+                            <button onclick="closeChatModal()" class="text-gray-400 hover:text-gray-600">
+                                <i data-lucide="x" class="h-6 w-6"></i>
+                            </button>
+                        </div>
+                        
+                        <div id="chat-messages" class="h-96 overflow-y-auto border rounded p-4 mb-4 bg-gray-50">
+                            <div class="text-center text-gray-500">Loading chat history...</div>
+                        </div>
+                        
+                        <div class="flex space-x-2">
+                            <input type="text" id="admin-message-input" 
+                                   placeholder="Type your message..." 
+                                   class="flex-1 border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <button onclick="sendAdminMessage()" 
+                                    class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                                Send
+                            </button>
+                            <button onclick="resolveHandover()" 
+                                    class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
+                                Resolve
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
+            chatModal = document.getElementById('chat-modal');
+            
+            // Load chat history
+            loadChatHistory(sessionId);
+            
+            // Add enter key listener
+            document.getElementById('admin-message-input').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    sendAdminMessage();
+                }
+            });
+            
+            lucide.createIcons();
+        }
+        
+        function closeChatModal() {
+            if (chatModal) {
+                chatModal.remove();
+                chatModal = null;
+                currentChatSession = null;
+            }
+        }
+        
+        function loadChatHistory(sessionId) {
+            fetch(`/api/chatbot/history/?session_id=${sessionId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        displayChatMessages(data.messages);
+                    }
+                })
+                .catch(error => console.error('Error loading chat history:', error));
+        }
+        
+        function displayChatMessages(messages) {
+            const chatMessages = document.getElementById('chat-messages');
+            if (messages.length === 0) {
+                chatMessages.innerHTML = '<div class="text-center text-gray-500">No messages yet</div>';
+                return;
+            }
+            
+            chatMessages.innerHTML = messages.map(msg => {
+                const isAdmin = msg.message_type === 'admin';
+                const isSystem = msg.message_type === 'system';
+                const messageClass = isAdmin ? 'bg-blue-100 ml-8' : isSystem ? 'bg-yellow-100' : 'bg-white mr-8';
+                const sender = isAdmin ? 'Admin' : isSystem ? 'System' : 'Customer';
+                
+                return `
+                    <div class="mb-3 p-3 rounded ${messageClass}">
+                        <div class="text-xs text-gray-500 mb-1">${sender} - ${new Date(msg.timestamp).toLocaleString()}</div>
+                        <div class="text-sm">${msg.content}</div>
+                    </div>
+                `;
+            }).join('');
+            
+            // Scroll to bottom
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        function sendAdminMessage() {
+            const input = document.getElementById('admin-message-input');
+            const message = input.value.trim();
+            
+            if (!message || !currentChatSession) return;
+            
+            fetch('/api/admin/send-message/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    session_id: currentChatSession,
+                    message: message
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    input.value = '';
+                    loadChatHistory(currentChatSession);
+                } else {
+                    alert('Error sending message: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error sending message:', error);
+                alert('Error sending message');
+            });
+        }
+        
+        function resolveHandover() {
+            if (!currentChatSession) return;
+            
+            if (confirm('Are you sure you want to resolve this support request?')) {
+                fetch('/api/admin/resolve-handover/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({ session_id: currentChatSession })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        closeChatModal();
+                        refreshHandovers();
+                    } else {
+                        alert('Error resolving handover: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error resolving handover:', error);
+                    alert('Error resolving handover');
+                });
+            }
+        }
+        
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        
+        // Auto-refresh handovers every 30 seconds
+        setInterval(refreshHandovers, 30000);
+        
+        // Initial load
+        refreshHandovers();
     </script>
     <script>
   document.addEventListener('DOMContentLoaded', function() {
