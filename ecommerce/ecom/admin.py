@@ -60,22 +60,28 @@ class FeedbackAdmin(admin.ModelAdmin):
 
 @admin.register(ChatSession)
 class ChatSessionAdmin(admin.ModelAdmin):
-    list_display = ['session_id', 'customer', 'created_at', 'is_active']
-    list_filter = ['is_active', 'created_at']
-    search_fields = ['session_id', 'customer__user__first_name', 'customer__user__last_name']
+    list_display = ['session_id', 'customer', 'handover_status', 'created_at', 'is_active']
+    list_filter = ['handover_status', 'is_active', 'created_at']
+    search_fields = ['session_id', 'customer__first_name', 'customer__last_name']
     readonly_fields = ['session_id', 'created_at', 'updated_at']
+    
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('customer', 'admin_user')
 
 
 @admin.register(ChatMessage)
 class ChatMessageAdmin(admin.ModelAdmin):
-    list_display = ['session', 'message_type', 'content_preview', 'timestamp', 'is_helpful']
-    list_filter = ['message_type', 'timestamp', 'is_helpful']
+    list_display = ['session', 'message_type', 'content_preview', 'timestamp']
+    list_filter = ['message_type', 'timestamp']
     search_fields = ['content', 'session__session_id']
     readonly_fields = ['timestamp']
     
     def content_preview(self, obj):
         return obj.content[:50] + '...' if len(obj.content) > 50 else obj.content
     content_preview.short_description = 'Content Preview'
+    
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('session', 'admin_user')
 
 
 @admin.register(ChatbotKnowledge)
