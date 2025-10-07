@@ -35,6 +35,11 @@ pipeline {
           fi
 
           echo "Built-in venv failed; attempting virtualenv..."
+          # Ensure pip is available; install via get-pip if missing
+          if ! command -v pip3 >/dev/null 2>&1; then
+            curl -sS https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+            python3 get-pip.py --user || true
+          fi
           # Install virtualenv user-wide, if possible
           python3 -m pip install --user virtualenv >/dev/null 2>&1 || true
           python3 -m virtualenv "$VENV"
@@ -44,15 +49,21 @@ pipeline {
             echo "PIP_BIN=$VENV/bin/pip" >> py.env
             "$VENV/bin/pip" install --upgrade pip
             "$VENV/bin/pip" install -r requirements.txt
+            rm -f get-pip.py || true
             exit 0
           fi
 
           echo "Virtualenv also failed; falling back to system Python/pip."
           # Final fallback to system Python/pip
           echo "PY_BIN=python3" > py.env
-          echo "PIP_BIN=pip3" >> py.env
-          pip3 install --user --upgrade pip || true
-          pip3 install --user -r requirements.txt
+          # Use python3 -m pip to avoid pip3 command dependency
+          if ! python3 -m pip --version >/dev/null 2>&1; then
+            curl -sS https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+            python3 get-pip.py --user || true
+          fi
+          python3 -m pip install --user --upgrade pip || true
+          python3 -m pip install --user -r requirements.txt
+          rm -f get-pip.py || true
         '''
       }
     }
