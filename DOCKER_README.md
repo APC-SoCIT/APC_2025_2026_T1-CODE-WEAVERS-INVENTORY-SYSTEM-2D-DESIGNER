@@ -11,9 +11,9 @@ This guide explains how to run the Django e-commerce application using Docker an
 
 ### Option 1: Using Docker Compose (Recommended)
 
-1. **Clone the repository and navigate to the project directory:**
+1. **Clone the repository and navigate to the project root directory:**
    ```bash
-   cd ecommerce
+   cd APC_2025_2026_T1-CODE-WEAVERS-INVENTORY-SYSTEM-2D-DESIGNER
    ```
 
 2. **Build and run the application:**
