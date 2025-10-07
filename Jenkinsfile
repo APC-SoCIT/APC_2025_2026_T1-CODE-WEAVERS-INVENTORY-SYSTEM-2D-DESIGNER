@@ -10,9 +10,9 @@ pipeline {
     stage('Detect Compose Command') {
       steps {
         script {
-          def hasComposeV2 = sh(returnStatus: true, script: 'docker compose version >/dev/null 2>&1') == 0
-          env.COMPOSE_CMD = hasComposeV2 ? 'docker compose' : 'docker-compose'
+          env.COMPOSE_CMD = 'docker compose'
           echo "Using ${env.COMPOSE_CMD}"
+          sh '${COMPOSE_CMD} version || (echo "Docker Compose v2 plugin not available. Install Compose v2 or adjust pipeline." && exit 1)'
         }
       }
     }
@@ -60,11 +60,7 @@ pipeline {
   post {
     always {
       sh '''
-        if docker compose version >/dev/null 2>&1; then
-          docker compose down -v
-        else
-          docker-compose down -v
-        fi || true
+        $COMPOSE_CMD down -v || true
       '''
     }
   }
