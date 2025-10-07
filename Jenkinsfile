@@ -9,13 +9,11 @@ pipeline {
     }
     stage('Detect Compose Command') {
       steps {
-        sh '''
-          if docker compose version >/dev/null 2>&1; then
-            echo "COMPOSE_CMD=docker compose" > compose.env
-          else
-            echo "COMPOSE_CMD=docker-compose" > compose.env
-          fi
-        '''
+        script {
+          def hasComposeV2 = sh(returnStatus: true, script: 'docker compose version >/dev/null 2>&1') == 0
+          env.COMPOSE_CMD = hasComposeV2 ? 'docker compose' : 'docker-compose'
+          echo "Using ${env.COMPOSE_CMD}"
+        }
       }
     }
     stage('Prepare Env') {
@@ -26,7 +24,6 @@ pipeline {
     stage('Build') {
       steps {
         sh '''
-          . compose.env
           $COMPOSE_CMD build
         '''
       }
@@ -34,7 +31,6 @@ pipeline {
     stage('Start Services') {
       steps {
         sh '''
-          . compose.env
           $COMPOSE_CMD up -d
         '''
       }
@@ -42,7 +38,6 @@ pipeline {
     stage('Migrate') {
       steps {
         sh '''
-          . compose.env
           $COMPOSE_CMD run --rm web python manage.py migrate --noinput
         '''
       }
@@ -50,7 +45,6 @@ pipeline {
     stage('Collect Static') {
       steps {
         sh '''
-          . compose.env
           $COMPOSE_CMD run --rm web python manage.py collectstatic --noinput
         '''
       }
@@ -58,7 +52,6 @@ pipeline {
     stage('Tests') {
       steps {
         sh '''
-          . compose.env
           $COMPOSE_CMD run --rm web python manage.py test
         '''
       }
@@ -67,12 +60,11 @@ pipeline {
   post {
     always {
       sh '''
-        if [ -f compose.env ]; then
-          . compose.env
-          $COMPOSE_CMD down -v
+        if docker compose version >/dev/null 2>&1; then
+          docker compose down -v
         else
-          docker compose down -v || docker-compose down -v || true
-        fi
+          docker-compose down -v
+        fi || true
       '''
     }
   }
