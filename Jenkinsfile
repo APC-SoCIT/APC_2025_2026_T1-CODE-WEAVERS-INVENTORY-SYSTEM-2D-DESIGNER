@@ -12,7 +12,7 @@ pipeline {
     }
     stage('Ensure Docker Engine') {
       steps {
-        powershell """
+        powershell '''
           $ErrorActionPreference = 'SilentlyContinue'
           $dockerOk = $false
           try { docker version | Out-Null; $dockerOk = $true } catch { $dockerOk = $false }
@@ -50,7 +50,7 @@ pipeline {
             }
             if (-not $dockerOk) { throw 'Docker engine did not start in time.' }
           }
-        """
+        '''
       }
     }
     stage('Detect Compose Command') {
