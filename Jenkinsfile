@@ -10,6 +10,49 @@ pipeline {
         checkout scm
       }
     }
+    stage('Ensure Docker Engine') {
+      steps {
+        powershell """
+          $ErrorActionPreference = 'SilentlyContinue'
+          $dockerOk = $false
+          try { docker version | Out-Null; $dockerOk = $true } catch { $dockerOk = $false }
+          if (-not $dockerOk) {
+            Write-Host 'Docker not running; attempting to start...'
+            # Try starting Windows service if available
+            $svc = Get-Service -Name 'com.docker.service' -ErrorAction SilentlyContinue
+            if ($svc) {
+              if ($svc.Status -ne 'Running') {
+                Write-Host 'Starting com.docker.service'
+                Start-Service -Name 'com.docker.service'
+              }
+            } else {
+              # Fallback: launch Docker Desktop
+              $desktop = 'C:\\Program Files\\Docker\\Docker\\Docker Desktop.exe'
+              if (Test-Path $desktop) {
+                Write-Host 'Launching Docker Desktop...'
+                Start-Process -FilePath $desktop | Out-Null
+              } else {
+                Write-Host 'Docker Desktop executable not found at expected path.'
+              }
+            }
+            # Wait for engine to be ready
+            $ErrorActionPreference = 'SilentlyContinue'
+            $retries = 40
+            for ($i=0; $i -lt $retries; $i++) {
+              try {
+                docker version | Out-Null
+                Write-Host 'Docker engine is ready.'
+                $dockerOk = $true
+                break
+              } catch {
+                Start-Sleep -Seconds 3
+              }
+            }
+            if (-not $dockerOk) { throw 'Docker engine did not start in time.' }
+          }
+        """
+      }
+    }
     stage('Detect Compose Command') {
       steps {
         script {
