@@ -1,6 +1,6 @@
 pipeline {
   agent any
-  options { timestamps(); ansiColor('xterm') }
+  options { timestamps() }
   environment {
     APP_URL = 'http://localhost:8000'
   }
