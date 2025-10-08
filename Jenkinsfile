@@ -10,58 +10,65 @@ pipeline {
     stage('Detect Compose Command') {
       steps {
         script {
-          env.COMPOSE_CMD = 'docker compose'
+          def hasV2 = powershell(returnStatus: true, script: '$ErrorActionPreference = "SilentlyContinue"; docker compose version') == 0
+          def hasV1 = powershell(returnStatus: true, script: '$ErrorActionPreference = "SilentlyContinue"; docker-compose --version') == 0
+          if (hasV2) {
+            env.COMPOSE_CMD = 'docker compose'
+          } else if (hasV1) {
+            env.COMPOSE_CMD = 'docker-compose'
+          } else {
+            error('Docker Compose not found. Install Docker Desktop (Compose v2) or docker-compose.')
+          }
           echo "Using ${env.COMPOSE_CMD}"
-          sh '${COMPOSE_CMD} version || (echo "Docker Compose v2 plugin not available. Install Compose v2 or adjust pipeline." && exit 1)'
         }
       }
     }
     stage('Prepare Env') {
       steps {
-        sh 'cp -f .env.docker .env || true'
+        powershell 'if (Test-Path ".env.docker") { Copy-Item -Force .env.docker .env }'
       }
     }
     stage('Build') {
       steps {
-        sh '''
-          $COMPOSE_CMD build
+        powershell '''
+          $env:COMPOSE_CMD build
         '''
       }
     }
     stage('Start Services') {
       steps {
-        sh '''
-          $COMPOSE_CMD up -d
+        powershell '''
+          $env:COMPOSE_CMD up -d
         '''
       }
     }
     stage('Migrate') {
       steps {
-        sh '''
-          $COMPOSE_CMD run --rm web python manage.py migrate --noinput
+        powershell '''
+          $env:COMPOSE_CMD run --rm web python manage.py migrate --noinput
         '''
       }
     }
     stage('Collect Static') {
       steps {
-        sh '''
-          $COMPOSE_CMD run --rm web python manage.py collectstatic --noinput
+        powershell '''
+          $env:COMPOSE_CMD run --rm web python manage.py collectstatic --noinput
         '''
       }
     }
     stage('Tests') {
       steps {
-        sh '''
-          $COMPOSE_CMD run --rm web python manage.py test
+        powershell '''
+          $env:COMPOSE_CMD run --rm web python manage.py test
         '''
       }
     }
   }
   post {
     always {
-      sh '''
-        $COMPOSE_CMD down -v || true
-      '''
+      script {
+        powershell(returnStatus: true, script: '$env:COMPOSE_CMD down -v')
+      }
     }
   }
 }
