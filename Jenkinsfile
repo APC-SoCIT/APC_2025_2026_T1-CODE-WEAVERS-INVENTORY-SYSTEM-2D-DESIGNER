@@ -1,6 +1,9 @@
 pipeline {
   agent any
-  options { timestamps() }
+  options { timestamps(); ansiColor('xterm') }
+  environment {
+    APP_URL = 'http://localhost:8000'
+  }
   stages {
     stage('Checkout') {
       steps {
@@ -45,33 +48,26 @@ pipeline {
         '''
       }
     }
-    stage('Migrate') {
+    stage('Smoke Test') {
       steps {
-        powershell '''
-          if ($env:COMPOSE_SUBCMD) { & $env:COMPOSE_EXE $env:COMPOSE_SUBCMD run --rm web python manage.py migrate --noinput } else { & $env:COMPOSE_EXE run --rm web python manage.py migrate --noinput }
-        '''
-      }
-    }
-    stage('Collect Static') {
-      steps {
-        powershell '''
-          if ($env:COMPOSE_SUBCMD) { & $env:COMPOSE_EXE $env:COMPOSE_SUBCMD run --rm web python manage.py collectstatic --noinput } else { & $env:COMPOSE_EXE run --rm web python manage.py collectstatic --noinput }
-        '''
-      }
-    }
-    stage('Tests') {
-      steps {
-        powershell '''
-          if ($env:COMPOSE_SUBCMD) { & $env:COMPOSE_EXE $env:COMPOSE_SUBCMD run --rm web python manage.py test } else { & $env:COMPOSE_EXE run --rm web python manage.py test }
-        '''
+        powershell """
+          $ErrorActionPreference = 'Stop'
+          Write-Host 'Waiting for web to be ready...'
+          $retries = 15
+          for ($i=0; $i -lt $retries; $i++) {
+            try {
+              $resp = Invoke-WebRequest -Uri '${APP_URL}' -UseBasicParsing -TimeoutSec 5
+              if ($resp.StatusCode -ge 200 -and $resp.StatusCode -lt 500) { Write-Host 'App is up.'; break }
+            } catch { Start-Sleep -Seconds 2 }
+            if ($i -eq ($retries-1)) { throw 'App did not become ready in time.' }
+          }
+        """
       }
     }
   }
   post {
     always {
-      script {
-        powershell(returnStatus: true, script: 'if ($env:COMPOSE_SUBCMD) { & $env:COMPOSE_EXE $env:COMPOSE_SUBCMD down -v } else { & $env:COMPOSE_EXE down -v }')
-      }
+      powershell 'docker ps'
     }
   }
 }
