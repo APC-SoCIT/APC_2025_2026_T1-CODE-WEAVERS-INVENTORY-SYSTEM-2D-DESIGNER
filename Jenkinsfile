@@ -13,13 +13,16 @@ pipeline {
           def hasV2 = powershell(returnStatus: true, script: '$ErrorActionPreference = "SilentlyContinue"; docker compose version') == 0
           def hasV1 = powershell(returnStatus: true, script: '$ErrorActionPreference = "SilentlyContinue"; docker-compose --version') == 0
           if (hasV2) {
-            env.COMPOSE_CMD = 'docker compose'
+            env.COMPOSE_EXE = 'docker'
+            env.COMPOSE_SUBCMD = 'compose'
+            echo 'Using docker compose (v2)'
           } else if (hasV1) {
-            env.COMPOSE_CMD = 'docker-compose'
+            env.COMPOSE_EXE = 'docker-compose'
+            env.COMPOSE_SUBCMD = ''
+            echo 'Using docker-compose (v1)'
           } else {
             error('Docker Compose not found. Install Docker Desktop (Compose v2) or docker-compose.')
           }
-          echo "Using ${env.COMPOSE_CMD}"
         }
       }
     }
@@ -31,35 +34,35 @@ pipeline {
     stage('Build') {
       steps {
         powershell '''
-          $env:COMPOSE_CMD build
+          if ($env:COMPOSE_SUBCMD) { & $env:COMPOSE_EXE $env:COMPOSE_SUBCMD build } else { & $env:COMPOSE_EXE build }
         '''
       }
     }
     stage('Start Services') {
       steps {
         powershell '''
-          $env:COMPOSE_CMD up -d
+          if ($env:COMPOSE_SUBCMD) { & $env:COMPOSE_EXE $env:COMPOSE_SUBCMD up -d } else { & $env:COMPOSE_EXE up -d }
         '''
       }
     }
     stage('Migrate') {
       steps {
         powershell '''
-          $env:COMPOSE_CMD run --rm web python manage.py migrate --noinput
+          if ($env:COMPOSE_SUBCMD) { & $env:COMPOSE_EXE $env:COMPOSE_SUBCMD run --rm web python manage.py migrate --noinput } else { & $env:COMPOSE_EXE run --rm web python manage.py migrate --noinput }
         '''
       }
     }
     stage('Collect Static') {
       steps {
         powershell '''
-          $env:COMPOSE_CMD run --rm web python manage.py collectstatic --noinput
+          if ($env:COMPOSE_SUBCMD) { & $env:COMPOSE_EXE $env:COMPOSE_SUBCMD run --rm web python manage.py collectstatic --noinput } else { & $env:COMPOSE_EXE run --rm web python manage.py collectstatic --noinput }
         '''
       }
     }
     stage('Tests') {
       steps {
         powershell '''
-          $env:COMPOSE_CMD run --rm web python manage.py test
+          if ($env:COMPOSE_SUBCMD) { & $env:COMPOSE_EXE $env:COMPOSE_SUBCMD run --rm web python manage.py test } else { & $env:COMPOSE_EXE run --rm web python manage.py test }
         '''
       }
     }
@@ -67,7 +70,7 @@ pipeline {
   post {
     always {
       script {
-        powershell(returnStatus: true, script: '$env:COMPOSE_CMD down -v')
+        powershell(returnStatus: true, script: 'if ($env:COMPOSE_SUBCMD) { & $env:COMPOSE_EXE $env:COMPOSE_SUBCMD down -v } else { & $env:COMPOSE_EXE down -v }')
       }
     }
   }
