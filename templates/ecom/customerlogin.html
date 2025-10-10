@@ -5,180 +5,211 @@
   <head>
     <meta charset="utf-8">
     <title>WorksTeamWear</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda+SC:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&display=swap" rel="stylesheet">
+    
     <style media="screen">
+      :root {
+        --bg-1: #f8fafc;
+        --bg-2: #eef2ff;
+        --card-bg: #ffffff;
+        --text-1: #0f172a;
+        --text-2: #334155;
+        --border: #e5e7eb;
+        --input: #d1d5db;
+        --primary: #2563eb;
+        --primary-dark: #1d4ed8;
+        --ring: rgba(37, 99, 235, 0.12);
+        --nav-h: 64px;
+        --footer-h: 64px;
+      }
+
       body {
         margin: 0;
         padding: 0;
-        font-family: 'Crimson Text', serif; /* Apply Crimson Text font */
-        background: url('{% static "images/background.jpg" %}') no-repeat center center fixed; /* Use the specified image as background */
-        background-size: cover; /* Ensure the background image covers the entire page */
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+        /* Show the background image directly (no white overlay) */
+        background: url('{% static "images/background.jpg" %}') center / cover no-repeat fixed;
+        min-height: 100vh;
+        color: var(--text-1);
       }
 
       .box {
         width: 100%;
-        max-width: 400px;
-        padding: 40px;
-        position: relative;
-        margin: 100px auto;
-        background: rgba(255, 255, 255, 0.1);
-        backdrop-filter: blur(15px);
-        -webkit-backdrop-filter: blur(15px);
-        text-align: center;
-        border-radius: 20px;
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-      }
-
-      .box:hover {
-        box-shadow: 1px 1px 25px 1px rgba(255, 255, 255, 0.75);
-        -webkit-box-shadow: 1px 1px 25px 1px rgba(255, 255, 255, 0.75);
-        -moz-box-shadow: 1px 1px 25px 1px rgba(255, 255, 255, 0.75);
-      }
-
-      .box input[type="text"],
-      .box input[type="password"] {
-        border: 0;
-        background: none;
-        display: block;
-        margin: 20px auto;
-        text-align: center;
-        border: 2px solid #ffffff;
-        padding: 10px 10px;
-        width: 250px;
-        outline: none;
-        color: white;
-        border-radius: 24px;
-
+        max-width: 460px;
+        padding: 32px 28px;
+        margin: 120px auto;
+        /* Translucent glass card to let background show subtly */
+        background: rgba(255, 255, 255, 0.116);
+        -webkit-backdrop-filter: blur(8px);
+        backdrop-filter: blur(8px);
+        text-align: left;
+        border-radius: 16px;
+        border: 1px solid rgba(229, 231, 235, 0.7);
+        box-shadow: 0 8px 30px rgba(2, 6, 23, 0.08);
       }
 
       .box h1 {
-        color: white;
-        font-family: 'Bodoni Moda SC', serif;
-        font-weight: 600;
+        color: var(--text-1);
+        font-weight: 700;
+        font-size: 24px;
+        letter-spacing: -0.01em;
+        margin: 0 0 6px;
+      }
 
+      .subtext {
+        color: var(--text-2);
+        font-size: 14px;
+        margin: 0 0 16px;
+      }
+
+      .box label {
+        display: block;
+        color: var(--text-2);
+        font-size: 13px;
+        margin: 14px 0 6px;
+      }
+
+      .field { position: relative; }
+
+      .box input[type="text"],
+      .box input[type="password"] {
+        border: 1px solid var(--input);
+        background: #ffffff;
+        display: block;
+        margin: 8px 0 10px;
+        text-align: left;
+        padding: 12px 14px;
+        height: 44px;
+        width: 100%;
+        outline: none;
+        color: var(--text-1);
+        border-radius: 12px;
+        transition: border-color .2s ease, box-shadow .2s ease;
       }
 
       .box input[type="text"]:focus,
       .box input[type="password"]:focus {
-        border-color: #d3d3d3;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 4px var(--ring);
       }
+
+      .toggle-password {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        border: none;
+        background: transparent;
+        color: var(--text-2);
+        cursor: pointer;
+        padding: 6px;
+        border-radius: 8px;
+      }
+      .toggle-password:hover { color: var(--text-1); }
 
       .box input[type="submit"] {
         border: 0;
-        background: none;
+        background: linear-gradient(135deg, var(--primary), var(--primary-dark));
         display: block;
-        margin: 20px auto;
+        margin: 12px 0 0;
         text-align: center;
-        border: 2px solid #2ecc71;
-        padding: 14px 40px;
+        padding: 12px 16px;
         outline: none;
-        color: white;
-        border-radius: 24px;
+        color: #ffffff;
+        border-radius: 12px;
         cursor: pointer;
+        width: 100%;
+        font-weight: 600;
+        box-shadow: 0 8px 20px rgba(29, 78, 216, 0.25);
+        transition: filter .2s ease, transform .02s ease;
+      }
+      .box input[type="submit"]:hover { filter: brightness(1.05); }
+      .box input[type="submit"]:active { transform: translateY(1px); }
+
+      .alert {
+        background: #ffffff;
+        border: 1px solid var(--border);
+        color: var(--text-1);
+        padding: 10px 12px;
+        border-radius: 12px;
+        margin: 8px 0;
+        font-size: 14px;
       }
 
-      .box input[type="submit"]:hover {
-        background: #2ecc71;
-
-      }
-
-      .forgot {
-        text-decoration: underline;
-      }
-
-      ul.social-network {
-        list-style: none;
-        display: inline;
-        margin-left: 0 !important;
-        padding: 0;
-      }
-
-      ul.social-network li {
-        display: inline;
-        margin: 0 5px;
-      }
-
-      .social-network a.icoFacebook:hover {
-        background-color: #3B5998;
-      }
-
-      .social-network a.icoTwitter:hover {
-        background-color: #33ccff;
-      }
-
-      .social-network a.icoGoogle:hover {
-        background-color: #BD3518;
-      }
-
-      .social-network a.icoFacebook:hover i,
-      .social-network a.icoTwitter:hover i,
-      .social-network a.icoGoogle:hover i {
-        color: #fff;
-      }
-
-      a.socialIcon:hover,
-      .socialHoverClass {
-        color: #44BCDD;
-      }
-
-      .social-circle li a {
-        display: inline-block;
-        position: relative;
-        margin: 0 auto 0 auto;
-        border-radius: 50%;
-        text-align: center;
-        width: 50px;
-        height: 50px;
-        font-size: 20px;
-      }
-
-      .social-circle li i {
-        margin: 0;
-        line-height: 50px;
-        text-align: center;
-      }
-
-      .social-circle li a:hover i,
-      .triggeredHover {
-
-      }
-
-      .social-circle i {
-        color: #fff;
-
-      }
+      .box .links { display:flex; gap:10px; margin-top: 12px; }
+      .box .links a { color: var(--primary); text-decoration: none; font-weight: 500; }
+      .box .links a:hover { text-decoration: underline; }
+      .helper { font-size: 13px; color: #9aa3af; }
+      .helper.warn { color: #ef4444; }
     </style>
   </head>
   <body>
     {% include "ecom/navbar.html" %}
-    <div class="container-fluid d-flex justify-content-center align-items-center" style="min-height: 80vh;">
+    <div class="container-fluid d-flex justify-content-center align-items-center" style="min-height: calc(100vh - var(--nav-h) - var(--footer-h)); padding: 24px;">
       <div class="row justify-content-center">
         <div class="col-12 col-md-6 col-lg-4">
-          <form class="box" method="post">
+          <form class="box" method="post" aria-labelledby="loginTitle">
             {% csrf_token %}
-            <h1>Login</h1>
-            {% if form.errors %}
-              <div class="alert alert-danger">
-                {% for field, error in form.errors.items %}
-                  {% if field == 'username' %}
-                    <p>Account not found, please register</p>
-                  {% else %}
-                    <p>{{ error }}</p>
-                  {% endif %}
+            <h1 id="loginTitle">Sign in</h1>
+            <p class="subtext">Please enter your details to continue.</p>
+
+            {% if messages %}
+              <div class="alert alert-info" role="alert" style="margin: 8px 6px;">
+                {% for message in messages %}
+                  <div>{{ message }}</div>
                 {% endfor %}
               </div>
             {% endif %}
-            {% render_field form.username class="form-control" placeholder="Username" autocomplete="off" %}
-            {% render_field form.password class="form-control" placeholder="Password" %}
-            <input type="submit" name="" value="Login">
-            <a href="/customersignup" class="btn btn-primary">Don't have an account? Register here!</a>
+
+            {% if form.non_field_errors %}
+              <div class="alert alert-danger" role="alert" style="margin: 8px 6px;">
+                {% for error in form.non_field_errors %}
+                  <div>{{ error }}</div>
+                {% endfor %}
+              </div>
+            {% endif %}
+
+            <label for="id_username">Username</label>
+            <div class="field">
+              {% render_field form.username class="form-control" placeholder="Enter your username" autocomplete="username" autofocus="autofocus" %}
+            </div>
+            {% if form.username.errors %}
+              <div class="alert alert-danger" role="alert" style="margin: 0 6px 10px;">
+                {% for error in form.username.errors %}<div>{{ error }}</div>{% endfor %}
+              </div>
+            {% endif %}
+
+            <label for="id_password">Password</label>
+            <div class="field">
+              {% render_field form.password class="form-control" placeholder="Enter your password" autocomplete="current-password" %}
+              <button type="button" class="toggle-password" aria-label="Show password" onclick="togglePassword()">Show</button>
+            </div>
+            <div class="helper"><a href="#" style="color: var(--primary); text-decoration: none;">Forgot password?</a></div>
+            {% if form.password.errors %}
+              <div class="alert alert-danger" role="alert" style="margin: 6px;">
+                {% for error in form.password.errors %}<div>{{ error }}</div>{% endfor %}
+              </div>
+            {% endif %}
+
+            <input type="submit" value="Sign In">
+
+            <div class="links">
+              <a href="/customersignup">Create account</a>
+            </div>
           </form>
         </div>
       </div>
     </div>
     {% include "ecom/footer.html" %}
+    <script>
+      function togglePassword() {
+        const input = document.getElementById('id_password');
+        if (!input) return;
+        const btn = document.querySelector('.toggle-password');
+        const isText = input.type === 'text';
+        input.type = isText ? 'password' : 'text';
+        if (btn) btn.textContent = isText ? 'Show' : 'Hide';
+      }
+    </script>
+  
   </body>
 </html>
