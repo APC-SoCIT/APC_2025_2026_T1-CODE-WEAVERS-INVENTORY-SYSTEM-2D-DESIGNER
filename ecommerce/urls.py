@@ -1,5 +1,5 @@
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
 from ecom import views
 from ecom import wishlist_views
 from django.contrib.auth.views import LoginView,LogoutView
@@ -18,6 +18,8 @@ from ecom import chatbot_views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    # Include Django auth URLs to provide password reset and related named routes
+    path('', include('django.contrib.auth.urls')),
     path('accounts/login/', RedirectView.as_view(url=reverse_lazy('customerlogin')), name='accounts-login-redirect'),
     path('manage-inventory', manage_inventory, name='manage-inventory'),
     path('update-stock/<int:item_id>/', update_stock, name='update-stock'),
@@ -69,7 +71,8 @@ urlpatterns = [
 
 
 
-    path('customersignup', views.customer_signup_view),
+    # Named route for signup to fix NoReverseMatch in templates
+    path('customersignup', views.customer_signup_view, name='signup'),
     path('customerlogin', LoginView.as_view(template_name='ecom/customerlogin.html'),name='customerlogin'),
     path('customer-home', views.customer_home_view,name='customer-home'),
     path('orders/pending/', views.pending_orders_view, name='pending-orders'),
