@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{% block title %}Admin Panel{% endblock %}</title>
+    <link rel="icon" href="{% static 'images/new logo.png' %}">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .sidebar-transition {
+            transition: transform 0.3s ease-in-out;
+        }
+        .fade-in {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="bg-gray-50">
+    <!-- Mobile sidebar overlay -->
+    <div id="sidebar-overlay" class="fixed inset-0 z-40 bg-black bg-opacity-50 hidden lg:hidden"></div>
+    
+    <!-- Sidebar -->
+    <div id="sidebar" class="fixed inset-y-0 left-0 z-50 w-72 bg-white border-r border-gray-200 sidebar-transition transform -translate-x-full lg:translate-x-0">
+        <div class="flex h-16 items-center border-b border-gray-200 px-6">
+            <h1 class="text-xl font-bold text-gray-900">WorksTeamWear</h1>
+            <button id="close-sidebar" class="ml-auto lg:hidden">
+                <i data-lucide="x" class="h-6 w-6"></i>
+            </button>
+        </div>
+        
+        <nav class="flex-1 space-y-1 px-4 py-4">
+            <a href="{% url 'admin-dashboard' %}" class="nav-item {% if request.resolver_match.url_name == 'admin-dashboard' %}bg-blue-50 text-blue-700{% else %}text-gray-600 hover:bg-gray-50 hover:text-gray-900{% endif %} group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                <i data-lucide="layout-dashboard" class="mr-3 h-5 w-5"></i>
+                Dashboard
+            </a>
+            <a href="{% url 'admin-view-users' %}" class="nav-item {% if request.resolver_match.url_name == 'admin-view-users' %}bg-blue-50 text-blue-700{% else %}text-gray-600 hover:bg-gray-50 hover:text-gray-900{% endif %} group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                <i data-lucide="users" class="mr-3 h-5 w-5"></i>
+                Users
+                {% if users %}
+                <span class="ml-auto bg-blue-100 text-blue-600 text-xs font-medium px-2.5 py-0.5 rounded-full">{{ users|length }}</span>
+                {% endif %}
+            </a>
+            <a href="{% url 'admin-view-processing-orders' %}" class="nav-item {% if request.resolver_match.url_name == 'admin-view-processing-orders' %}bg-blue-50 text-blue-700{% else %}text-gray-600 hover:bg-gray-50 hover:text-gray-900{% endif %} group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                <i data-lucide="shopping-bag" class="mr-3 h-5 w-5"></i>
+                Orders
+                {% if ordercount %}
+                <span class="ml-auto bg-blue-100 text-blue-600 text-xs font-medium px-2.5 py-0.5 rounded-full">{{ ordercount }}</span>
+                {% endif %}
+            </a>
+            <a href="#" class="nav-item text-gray-600 hover:bg-gray-50 hover:text-gray-900 group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                <i data-lucide="bar-chart-3" class="mr-3 h-5 w-5"></i>
+                Analytics
+            </a>
+        </nav>
+        
+        <div class="border-t border-gray-200 p-4">
+            <a href="#" class="nav-item text-gray-600 hover:bg-gray-50 hover:text-gray-900 group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                <i data-lucide="settings" class="mr-3 h-5 w-5"></i>
+                Settings
+            </a>
+            <a href="#" class="text-gray-600 hover:bg-gray-50 hover:text-gray-900 group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                <i data-lucide="help-circle" class="mr-3 h-5 w-5"></i>
+                Help
+            </a>
+            <a href="{% url 'logout' %}" class="text-gray-600 hover:bg-gray-50 hover:text-gray-900 group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                <i data-lucide="log-out" class="mr-3 h-5 w-5"></i>
+                Logout
+            </a>
+        </div>
+    </div>
+
+    <!-- Main content -->
+    <div class="lg:pl-72">
+        <!-- Header -->
+        <header class="bg-white border-b border-gray-200 px-4 py-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between">
+                <button id="open-sidebar" class="lg:hidden">
+                    <i data-lucide="menu" class="h-6 w-6"></i>
+                </button>
+                
+                <div class="flex-1 max-w-md mx-4">
+                    <div class="relative">
+                        <i data-lucide="search" class="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400"></i>
+                        <input type="text" placeholder="Search..." class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    <button class="p-2 text-gray-400 hover:text-gray-600 relative">
+                        <i data-lucide="bell" class="h-5 w-5"></i>
+                        <!-- Notification badge -->
+                        <span class="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">3</span>
+                    </button>
+                    
+                    <!-- User Profile Dropdown -->
+                    <div class="relative">
+                        <button id="user-menu-button" class="flex items-center space-x-2 p-2 text-gray-700 hover:text-gray-900 rounded-md hover:bg-gray-50">
+                            <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                                <i data-lucide="user" class="h-4 w-4 text-white"></i>
+                            </div>
+                            <span class="hidden md:block text-sm font-medium">Admin</span>
+                            <i data-lucide="chevron-down" class="h-4 w-4"></i>
+                        </button>
+                        
+                        <!-- Dropdown menu -->
+                        <div id="user-dropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200">
+                            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                <i data-lucide="user" class="inline h-4 w-4 mr-2"></i>
+                                Profile
+                            </a>
+                            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                <i data-lucide="settings" class="inline h-4 w-4 mr-2"></i>
+                                Settings
+                            </a>
+                            <div class="border-t border-gray-100"></div>
+                            <a href="{% url 'logout' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                <i data-lucide="log-out" class="inline h-4 w-4 mr-2"></i>
+                                Sign out
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        {% block content %}
+        <!-- Page specific content will be injected here -->
+        {% endblock %}
+    </div>
+
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        // Sidebar functionality
+        const sidebar = document.getElementById('sidebar');
+        const sidebarOverlay = document.getElementById('sidebar-overlay');
+        const openSidebarBtn = document.getElementById('open-sidebar');
+        const closeSidebarBtn = document.getElementById('close-sidebar');
+
+        function openSidebar() {
+            sidebar.classList.remove('-translate-x-full');
+            sidebarOverlay.classList.remove('hidden');
+        }
+
+        function closeSidebar() {
+            sidebar.classList.add('-translate-x-full');
+            sidebarOverlay.classList.add('hidden');
+        }
+
+        openSidebarBtn.addEventListener('click', openSidebar);
+        closeSidebarBtn.addEventListener('click', closeSidebar);
+        sidebarOverlay.addEventListener('click', closeSidebar);
+
+        // User dropdown functionality
+        const userMenuButton = document.getElementById('user-menu-button');
+        const userDropdown = document.getElementById('user-dropdown');
+
+        userMenuButton.addEventListener('click', function(e) {
+            e.stopPropagation();
+            userDropdown.classList.toggle('hidden');
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!userMenuButton.contains(e.target) && !userDropdown.contains(e.target)) {
+                userDropdown.classList.add('hidden');
+            }
+        });
+
+        // Close dropdown when pressing escape
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                userDropdown.classList.add('hidden');
+            }
+        });
+    </script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

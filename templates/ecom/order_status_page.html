@@ -1,0 +1,206 @@
+{% extends 'ecom/customer_base.html' %}
+{% load static %}
+{% load humanize %}
+{% load custom_filters %}
+{% block content %}
+
+<style media="screen">
+    @import url('https://fonts.googleapis.com/css?family=Open+Sans&display=swap');
+    body {
+        background-color: #f7f7f7;
+    }
+    
+    .container {
+        margin-top: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .card {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        word-wrap: break-word;
+        background-color: #fff;
+        background-clip: border-box;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        border-radius: 0.25rem;
+        margin-bottom: 20px;
+    }
+    
+    .card-header {
+        padding: 1rem 1.25rem;
+        margin-bottom: 0;
+        background-color: #f8f9fa;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    }
+    
+    .card-body {
+        padding: 1.25rem;
+    }
+    
+    .order-status {
+        font-size: 0.9rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+        font-weight: 500;
+    }
+    
+    .status-pending { background-color: #ffeeba; color: #856404; }
+    .status-processing { background-color: #b8daff; color: #004085; }
+    .status-confirmed { background-color: #c3e6cb; color: #155724; }
+    .status-shipping { background-color: #bee5eb; color: #0c5460; }
+    .status-delivered { background-color: #d4edda; color: #155724; }
+    .status-cancelled { background-color: #f8d7da; color: #721c24; }
+    
+    .product-image {
+        max-width: 100px;
+        height: auto;
+    }
+    
+    .order-details {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .order-meta {
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+</style>
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <h2 class="mb-4">{{ title }}</h2>
+            
+            {% if not orders_with_items %}
+            <div class="alert alert-info">
+                No {{ status }} orders found.
+            </div>
+            {% endif %}
+            
+            {% for order_dict in orders_with_items %}
+            <div class="card">
+                <div class="card-header">
+                    <div class="order-details">
+                        <div>
+<strong>Order ID: {{ order_dict.order.order_ref|default:"N/A" }}</strong>
+                            <span class="order-meta ml-3">Placed on {{ order_dict.order.created_at|date:"M d, Y" }}</span>
+                        </div>
+                        <span class="order-status status-{{ order_dict.order.status|lower }}">{{ order_dict.order.status }}</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Product</th>
+                                        <th>Size</th>
+                                        <th>Quantity</th>
+                                        <th>Price</th>
+                                        <th>Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in order_dict.products %}
+                                    <tr>
+                                        <td>{{ item.item.product.name }}</td>
+                                        <td>{% if item.size %}{{ item.size }}{% else %}{{ item.item.product.size }}{% endif %}</td>
+                                        <td>{{ item.quantity }}</td>
+                                        <td>₱{{ item.unit_price|floatformat:2|intcomma }}</td>
+                                        <td>₱{{ item.line_total|floatformat:2|intcomma }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <th colspan="4" style="text-align: right;">Subtotal</th>
+                                        <th>₱{{ order_dict.subtotal|floatformat:2|intcomma }}</th>
+                                    </tr>
+                                    <tr>
+                                        <th colspan="4" style="text-align: right;">VAT (12%)</th>
+                                        <th>₱{{ order_dict.vat_amount|floatformat:2|intcomma }}</th>
+                                    </tr>
+                                    <tr>
+                                        <th colspan="4" style="text-align: right;">Delivery Fee</th>
+                                        <th>₱{{ order_dict.delivery_fee|floatformat:2|intcomma }}</th>
+                                    </tr>
+                                    <tr>
+                                        <th colspan="4" style="text-align: right;">Total</th>
+                                        <th><strong>₱{{ order_dict.grand_total|floatformat:2|intcomma }}</strong></th>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                        <div class="col-md-4">
+                            <h6>{% if order_dict.order.status == 'Cancelled' %}Cancellation Details{% else %}Delivery Details{% endif %}</h6>
+                            {% if order_dict.order.status == 'Cancelled' %}
+                            <p class="mb-1">Order cancelled on {{ order_dict.order.status_updated_at|date:"M d, Y" }}</p>
+                            {% if order_dict.order.notes %}
+                            <p class="mb-1">Reason: {{ order_dict.order.notes }}</p>
+                            {% endif %}
+                            {% else %}
+                                {% if order_dict.order.payment_method == 'cod' %}
+                                <p class="mb-1">{{ order_dict.order.customer.get_full_address }}</p>
+                                <p class="mb-1">Contact: {{ order_dict.order.customer.mobile }}</p>
+                                {% else %}
+                                <p class="mb-1">{{ order_dict.order.address }}</p>
+                                <p class="mb-1">Contact: {{ order_dict.order.mobile }}</p>
+                                {% endif %}
+                                {% if order_dict.order.estimated_delivery_date %}
+                                <p class="mb-0">Estimated Delivery: {{ order_dict.order.estimated_delivery_date|date:"M d, Y" }}</p>
+                                {% endif %}
+                                {% if order_dict.order.status == 'Pending' %}
+                                <a class="btn btn-primary btn-sm rounded-0" style="text-decoration:none;" href="{% url 'download-invoice' order_dict.order.id %}" target="_blank"><i class="fa fa-download " style="font-size: 12px;height:auto"></i> Download Invoice</a>
+                                <button type="button" class="btn btn-danger btn-sm rounded-0" data-toggle="modal" data-target="#cancelModal{{order_dict.order.id}}"><i class="fa fa-times" style="font-size: 12px;height:auto"></i> Cancel Order</button>
+                                
+                                <!-- Cancel Order Modal -->
+                                <div class="modal fade" id="cancelModal{{order_dict.order.id}}" tabindex="-1" role="dialog" aria-labelledby="cancelModalLabel{{order_dict.order.id}}" aria-hidden="true">
+                                  <div class="modal-dialog" role="document">
+                                    <div class="modal-content">
+                                      <div class="modal-header">
+                                        <h5 class="modal-title" id="cancelModalLabel{{order_dict.order.id}}">Cancel Order</h5>
+                                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                          <span aria-hidden="true">&times;</span>
+                                        </button>
+                                      </div>
+                                      <form action="{% url 'cancel-order' order_dict.order.id %}" method="POST">
+                                        {% csrf_token %}
+                                        <div class="modal-body">
+                                          <div class="form-group">
+                                            <label for="cancelReason{{order_dict.order.id}}">Please provide a reason for cancellation:</label>
+                                            <select class="form-control" id="cancelReason{{order_dict.order.id}}" name="cancel_reason" required>
+                                              <option value="">Select a reason</option>
+                                              <option value="Changed my mind">Changed my mind</option>
+                                              <option value="Found better price elsewhere">Found better price elsewhere</option>
+                                              <option value="Ordered by mistake">Ordered by mistake</option>
+                                              <option value="Shipping time too long">Shipping time too long</option>
+                                              <option value="Other">Other</option>
+                                            </select>
+                                            <textarea class="form-control mt-3" id="otherReason{{order_dict.order.id}}" name="other_reason" placeholder="Please specify your reason" style="display: none;"></textarea>
+                                          </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                                          <button type="submit" class="btn btn-danger">Confirm Cancellation</button>
+                                        </div>
+                                      </form>
+                                    </div>
+                                  </div>
+                                </div>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+{% endblock content %}

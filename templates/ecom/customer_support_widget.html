@@ -1,0 +1,703 @@
+<!-- Customer Support Chat Widget -->
+<div id="customer-support-widget" class="support-widget-container">
+    <!-- Support Widget Toggle Button -->
+    <div id="support-toggle-btn" class="support-toggle-button">
+        <i class="fa fa-headphones"></i>
+        <span class="support-notification-badge" id="support-notification-count" style="display: none;">0</span>
+    </div>
+
+    <!-- Support Chat Window -->
+    <div id="support-chat-window" class="support-chat-window" style="display: none;">
+        <!-- Header -->
+        <div class="support-chat-header">
+            <div class="support-header-info">
+                <div class="support-avatar">
+                    <i class="fa fa-user-circle"></i>
+                </div>
+                <div class="support-header-text">
+                    <h4>Customer Support</h4>
+                    <span class="support-status" id="support-status">Online</span>
+                </div>
+            </div>
+            <div class="support-header-actions">
+                <button class="support-new-agent-btn" id="support-new-agent-btn" title="Request New Agent">
+                    <i class="fa fa-user-plus"></i>
+                </button>
+                <button class="support-minimize-btn" id="support-minimize-btn">
+                    <i class="fa fa-minus"></i>
+                </button>
+                <button class="support-close-btn" id="support-close-btn">
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Messages Container -->
+        <div class="support-messages-container" id="support-messages-container">
+            <div class="support-welcome-message">
+                <div class="support-message support-bot-message">
+                    <div class="support-message-content">
+                        <p>👋 Hello! I'm here to help you with any questions or issues you might have. How can I assist you today?</p>
+                    </div>
+                    <div class="support-message-time">Just now</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Input Area -->
+        <div class="support-input-area">
+            <div class="support-input-container">
+                <input type="text" id="support-message-input" class="support-message-input" placeholder="Type your message..." maxlength="500">
+                <button id="support-send-btn" class="support-send-button">
+                    <i class="fa fa-paper-plane"></i>
+                </button>
+            </div>
+            <div class="support-input-footer">
+                <small class="support-powered-by">WorksTeamWear</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Customer Support Widget Styles */
+.support-widget-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 9999;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.support-toggle-button {
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.support-toggle-button:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 25px rgba(102, 126, 234, 0.6);
+}
+
+.support-toggle-button i {
+    color: white;
+    font-size: 24px;
+}
+
+.support-notification-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: #ff4757;
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.support-chat-window {
+    width: 350px;
+    height: 500px;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    position: absolute;
+    bottom: 80px;
+    right: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.support-chat-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.support-header-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.support-avatar i {
+    font-size: 24px;
+    color: white;
+}
+
+.support-header-text h4 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.support-status {
+    font-size: 12px;
+    opacity: 0.9;
+}
+
+.support-header-actions {
+    display: flex;
+    gap: 5px;
+}
+
+.support-minimize-btn,
+.support-close-btn,
+.support-new-agent-btn {
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 3px;
+    transition: background 0.2s;
+}
+
+.support-minimize-btn:hover,
+.support-close-btn:hover,
+.support-new-agent-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.support-messages-container {
+    flex: 1;
+    padding: 15px;
+    overflow-y: auto;
+    background: #f8f9fa;
+}
+
+.support-message {
+    margin-bottom: 15px;
+    display: flex;
+    flex-direction: column;
+}
+
+.support-user-message {
+    align-items: flex-end;
+}
+
+.support-bot-message,
+.support-admin-message {
+    align-items: flex-start;
+}
+
+.support-message-content {
+    max-width: 80%;
+    padding: 12px 15px;
+    border-radius: 18px;
+    word-wrap: break-word;
+}
+
+.support-user-message .support-message-content {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-bottom-right-radius: 5px;
+}
+
+.support-bot-message .support-message-content,
+.support-admin-message .support-message-content {
+    background: white;
+    color: #333;
+    border: 1px solid #e1e8ed;
+    border-bottom-left-radius: 5px;
+}
+
+.support-message-time {
+    font-size: 11px;
+    color: #8899a6;
+    margin-top: 5px;
+    padding: 0 5px;
+}
+
+.support-input-area {
+    padding: 15px;
+    background: white;
+    border-top: 1px solid #e1e8ed;
+}
+
+.support-input-container {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.support-message-input {
+    flex: 1;
+    padding: 12px 15px;
+    border: 1px solid #e1e8ed;
+    border-radius: 25px;
+    outline: none;
+    font-size: 14px;
+    transition: border-color 0.2s;
+}
+
+.support-message-input:focus {
+    border-color: #667eea;
+}
+
+.support-send-button {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    border-radius: 50%;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s;
+}
+
+.support-send-button:hover {
+    transform: scale(1.1);
+}
+
+.support-send-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.support-input-footer {
+    text-align: center;
+    margin-top: 8px;
+}
+
+.support-powered-by {
+    color: #8899a6;
+    font-size: 11px;
+}
+
+.support-typing-indicator {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 10px 15px;
+    color: #8899a6;
+    font-size: 12px;
+}
+
+.support-typing-dots {
+    display: flex;
+    gap: 3px;
+}
+
+.support-typing-dot {
+    width: 4px;
+    height: 4px;
+    background: #8899a6;
+    border-radius: 50%;
+    animation: typingDot 1.4s infinite;
+}
+
+.support-typing-dot:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.support-typing-dot:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+@keyframes typingDot {
+    0%, 60%, 100% {
+        transform: translateY(0);
+    }
+    30% {
+        transform: translateY(-10px);
+    }
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .support-chat-window {
+        width: 300px;
+        height: 450px;
+    }
+    
+    .support-widget-container {
+        bottom: 15px;
+        right: 15px;
+    }
+}
+</style>
+
+<script>
+// Customer Support Widget JavaScript
+class CustomerSupportWidget {
+    constructor() {
+        this.isOpen = false;
+        this.isMinimized = false;
+        this.sessionId = null;
+        this.pollInterval = null;
+        this.lastMessageId = 0;
+        
+        this.initializeWidget();
+        this.bindEvents();
+        this.startSession();
+    }
+    
+    initializeWidget() {
+        // Generate or retrieve session ID
+        this.sessionId = this.getOrCreateSessionId();
+        
+        // Set initial status
+        this.updateStatus('online');
+    }
+    
+    bindEvents() {
+        // Toggle button
+        document.getElementById('support-toggle-btn').addEventListener('click', () => {
+            this.toggleWidget();
+        });
+        
+        // Close button
+        document.getElementById('support-close-btn').addEventListener('click', () => {
+            this.closeWidget();
+        });
+        
+        // Minimize button
+        document.getElementById('support-minimize-btn').addEventListener('click', () => {
+            this.minimizeWidget();
+        });
+        
+        // Send message
+        document.getElementById('support-send-btn').addEventListener('click', () => {
+            this.sendMessage();
+        });
+        
+        // Enter key to send
+        document.getElementById('support-message-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                this.sendMessage();
+            }
+        });
+        
+        // New agent button
+        document.getElementById('support-new-agent-btn').addEventListener('click', () => {
+            this.requestNewAgent();
+        });
+    }
+    
+    getOrCreateSessionId() {
+        let sessionId = localStorage.getItem('support_session_id');
+        if (!sessionId) {
+            sessionId = 'support_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('support_session_id', sessionId);
+        }
+        return sessionId;
+    }
+    
+    toggleWidget() {
+        if (this.isOpen) {
+            this.closeWidget();
+        } else {
+            this.openWidget();
+        }
+    }
+    
+    openWidget() {
+        document.getElementById('support-chat-window').style.display = 'flex';
+        this.isOpen = true;
+        this.isMinimized = false;
+        
+        // Ensure session is started
+        this.startSession();
+        
+        // Start polling for new messages
+        this.startPolling();
+        
+        // Load chat history
+        this.loadChatHistory();
+    }
+    
+    closeWidget() {
+        document.getElementById('support-chat-window').style.display = 'none';
+        this.isOpen = false;
+        this.isMinimized = false;
+        
+        // Stop polling
+        this.stopPolling();
+    }
+    
+    minimizeWidget() {
+        document.getElementById('support-chat-window').style.display = 'none';
+        this.isMinimized = true;
+        
+        // Continue polling even when minimized
+    }
+    
+    startSession() {
+        // Initialize chat session with backend
+        fetch('/api/support/start-session/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': this.getCSRFToken()
+            },
+            body: JSON.stringify({
+                session_id: this.sessionId
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                console.log('Support session started:', this.sessionId);
+            }
+        })
+        .catch(error => {
+            console.error('Error starting support session:', error);
+        });
+    }
+    
+    sendMessage() {
+        const input = document.getElementById('support-message-input');
+        const message = input.value.trim();
+        
+        if (!message) return;
+        
+        // Add message to UI immediately
+        this.addMessageToUI(message, 'user');
+        
+        // Clear input
+        input.value = '';
+        
+        // Send to backend
+        fetch('/api/support/send-message/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': this.getCSRFToken()
+            },
+            body: JSON.stringify({
+                session_id: this.sessionId,
+                message: message,
+                message_type: 'user'
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Message sent successfully
+                console.log('Message sent successfully');
+            } else {
+                console.error('Error sending message:', data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error sending message:', error);
+        });
+    }
+    
+    addMessageToUI(content, type, timestamp = null, senderName = null) {
+        const container = document.getElementById('support-messages-container');
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `support-message support-${type}-message`;
+        
+        const timeStr = timestamp ? new Date(timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Just now';
+        
+        // Determine display name
+        let displayName = '';
+        if (senderName) {
+            displayName = senderName;
+        } else {
+            switch(type) {
+                case 'user': displayName = 'You'; break;
+                case 'admin': displayName = 'Support Agent'; break;
+                case 'bot': displayName = 'Bot Assistant'; break;
+                case 'system': displayName = 'System'; break;
+                default: displayName = 'Unknown';
+            }
+        }
+        
+        messageDiv.innerHTML = `
+            <div class="support-message-content">
+                <div class="support-sender-name" style="font-size: 11px; color: #8899a6; margin-bottom: 4px;">${displayName}</div>
+                <p>${this.escapeHtml(content)}</p>
+            </div>
+            <div class="support-message-time">${timeStr}</div>
+        `;
+        
+        container.appendChild(messageDiv);
+        container.scrollTop = container.scrollHeight;
+    }
+    
+    loadChatHistory() {
+        fetch(`/api/support/chat-history/?session_id=${this.sessionId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Clear existing messages except welcome
+                const container = document.getElementById('support-messages-container');
+                const welcomeMsg = container.querySelector('.support-welcome-message');
+                container.innerHTML = '';
+                if (welcomeMsg) {
+                    container.appendChild(welcomeMsg);
+                }
+                
+                // Add chat history
+                data.messages.forEach(msg => {
+                    this.addMessageToUI(msg.content, msg.message_type, msg.timestamp, msg.sender_name);
+                    if (msg.id && !isNaN(msg.id)) {
+                        this.lastMessageId = Math.max(this.lastMessageId || 0, parseInt(msg.id));
+                    }
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error loading chat history:', error);
+        });
+    }
+    
+    startPolling() {
+        if (this.pollInterval) {
+            clearInterval(this.pollInterval);
+        }
+        
+        this.pollInterval = setInterval(() => {
+            this.checkForNewMessages();
+        }, 2000); // Poll every 2 seconds
+    }
+    
+    stopPolling() {
+        if (this.pollInterval) {
+            clearInterval(this.pollInterval);
+            this.pollInterval = null;
+        }
+    }
+    
+    checkForNewMessages() {
+        const lastId = this.lastMessageId && !isNaN(this.lastMessageId) ? this.lastMessageId : 0;
+        fetch(`/api/support/new-messages/?session_id=${this.sessionId}&last_id=${lastId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.messages.length > 0) {
+                data.messages.forEach(msg => {
+                    this.addMessageToUI(msg.content, msg.message_type, msg.timestamp, msg.sender_name);
+                    if (msg.id && !isNaN(msg.id)) {
+                        this.lastMessageId = Math.max(this.lastMessageId || 0, parseInt(msg.id));
+                    }
+                });
+                
+                // Show notification if widget is closed
+                if (!this.isOpen) {
+                    this.showNotification(data.messages.length);
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error checking for new messages:', error);
+        });
+    }
+    
+    showNotification(count) {
+        const badge = document.getElementById('support-notification-count');
+        const currentCount = parseInt(badge.textContent) || 0;
+        const newCount = currentCount + count;
+        
+        badge.textContent = newCount;
+        badge.style.display = 'flex';
+    }
+    
+    clearNotifications() {
+        const badge = document.getElementById('support-notification-count');
+        badge.style.display = 'none';
+        badge.textContent = '0';
+    }
+    
+    updateStatus(status) {
+        const statusElement = document.getElementById('support-status');
+        statusElement.textContent = status === 'online' ? 'Online' : 'Offline';
+    }
+    
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    requestNewAgent() {
+        // Add system message to UI
+        this.addMessageToUI('Requesting a new agent...', 'system');
+        
+        // Send request to backend
+        fetch('/api/support/request-new-agent/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': this.getCSRFToken()
+            },
+            body: JSON.stringify({
+                session_id: this.sessionId
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                this.addMessageToUI('A new agent has been assigned to help you.', 'system');
+            } else {
+                this.addMessageToUI('Unable to assign a new agent at this time. Please try again later.', 'system');
+            }
+        })
+        .catch(error => {
+            console.error('Error requesting new agent:', error);
+            this.addMessageToUI('Error requesting new agent. Please try again.', 'system');
+        });
+    }
+    
+    getCSRFToken() {
+        return getCookie('csrftoken') || document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+    }
+}
+
+// Helper function to get cookies
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Initialize widget when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    window.customerSupportWidget = new CustomerSupportWidget();
+});
+</script>

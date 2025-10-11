@@ -1,0 +1,595 @@
+{% extends "ecom/navbar.html" %}
+{% load static %}
+{% load custom_filters %}
+{% load phone_format %}
+
+{% block content %}
+<style>
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+
+  .page-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 2rem 0;
+    margin-bottom: 30px;
+  }
+
+  .address-management-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .header-content h1 {
+    margin: 0;
+    font-size: 2.5rem;
+    font-weight: 600;
+  }
+
+  .header-content p {
+    margin: 0.5rem 0 0 0;
+    font-size: 1.1rem;
+    opacity: 0.9;
+  }
+
+  .back-to-cart-btn {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .back-to-cart-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.5);
+    color: white;
+    text-decoration: none;
+    transform: translateY(-2px);
+  }
+
+  .addresses-container {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    padding: 30px;
+    margin-bottom: 30px;
+  }
+
+  .section-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .section-title .icon {
+    font-size: 1.8rem;
+  }
+
+  .address-card {
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    transition: all 0.3s ease;
+    position: relative;
+    background: #fafafa;
+  }
+
+  .address-card:hover {
+    border-color: #007bff;
+    box-shadow: 0 4px 15px rgba(0,123,255,0.1);
+    transform: translateY(-2px);
+  }
+
+  .address-card.default {
+    border-color: #28a745;
+    background: #f8fff8;
+  }
+
+  .default-badge {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: #28a745;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .address-text {
+    font-size: 16px;
+    color: #495057;
+    line-height: 1.6;
+    margin-bottom: 15px;
+    padding-right: 100px;
+  }
+
+  .address-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .btn-primary {
+    background-color: #007bff;
+    color: white;
+  }
+
+  .btn-primary:hover {
+    background-color: #0056b3;
+  }
+
+  .btn-success {
+    background-color: #28a745;
+    color: white;
+  }
+
+  .btn-success:hover {
+    background-color: #1e7e34;
+  }
+
+  .btn-danger {
+    background-color: #dc3545;
+    color: white;
+  }
+
+  .btn-danger:hover {
+    background-color: #c82333;
+  }
+
+  .btn-outline-primary {
+    background-color: transparent;
+    color: #007bff;
+    border: 2px solid #007bff;
+  }
+
+  .btn-outline-primary:hover {
+    background-color: #007bff;
+    color: white;
+  }
+
+  .add-address-section {
+    text-align: center;
+    padding: 40px 20px;
+    border: 2px dashed #dee2e6;
+    border-radius: 12px;
+    margin-top: 20px;
+    background: #f8f9fa;
+  }
+
+  .add-address-section h3 {
+    color: #6c757d;
+    margin-bottom: 15px;
+  }
+
+  .no-addresses {
+    text-align: center;
+    padding: 60px 20px;
+    color: #6c757d;
+  }
+
+  .no-addresses .icon {
+    font-size: 4rem;
+    margin-bottom: 20px;
+    opacity: 0.5;
+  }
+
+  .address-form {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    padding: 30px;
+    margin-top: 30px;
+    display: none;
+  }
+
+  .form-group {
+    margin-bottom: 20px;
+  }
+
+  .form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #333;
+  }
+
+  .form-control {
+    width: 100%;
+    padding: 12px 15px;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: border-color 0.2s ease;
+  }
+
+  .form-control:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0,123,255,0.1);
+  }
+
+  .form-row {
+    display: flex;
+    gap: 15px;
+  }
+
+  .form-row .form-group {
+    flex: 1;
+  }
+
+  .alert {
+    padding: 15px 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border: 1px solid transparent;
+  }
+
+  .alert-success {
+    background-color: #d4edda;
+    border-color: #c3e6cb;
+    color: #155724;
+  }
+
+  .alert-danger {
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+    color: #721c24;
+  }
+
+  .back-to-cart {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #007bff;
+    text-decoration: none;
+    font-weight: 500;
+    margin-bottom: 20px;
+  }
+
+  .back-to-cart:hover {
+    color: #0056b3;
+    text-decoration: none;
+  }
+
+  @media (max-width: 768px) {
+    .form-row {
+      flex-direction: column;
+    }
+    
+    .address-text {
+      padding-right: 0;
+      margin-bottom: 20px;
+    }
+    
+    .default-badge {
+      position: static;
+      display: inline-block;
+      margin-bottom: 10px;
+    }
+  }
+</style>
+
+<div class="page-header">
+  <div class="container">
+    <div class="address-management-header">
+      <div class="header-content">
+        <h1>📍 Manage Addresses</h1>
+        <p>Add, edit, and manage your delivery addresses</p>
+      </div>
+      <div class="header-actions">
+        <a href="{% url 'cart' %}" class="btn btn-secondary back-to-cart-btn">
+          <i class="fas fa-arrow-left"></i> Back to Cart
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+  <div class="addresses-container">
+    <div class="section-title">
+      <span class="icon">🏠</span>
+      <span>Your Saved Addresses</span>
+    </div>
+
+    {% if saved_addresses %}
+      {% for address in saved_addresses %}
+      <div class="address-card {% if address.is_default %}default{% endif %}" data-address-id="{{ address.id }}">
+        {% if address.is_default %}
+          <span class="default-badge">Default</span>
+        {% endif %}
+        
+        <div class="address-text">
+          {{ address.street_address }}, {{ address.barangay|barangay_name }}, {{ address.citymun|citymun_name }}, {{ address.province|province_name }}, {{ address.region|region_name }}, {{ address.postal_code }}
+        </div>
+        
+        <div class="address-actions">
+          <button class="btn btn-primary" onclick="selectAddress({{ address.id }}, '{{ address.street_address }}, {{ address.barangay|barangay_name }}, {{ address.citymun|citymun_name }}, {{ address.province|province_name }}, {{ address.region|region_name }}, {{ address.postal_code }}')">Use This Address</button>
+          
+          {% if not address.is_default %}
+            <button class="btn btn-success" onclick="setDefaultAddress({{ address.id }})">Set as Default</button>
+            <button class="btn btn-danger" onclick="deleteAddress({{ address.id }})">Delete</button>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="no-addresses">
+        <div class="icon">📍</div>
+        <h3>No saved addresses yet</h3>
+        <p>Add your first address to get started with faster checkout</p>
+      </div>
+    {% endif %}
+
+    <div class="add-address-section">
+      <h3>Add New Address</h3>
+      <p>Save a new delivery address for faster checkout</p>
+      <button class="btn btn-outline-primary" onclick="showAddressForm()">+ Add New Address</button>
+    </div>
+  </div>
+
+  <!-- Address Form -->
+  <div class="address-form" id="address-form">
+    <div class="section-title">
+      <span class="icon">📝</span>
+      <span>Add New Address</span>
+    </div>
+    
+    <form method="post" action="{% url 'save-address' %}" onsubmit="return saveNewAddress(event);">
+      {% csrf_token %}
+      
+      <div class="form-row">
+        <div class="form-group">
+          <label>Full Name</label>
+          <input type="text" name="full_name" value="{{ user.first_name }} {{ user.last_name }}" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label>Phone Number</label>
+          <input type="text" name="phone" value="{{ user.customer.mobile|ph_mobile_format }}" class="form-control" required oninput="autoFormatPHMobile(this)">
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label>Street Address</label>
+        <input type="text" name="street_address" class="form-control" placeholder="House number, street name" required>
+      </div>
+      
+      <div class="form-row">
+        <div class="form-group">
+          <label>Region</label>
+          <select name="region" id="region-select" class="form-control" required>
+            <option value="">Select Region</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Province</label>
+          <select name="province" id="province-select" class="form-control" required>
+            <option value="">Select Province</option>
+          </select>
+        </div>
+      </div>
+      
+      <div class="form-row">
+        <div class="form-group">
+          <label>City/Municipality</label>
+          <select name="citymun" id="citymun-select" class="form-control" required>
+            <option value="">Select City/Municipality</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Barangay</label>
+          <select name="barangay" id="barangay-select" class="form-control" required>
+            <option value="">Select Barangay</option>
+          </select>
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label>Postal Code</label>
+        <input type="text" name="postal_code" class="form-control" placeholder="e.g. 1234" required>
+      </div>
+      
+      <div class="form-actions" style="display: flex; gap: 10px; margin-top: 30px;">
+        <button type="submit" class="btn btn-primary">Save Address</button>
+        <button type="button" class="btn btn-outline-primary" onclick="hideAddressForm()">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="{% static 'js/ph-address-cascade-api.js' %}"></script>
+<script>
+  // Function to select address and redirect back to cart
+  function selectAddress(addressId, fullAddress) {
+    // Store the selected address ID for checkout
+    sessionStorage.setItem('selectedAddressId', addressId);
+    
+    // Show success message
+    const successMsg = document.createElement('div');
+    successMsg.className = 'alert alert-success';
+    successMsg.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 9999; padding: 15px 20px; border-radius: 8px;';
+    successMsg.innerHTML = `
+      <strong>Address Selected!</strong><br>
+      Redirecting back to cart...
+    `;
+    document.body.appendChild(successMsg);
+    
+    // Redirect back to cart after a short delay
+    setTimeout(() => {
+      window.location.href = '{% url "cart" %}';
+    }, 1500);
+  }
+
+  function setDefaultAddress(addressId) {
+    if (confirm('Set this address as your default delivery address?')) {
+      fetch(`/set-default-address/${addressId}/`, {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+        }
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.status === 'success') {
+            location.reload();
+          } else {
+            alert(data.message);
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('Error setting default address. Please try again.');
+        });
+    }
+  }
+
+  function deleteAddress(addressId) {
+    if (confirm('Are you sure you want to delete this address? This action cannot be undone.')) {
+      fetch(`/delete-address/${addressId}/`, {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+        }
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.status === 'success') {
+            location.reload();
+          } else {
+            alert(data.message);
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('Error deleting address. Please try again.');
+        });
+    }
+  }
+
+  function showAddressForm() {
+    const addressForm = document.getElementById('address-form');
+    addressForm.style.display = 'block';
+    addressForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  function hideAddressForm() {
+    document.getElementById('address-form').style.display = 'none';
+  }
+
+  // Function to save new address via AJAX
+  function saveNewAddress(event) {
+    event.preventDefault();
+    
+    const form = event.target;
+    const formData = new FormData(form);
+    
+    fetch('/save-address/', {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+      }
+    })
+      .then(response => response.json())
+      .then(data => {
+        if (data.status === 'success') {
+          // Show success message
+          const successMsg = document.createElement('div');
+          successMsg.className = 'alert alert-success';
+          successMsg.innerHTML = '<strong>Success!</strong> Address saved successfully. Reloading page...';
+          form.parentNode.insertBefore(successMsg, form);
+          
+          // Reload the page after a short delay
+          setTimeout(() => {
+            location.reload();
+          }, 1500);
+        } else {
+          // Show error message
+          const errorMsg = document.createElement('div');
+          errorMsg.className = 'alert alert-danger';
+          errorMsg.innerHTML = `<strong>Error!</strong> ${data.message || 'Error saving address'}`;
+          form.parentNode.insertBefore(errorMsg, form);
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        const errorMsg = document.createElement('div');
+        errorMsg.className = 'alert alert-danger';
+        errorMsg.innerHTML = '<strong>Error!</strong> Error saving address. Please try again.';
+        form.parentNode.insertBefore(errorMsg, form);
+      });
+    
+    return false;
+  }
+
+  // Phone number formatting function
+  function autoFormatPHMobile(input) {
+    let value = input.value.replace(/\D/g, '');
+    
+    if (value.startsWith('63')) {
+      value = value.substring(2);
+    }
+    
+    if (value.startsWith('0')) {
+      value = value.substring(1);
+    }
+    
+    if (value.length > 0) {
+      if (value.length <= 3) {
+        value = value;
+      } else if (value.length <= 6) {
+        value = value.substring(0, 3) + ' ' + value.substring(3);
+      } else {
+        value = value.substring(0, 3) + ' ' + value.substring(3, 6) + ' ' + value.substring(6, 10);
+      }
+      
+      input.value = '+63 ' + value;
+    }
+  }
+
+  // Initialize address cascading when page loads
+  document.addEventListener('DOMContentLoaded', function() {
+    // Initialize the address cascade functionality
+    if (window.initPHAddressCascadeAPI) {
+      window.initPHAddressCascadeAPI({
+        region: 'region-select',
+        province: 'province-select',
+        citymun: 'citymun-select',
+        barangay: 'barangay-select'
+      });
+    }
+  });
+</script>
+{% endblock %}

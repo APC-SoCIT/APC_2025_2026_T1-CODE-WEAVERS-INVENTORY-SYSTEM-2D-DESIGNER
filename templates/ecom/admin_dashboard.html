@@ -1,0 +1,280 @@
+{% extends 'ecom/admin_base.html' %}
+{% block content %}
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900">Dashboard</h1>
+        <p class="text-gray-600">Overview of your platform statistics and performance.</p>
+    </div>
+    <!-- Tabs -->
+    <div class="mb-6">
+        <div class="border-b border-gray-200">
+            <nav class="-mb-px flex space-x-8">
+                <button onclick="showDashboardTab('daily')" class="dashboard-tab active border-b-2 border-blue-500 py-2 px-1 text-sm font-medium text-blue-600">Daily</button>
+                <button onclick="showDashboardTab('weekly')" class="dashboard-tab border-b-2 border-transparent py-2 px-1 text-sm font-medium text-gray-500 hover:text-gray-700">Weekly</button>
+                <button onclick="showDashboardTab('monthly')" class="dashboard-tab border-b-2 border-transparent py-2 px-1 text-sm font-medium text-gray-500 hover:text-gray-700">Monthly</button>
+            </nav>
+        </div>
+    </div>
+    <!-- Stats Cards -->
+    <div id="daily-stats" class="dashboard-tab-content grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600">New Users Today</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ dashboard_stats.new_users_today }}</p>
+                    <p class="text-sm text-green-600">+12% from yesterday</p>
+                </div>
+                <i data-lucide="user-plus" class="h-8 w-8 text-gray-400"></i>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600">Total Users</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ dashboard_stats.total_users }}</p>
+                    <p class="text-sm text-green-600">+2.5% from last week</p>
+                </div>
+                <i data-lucide="users" class="h-8 w-8 text-gray-400"></i>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600">Transactions Today</p>
+                    <p class="text-2xl font-bold text-gray-900">R {{ dashboard_stats.transactions_today }}</p>
+                    <p class="text-sm text-green-600">+18% from yesterday</p>
+                </div>
+                <i data-lucide="wallet" class="h-8 w-8 text-gray-400 -mt-7"></i>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600">Non-Users</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ dashboard_stats.non_users }}</p>
+                    <p class="text-sm text-red-600">-4% from yesterday</p>
+                </div>
+                <i data-lucide="user-x" class="h-8 w-8 text-gray-400"></i>
+            </div>
+        </div>
+    </div>
+    <div id="weekly-stats" class="dashboard-tab-content hidden grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600">New Users This Week</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ dashboard_stats.new_users_week }}</p>
+                    <p class="text-sm text-green-600">+8% from last week</p>
+                </div>
+                <i data-lucide="user-plus" class="h-8 w-8 text-gray-400"></i>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600">Total Users</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ dashboard_stats.total_users }}</p>
+                    <p class="text-sm text-green-600">+2.5% from last week</p>
+                </div>
+                <i data-lucide="users" class="h-8 w-8 text-gray-400"></i>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center justify-between">
+                <p class="text-sm font-medium text-gray-600">Transactions This Week</p>
+                <p class="text-2xl font-bold text-gray-900">R {{ dashboard_stats.transactions_week }}</p>
+                <p class="text-sm text-green-600">+12% from last week</p>
+            </div>
+            <i data-lucide="wallet" class="h-8 w-8 text-gray-400"></i>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600">Non-Users</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ dashboard_stats.non_users }}</p>
+                    <p class="text-sm text-red-600">-4% from last week</p>
+                </div>
+                <i data-lucide="user-x" class="h-8 w-8 text-gray-400"></i>
+            </div>
+        </div>
+    </div>
+    <div id="monthly-stats" class="dashboard-tab-content hidden grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600">New Users This Month</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ dashboard_stats.new_users_month }}</p>
+                    <p class="text-sm text-green-600">+15% from last month</p>
+                </div>
+                <i data-lucide="user-plus" class="h-8 w-8 text-gray-400"></i>
+            </div>
+        </div>
+        
+        
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600">Total Users</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ dashboard_stats.total_users }}</p>
+                    <p class="text-sm text-green-600">+2.5% from last month</p>
+                </div>
+                <i data-lucide="users" class="h-8 w-8 text-gray-400"></i>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center justify-between">
+                <p class="text-sm font-medium text-gray-600">Transactions This Month</p>
+                <p class="text-2xl font-bold text-gray-900">R {{ dashboard_stats.transactions_month }}</p>
+                <p class="text-sm text-green-600">+22% from last month</p>
+            </div>
+            <i data-lucide="wallet" class="h-8 w-8 text-gray-400"></i>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600">Non-Users</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ dashboard_stats.non_users }}</p>
+                    <p class="text-sm text-red-600">-4% from last month</p>
+                </div>
+                <i data-lucide="user-x" class="h-8 w-8 text-gray-400"></i>
+            </div>
+        </div>
+    </div>
+    
+
+    
+    <!-- Charts and Recent Transactions -->
+    <div class="grid grid-cols-1 lg:grid-cols-7 gap-6">
+        <div class="lg:col-span-4 bg-white rounded-lg shadow p-9" style="height: 600px; overflow-y: hidden;">
+            <h3 class="text-lg font-medium text-gray-900 mb-0">Transaction Overview</h3>
+            <canvas id="transactionChart" style="width: 100%; height: 100%;"></canvas>
+        </div>
+        
+    <div class="lg:col-span-3 bg-white rounded-lg shadow p-6" style="height: 600px; overflow-y: hidden;">
+        <h3 id="recentTransactionsTitle" class="text-lg font-medium text-gray-900 mb-4">Recent Customer Orders</h3>
+        <div id="recentOrdersList" class="space-y-4 overflow-y-auto max-h-full">
+            {% if recent_orders %}
+                {% for order in recent_orders %}
+                    <div class="flex items-center justify-between p-2 border rounded hover:bg-gray-50">
+                        <div class="flex flex-col">
+                            <p class="text-sm font-medium text-gray-900">
+                                {{ order.customer.user.first_name }} {{ order.customer.user.last_name }}
+                            </p>
+                            <p class="text-xs text-gray-500">Order ID: {{ order.order_ref }}</p>
+                            <p class="text-xs text-gray-500">Date: {{ order.created_at|date:"Y-m-d" }}</p>
+                        </div>
+                        <div class="text-sm font-medium text-gray-900">
+                            Amount: R{{ order.total_price|floatformat:2 }}
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p class="text-gray-500">No recent orders found.</p>
+            {% endif %}
+        </div>
+    </div>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const transactionCtx = document.getElementById('transactionChart').getContext('2d');
+            const recentTransactionsList = document.getElementById('recentOrdersList');
+            const recentTransactionsTitle = document.getElementById('recentTransactionsTitle');
+            let selectedBarIndex = null;
+            const defaultBarColor = 'rgba(37, 99, 235, 0.8)';
+            const selectedBarColor = 'rgba(34, 197, 94, 0.8)';
+            const transactionChart = new Chart(transactionCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+                    datasets: [{
+                        label: 'Transaction Volume (R)',
+                        data: {{ monthly_sales|safe }},
+                        backgroundColor: Array(12).fill(defaultBarColor),
+                        borderColor: 'rgba(37, 99, 235, 1)',
+                        borderWidth: 1,
+                        borderRadius: 4,
+                        barPercentage: 0.6,
+                        categoryPercentage: 0.7
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: {
+                        duration: 900,
+                        easing: 'easeOutQuart'
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return 'R' + value.toLocaleString();
+                                }
+                            },
+                            grid: {
+                                drawBorder: false,
+                                color: 'rgba(0,0,0,0.05)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            enabled: true,
+                            mode: 'index',
+                            intersect: false,
+                            backgroundColor: 'rgba(37, 99, 235, 0.9)',
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            borderColor: 'rgba(37, 99, 235, 1)',
+                            borderWidth: 1,
+                            padding: 8,
+                            cornerRadius: 6,
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        label += 'R' + context.parsed.y.toLocaleString();
+                                    }
+                                    return label;
+                                }
+                            }
+                        },
+                        legend: {
+                            display: false
+                        }
+                    },
+                    hover: {
+                        mode: 'nearest',
+                        intersect: true
+                    }
+                }
+            });
+        });
+        
+
+    </script>
+    <script>
+  document.addEventListener('DOMContentLoaded', function() {
+    lucide.createIcons();
+  });
+</script>
+    <!-- Admin Support Widget -->
+    {% include 'ecom/admin_support_widget.html' %}
+
+{% endblock %}

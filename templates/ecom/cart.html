@@ -1,0 +1,1884 @@
+{% extends 'ecom/homebase.html' %}
+{% load static %}
+{% load phone_format %}
+{% load humanize %}
+{% load custom_filters %}
+{% block content %}
+
+{% if redirect_to %}
+<script>
+  location.replace("{{redirect_to}}")
+</script>
+{% endif %}
+
+<button class="cta" onclick="location.href='/customer-home';">
+  <a href="/customer_home" class="shop-now"></a>
+  <span class="hover-underline-animation"> Shop now </span>
+  <svg
+    id="arrow-horizontal"
+    style= "margin-bottom: 10px"
+    xmlns="http://www.w3.org/2000/svg"
+    width="30"
+    height="10"
+    viewBox="0 0 46 16"
+  >
+    <path
+      id="Path_10"
+      data-name="Path 10"
+      d="M8,0,6.545,1.455l5.506,5.506H-30V9.039H12.052L6.545,14.545,8,16l8-8Z"
+      transform="translate(30)"
+    ></path>
+  </svg>
+</button>
+
+<head>
+  <link href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
+  <script src="//netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js"></script>
+  <script src="//code.jquery.com/jquery-1.11.1.min.js"></script>
+
+  <script src="https://www.paypal.com/sdk/js?client-id=AbktyGNl4UcmLDfE0d0Wm_YMY_bdcDmRO5dc3TEl7zR2XXACyUanC5vQr6lC4M4umP12sagxFbh1MP6J&currency=PHP"></script>
+
+  <style media="screen">
+    /* Saved Addresses Modal Styles */
+    .saved-addresses-modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.5);
+      opacity: 0;
+      transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .saved-addresses-modal.show {
+      opacity: 1;
+    }
+
+    .saved-addresses-content {
+      background-color: #fefefe;
+      margin: 15% auto;
+      padding: 20px;
+      border: 1px solid #888;
+      width: 80%;
+      max-width: 600px;
+      border-radius: 8px;
+      transform: translateY(-20px);
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .saved-addresses-modal.show .saved-addresses-content {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    .saved-address-card {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 15px;
+      position: relative;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      animation: fadeInUp 0.5s ease-out;
+    }
+
+    .saved-address-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    .saved-address-card.default {
+      border-color: #4CAF50;
+      background-color: #f8fff8;
+    }
+
+    .default-badge {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background-color: #4CAF50;
+      color: white;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+    }
+
+    .address-actions {
+      margin-top: 10px;
+      display: flex;
+      gap: 10px;
+    }
+
+    .close-modal {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .close-modal:hover {
+      color: black;
+    }
+
+    .cta {
+      border: none;
+      background: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-left: auto;
+      margin-right: 180px;
+      position: relative;
+      top: 50px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      animation: fadeInRight 0.5s ease-out;
+    }
+    
+    .cta span {
+      padding-bottom: 7px;
+      letter-spacing: 4px;
+      font-size: 14px;
+      padding-right: 15px;
+      text-transform: uppercase;
+    }
+    
+    .cta svg {
+      transform: translateX(-8px);
+      transition: all 0.3s ease;
+    }
+    
+    .cta:hover svg {
+      transform: translateX(0);
+    }
+    
+    .cta:active svg {
+      transform: scale(0.9);
+    }
+    
+    .hover-underline-animation {
+      position: relative;
+      color: black;
+      padding-bottom: 20px;
+    }
+    
+    .hover-underline-animation:after {
+      content: "";
+      position: absolute;
+      width: 100%;
+      transform: scaleX(0);
+      height: 2px;
+      bottom: 0;
+      left: 0;
+      background-color: #000000;
+      transform-origin: bottom right;
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .cta:hover .hover-underline-animation:after {
+      transform: scaleX(1);
+      transform-origin: bottom left;
+    }
+    
+    .button {
+      display: inline-block;
+      border-radius: 4px;
+      background-color: #f4511e;
+      border: none;
+      color: #FFFFFF;
+      text-align: center;
+      font-size: 28px;
+      padding: 20px;
+      width: 200px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+      margin: 10px;
+      animation: fadeIn 0.5s ease-out;
+    }
+
+    .button:hover {
+      transform: translateY(-2px) scale(1.02);
+      box-shadow: 0 10px 20px rgba(244, 81, 30, 0.3);
+    }
+
+    .button span {
+      cursor: pointer;
+      display: inline-block;
+      position: relative;
+      transition: 0.5s;
+    }
+
+    .button span:after {
+      content: '\00bb';
+      position: absolute;
+      opacity: 0;
+      top: 0;
+      right: -20px;
+      transition: 0.5s;
+    }
+
+    .button:hover span {
+      padding-right: 25px;
+    }
+
+    .button:hover span:after {
+      opacity: 1;
+      right: 0;
+    }
+    
+    .size-badge {
+      display: inline-block;
+      background-color: #f8f9fa;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 2px 8px;
+      font-size: 12px;
+      margin-right: 5px;
+    }
+    
+    .quantity-badge {
+      display: inline-block;
+      background-color: #e9ecef;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      text-align: center;
+      line-height: 24px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    /* Delivery Address Display */
+    .delivery-address-display {
+      background: #ffffff;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .delivery-address-display .header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 15px;
+    }
+
+    .delivery-address-display .header .icon {
+      color: #ff6b6b;
+      font-size: 16px;
+    }
+
+    .delivery-address-display .header .title {
+      color: #ff6b6b;
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .delivery-address-display .content {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 20px;
+    }
+
+    .delivery-address-display .customer-info {
+      flex: 0 0 auto;
+    }
+
+    .delivery-address-display .customer-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 2px;
+    }
+
+    .delivery-address-display .customer-phone {
+      font-size: 14px;
+      color: #666;
+    }
+
+    .delivery-address-display .address-info {
+      flex: 1;
+      margin: 0 20px;
+    }
+
+    .delivery-address-display .address-text {
+      font-size: 14px;
+      color: #666;
+      line-height: 1.4;
+    }
+
+    .delivery-address-display .actions {
+      flex: 0 0 auto;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .delivery-address-display .default-btn {
+      padding: 6px 12px;
+      border: 1px solid #ddd;
+      background: white;
+      color: #666;
+      font-size: 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .delivery-address-display .default-btn:hover {
+      border-color: #999;
+      color: #333;
+    }
+
+    .delivery-address-display .change-btn {
+      color: #007bff;
+      font-size: 14px;
+      text-decoration: none;
+      font-weight: 500;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+
+    .delivery-address-display .change-btn:hover {
+      color: #0056b3;
+      text-decoration: underline;
+    }
+
+    /* Address Form Styles */
+    .address-form {
+      background: #f8f9fa;
+      border: 1px solid #e9ecef;
+      border-radius: 8px;
+      padding: 20px;
+      margin-top: 15px;
+      display: none;
+    }
+
+    .address-form .form-group {
+      margin-bottom: 15px;
+    }
+
+    .address-form label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #555;
+      margin-bottom: 5px;
+      display: block;
+    }
+
+    .address-form .form-control {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+
+    .address-form .form-control:focus {
+      outline: none;
+      border-color: #007bff;
+      box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+    }
+
+    .address-form .form-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    @media (max-width: 768px) {
+      .delivery-address-display .content {
+        flex-direction: column;
+        gap: 15px;
+      }
+
+      .delivery-address-display .actions {
+        align-self: flex-end;
+      }
+    }
+
+    /* Checkout */
+    .checkout {
+      border-radius: 9px 9px 19px 19px;
+    }
+    
+    .checkout .details {
+      display: grid;
+      grid-template-columns: 3fr 1fr;
+      padding: 10px;
+      gap: 5px;
+    }
+    
+    .checkout .details span {
+      font-size: 18px;
+      font-weight: 600;
+    }
+    
+    .checkout .details span:nth-child(odd) {
+      font-size: 16px;
+      font-weight: 700;
+      color: #707175;
+      margin: auto auto auto 0;
+    }
+    
+    .checkout .details span:nth-child(even) {
+      font-size: 18px;
+      font-weight: 600;
+      color: #47484b;
+      margin: auto 0 auto auto;
+    }
+    
+    .checkout .checkout--footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 10px 10px 20px;
+      background-color: #efeff3;
+    }
+    
+    .price {
+      position: relative;
+      font-size: 22px;
+      color: #2B2B2F;
+      font-weight: 900;
+    }
+    
+    .price sup {
+      font-size: 13px;
+    }
+    
+    .price sub {
+      width: fit-content;
+      position: absolute;
+      font-size: 11px;
+      color: #5F5D6B;
+      bottom: 5px;
+      display: inline-block;
+    }
+    
+    .checkout .checkout-btn {
+      display: flex;
+      flex-direction: row;
+      justify-content: center;
+      align-items: center;
+      width: 150px;
+      height: 36px;
+      background: linear-gradient(180deg, #4480FF 0%, #115DFC 50%, #0550ED 100%);
+      box-shadow: 0px 0.5px 0.5px #EFEFEF, 0px 1px 0.5px rgba(239, 239, 239, 0.5);
+      border-radius: 7px;
+      border: 0;
+      outline: none;
+      color: #ffffff;
+      font-size: 13px;
+      font-weight: 600;
+      transition: all 0.3s cubic-bezier(0.15, 0.83, 0.66, 1);
+    }
+
+    .pay-btn {
+      width: 130px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: rgb(15, 15, 15);
+      border: none;
+      color: white;
+      font-weight: 600;
+      gap: 8px;
+      cursor: pointer;
+      box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.103);
+      position: relative;
+      overflow: hidden;
+      transition-duration: .3s;
+    }
+    
+    .pay-svgIcon {
+      width: 16px;
+    }
+    
+    .pay-svgIcon path {
+      fill: white;
+    }
+    
+    .pay-btn::before {
+      width: 130px;
+      height: 130px;
+      position: absolute;
+      content: "";
+      background-color: white;
+      border-radius: 50%;
+      left: -100%;
+      top: 0;
+      transition-duration: .3s;
+      mix-blend-mode: difference;
+    }
+    
+    .pay-btn:hover::before {
+      transition-duration: .3s;
+      transform: translate(100%,-50%);
+      border-radius: 0;
+    }
+    
+    .pay-btn:active {
+      transform: translate(5px,5px);
+      transition-duration: .3s;
+    }
+    
+  </style>
+</head>
+
+<br><br><br><br>
+
+<div class="container">
+  <div class="panel panel-success">
+    <div class="panel-heading">
+      <h6 style="text-align:center;" class="panel-title">My Cart</h6>
+    </div>
+    <table class="table table-hover table-bordered" id="dev-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Image</th>
+          <th>Price</th>
+          <th>Size</th>
+          <th>Quantity</th>    
+        </tr>
+      </thead>
+      {% for product in products %}
+        <tr>
+          <td>{{ product.product.name }}</td>
+          <td><img src="{{ product.product.product_image.url }}" alt="Product Image" height="50px" width="50px"></td>
+          <td>₱ {{ product.product.price|floatformat:2 }}</td>
+          <td><span class="size-badge">{{ product.size }}</span></td>
+          <td><span class="quantity-badge">{{ product.quantity }}</span></td>
+          <td>{{ product.product.description }}</td>
+          <td>
+            <a class="btn btn-danger btn-xs" href="{% url 'remove-from-cart' product.product.id %}?size={{ product.size }}&next_page={{request.path}}">
+              <span class="glyphicon glyphicon-trash"></span>
+            </a>
+          </td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="7" class="text-center" style="padding: 40px; color: #666;">
+            <div style="font-size: 18px; margin-bottom: 10px;">🛒</div>
+            <h4>Your cart is empty</h4>
+            <p>Add some products to get started!</p>
+            <a href="{% url 'customer-home' %}" class="btn btn-primary">Continue Shopping</a>
+          </td>
+        </tr>
+      {% endfor %}
+    </table>
+
+    <!-- Delivery Address Display -->
+    <div class="delivery-address-display">
+      <div class="header">
+        <span class="icon">📍</span>
+        <span class="title">Delivery Address</span>
+      </div>
+      <div class="content">
+        <div class="customer-info">
+          <div class="customer-name">{{ user.first_name }} {{ user.last_name }}</div>
+          <div class="customer-phone">{{ user.customer.mobile|ph_mobile_format|default:"0956 837 0169" }}</div>
+        </div>
+        <div class="address-info">
+          <div class="address-text">
+            {% if user.customer.street_address %}
+              {{ user.customer.street_address }}, {{ user.customer.barangay|barangay_name }}, {{ user.customer.citymun|citymun_name }}, {{ user.customer.province|province_name }}, {{ user.customer.region|region_name }}, {{ user.customer.postal_code }}
+            {% else %}
+              2565 Pasigline Street, Sta. Ana, Barangay 778, Santa Ana, Metro Manila, Metro Manila 1009
+            {% endif %}
+          </div>
+        </div>
+        <div class="actions">
+          <button class="default-btn">Default</button>
+          <button class="change-btn" onclick="showAddressForm()">Add New</button>
+          <button class="change-btn" onclick="openAddressModal()" style="padding: 6px 12px; margin-left: 5px; border: none; background-color: #007bff; color: white; border-radius: 4px; cursor: pointer;">Manage All</button>
+        </div>
+      </div>
+      
+      <!-- Saved Addresses List -->
+      {% if saved_addresses %}
+      <div class="saved-addresses-list" style="margin-top: 15px;">
+        <h5 style="color: #666; font-size: 14px; margin-bottom: 10px;">Saved Addresses:</h5>
+        {% for address in saved_addresses %}
+        <div class="saved-address-item" data-default="{% if address.is_default %}true{% else %}false{% endif %}" onclick="selectAddress(event, {{ address.id }}, '{{ address.street_address }}, {{ address.barangay|barangay_name }}, {{ address.citymun|citymun_name }}, {{ address.province|province_name }}, {{ address.region|region_name }}, {{ address.postal_code }}')" style="border: 1px solid #e0e0e0; border-radius: 8px; padding: 12px; margin-bottom: 10px; background-color: {% if address.is_default %}#f8fff8{% else %}#fafafa{% endif %}; cursor: pointer; transition: all 0.2s ease;" onmouseover="this.style.backgroundColor='#e8f4fd'; this.style.borderColor='#007bff';" onmouseout="this.style.backgroundColor='{% if address.is_default %}#f8fff8{% else %}#fafafa{% endif %}'; this.style.borderColor='#e0e0e0';">
+          <div class="address-header" style="display: flex; justify-content: between; align-items: center; margin-bottom: 8px;">
+            <div class="address-info" style="flex: 1;">
+              <div class="address-text" style="font-size: 14px; color: #333;">
+                {{ address.street_address }}, {{ address.barangay|barangay_name }}, {{ address.citymun|citymun_name }}, {{ address.province|province_name }}, {{ address.region|region_name }}, {{ address.postal_code }}
+              </div>
+            </div>
+            <div class="address-actions" style="display: flex; gap: 8px; align-items: center;">
+              {% if address.is_default %}
+                <span class="default-badge" style="background-color: #4CAF50; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px;">Default</span>
+              {% else %}
+                <button class="btn btn-sm btn-outline-success" onclick="setDefaultAddress({{ address.id }})" style="font-size: 11px; padding: 2px 8px;">Set as Default</button>
+                <button class="btn btn-sm btn-outline-danger" onclick="deleteAddress({{ address.id }})" style="font-size: 11px; padding: 2px 8px;">Delete</button>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <!-- No saved addresses -->
+      <div style="margin-top: 15px; color: #666; font-style: italic;">
+        No delivery address set
+      </div>
+      {% endif %}
+      
+      <!-- Address Form -->
+      <div class="address-form" id="address-form" style="display: none;">
+        <h4 style="color: #333; margin-bottom: 15px;">📍 Add New Address</h4>
+        <form onsubmit="saveNewAddress(event)" method="post">
+          {% csrf_token %}
+          <div class="form-row" style="display: flex; gap: 15px; margin-bottom: 15px;">
+            <div class="form-group" style="flex: 1;">
+              <label>Full Name</label>
+              <input type="text" name="name" value="{{ user.first_name }} {{ user.last_name }}" class="form-control" required>
+            </div>
+            <div class="form-group" style="flex: 1;">
+              <label>Phone Number</label>
+              <input type="text" name="phone" value="{{ user.customer.mobile|ph_mobile_format }}" class="form-control" required oninput="autoFormatPHMobile(this)">
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label>Street Address</label>
+            <input type="text" name="street_address" class="form-control" placeholder="House number, street name" required>
+          </div>
+          
+          <div class="form-row" style="display: flex; gap: 15px; margin-bottom: 15px;">
+            <div class="form-group" style="flex: 1;">
+              <label>Region</label>
+              <select name="region" id="region-select" class="form-control" required>
+                <option value="">Select Region</option>
+              </select>
+            </div>
+            <div class="form-group" style="flex: 1;">
+              <label>Province</label>
+              <select name="province" id="province-select" class="form-control" required>
+                <option value="">Select Province</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="form-row" style="display: flex; gap: 15px; margin-bottom: 15px;">
+            <div class="form-group" style="flex: 1;">
+              <label>City/Municipality</label>
+              <select name="citymun" id="citymun-select" class="form-control" required>
+                <option value="">Select City/Municipality</option>
+              </select>
+            </div>
+            <div class="form-group" style="flex: 1;">
+              <label>Barangay</label>
+              <select name="barangay" id="barangay-select" class="form-control" required>
+                <option value="">Select Barangay</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label>Postal Code</label>
+            <input type="text" name="postal_code" class="form-control" placeholder="e.g. 1234" required>
+          </div>
+          
+          <div class="form-actions" style="display: flex; gap: 10px; margin-top: 20px;">
+            <button type="submit" class="btn btn-primary">Save Address</button>
+            <button type="button" class="btn btn-outline-primary" onclick="hideAddressForm()">Cancel</button>
+          </div>
+        </form>
+      </div>
+      
+      <!-- Show a message if address was updated -->
+      {% if messages %}
+        <div class="alert alert-success" role="alert">
+          {% for message in messages %}{{ message }}{% endfor %}
+        </div>
+      {% endif %}
+    </div>
+
+    <div class="card checkout">
+      <label class="title">Checkout</label>
+      <div class="details">
+        <span>Your cart subtotal:</span>
+        <span id="subtotal">₱ {{ total|floatformat:2|intcomma }}</span>
+        <span>Delivery Fee:</span>
+        <span id="delivery-fee">₱ <span id="delivery-amount">{{ delivery_fee|default:50|intcomma }}</span></span>
+        <span>VAT (12%):</span>
+        <span id="vat-amount">₱ <span id="vat-value">{{ vat_amount|default_if_none:0|floatformat:2|intcomma }}</span></span>
+        <span style="border-top: 1px solid #ddd; padding-top: 5px; margin-top: 5px;">Grand Total:</span>
+        <strong id="grand-total">₱ <span id="grand-total-value">{{ grand_total|default_if_none:total|floatformat:2|intcomma }}</span></strong>
+      </div>
+      <div class="checkout--footer">
+        <button class="pay-btn" id="openModalBtn"> 
+          Checkout
+          <svg class="pay-svgIcon" viewBox="0 0 576 512">
+            <path d="M512 80c8.8 0 16 7.2 16 16v32H48V96c0-8.8 7.2-16 16-16H512zm16 144V416c0 8.8-7.2 16-16 16H64c-8.8 0-16-7.2-16-16V224H528zM64 32C28.7 32 0 60.7 0 96V416c0 35.3 28.7 64 64 64H512c35.3 0 64-28.7 64-64V96c0-35.3-28.7-64-64-64H64zm56 304c-13.3 0-24 10.7-24 24s10.7 24 24 24h48c13.3 0 24-10.7 24-24s-10.7-24-24-24H120zm128 0c-13.3 0-24 10.7-24 24s10.7 24 24 24H360c13.3 0 24-10.7 24-24s-10.7-24-24-24H248z"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+    
+    <!-- Modal Structure -->
+    <div id="checkoutModal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:1000; justify-content:center; align-items:center;">
+      <div style="background:white; padding:20px; border-radius:8px; min-width:750px; position:relative;">
+        <button id="closeModalBtn" style="position:absolute; top:10px; right:10px; background:none; border:none; font-size:18px;">&times;</button>
+        <h3 style="margin-bottom:20px;">Complete your Payment</h3>
+        
+        <!-- Payment Method Selection -->
+        <div class="payment-methods" style="margin-bottom: 20px;">
+          <h4>Select Payment Method</h4>
+          <div class="payment-method-options" style="display: flex; gap: 15px; margin-top: 10px;">
+            <button class="payment-method-btn" data-method="paypal" style="flex: 1; padding: 15px; border: 1px solid #ddd; border-radius: 8px; background: white; cursor: pointer;">
+              <img src="https://www.paypalobjects.com/webstatic/mktg/logo/pp_cc_mark_37x23.jpg" alt="PayPal" style="height: 23px; margin-bottom: 8px;">
+              <div>PayPal</div>
+            </button>
+            <button class="payment-method-btn" data-method="cod" style="flex: 1; padding: 15px; border: 1px solid #ddd; border-radius: 8px; background: white; cursor: pointer;">
+              <img src="https://cdn-icons-png.flaticon.com/512/1554/1554401.png" alt="COD" style="height: 23px; margin-bottom: 8px;">
+              <div>Cash on Delivery</div>
+            </button>
+            <button class="payment-method-btn" data-method="gcash" style="flex: 1; padding: 15px; border: 1px solid #ddd; border-radius: 8px; background: white; cursor: pointer;">
+              <img src="{% static 'images/gcash.png' %}" alt="GCash" style="height: 23px; margin-bottom: 8px;">
+              <div>GCash</div>
+            </button>
+          </div>
+        </div>
+
+        <!-- PayPal Button Container -->
+        <div id="paypal-button-container" style="display: none;"></div>
+        
+        <!-- GCash Button Container -->
+        <div id="gcash-button-container" style="display: none; margin-top: 20px; text-align: center;">
+          <button id="gcash-pay-button" type="button" style="width: 100%; height: 45px; background-color: #017eff; border: none; border-radius: 4px; font-weight: 600; font-size: 18px; color: #F5FEFD; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 2px 4px rgb(0 0 0 / 0.2);">
+            <img src="{% static 'images/gcashbanner.jpg' %}" alt="GCash Logo" style="height: 24px; width: auto;" />
+            <span>GCash</span>
+          </button>
+        </div>
+
+        <!-- COD Form -->
+        <div id="cod-form" style="display: none;">
+          <form id="cod-checkout-form" style="margin-top: 20px;">
+            <button type="submit" class="btn btn-primary">Place Order</button>
+          </form>
+        </div>
+      </div>
+    </div>
+    
+    <script>
+      // Global variables for calculations
+      let subtotal = parseFloat("{{ total|floatformat:'2'|default:'0.00' }}");
+      let deliveryFee = parseFloat("{{ delivery_fee|default:'50' }}");
+      let vatRate = 0.12;
+      
+      // Function to select a saved address as delivery address
+      function selectAddress(event, addressId, fullAddress) {
+        // Prevent any default behavior
+        event.preventDefault();
+        event.stopPropagation();
+        
+        // Update the delivery address display
+        const deliveryAddressElement = document.querySelector('.delivery-address');
+        if (deliveryAddressElement) {
+          deliveryAddressElement.innerHTML = `
+            <strong>Delivery Address:</strong><br>
+            ${fullAddress}
+            <button class="btn btn-link btn-sm" onclick="showAddressForm()" style="padding: 0; margin-left: 10px; font-size: 12px;">Change</button>
+          `;
+        }
+        
+        // Store the selected address ID for checkout
+        const selectedAddressInput = document.getElementById('selected-address-id');
+        if (selectedAddressInput) {
+          selectedAddressInput.value = addressId;
+        }
+        
+        // Update visual selection
+        document.querySelectorAll('.saved-address-item').forEach(item => {
+          item.style.backgroundColor = item.dataset.default === 'true' ? '#f8fff8' : '#fafafa';
+          item.style.borderColor = '#e0e0e0';
+        });
+        
+        // Highlight selected address
+        event.currentTarget.style.backgroundColor = '#e8f4fd';
+        event.currentTarget.style.borderColor = '#007bff';
+        
+        console.log('Selected address ID:', addressId);
+      }
+      
+      // Function to save new address via AJAX
+      function saveNewAddress(event) {
+        event.preventDefault();
+        
+        const form = event.target;
+        const formData = new FormData(form);
+        
+        fetch('/save-address/', {
+          method: 'POST',
+          body: formData
+        })
+          .then(response => response.json())
+          .then(data => {
+            if (data.status === 'success') {
+              // Clear the form
+              form.reset();
+              // Hide the form
+              document.getElementById('address-form').style.display = 'none';
+              
+              // Check if we should redirect or just show notice
+              if (data.redirect === false) {
+                // Show success notice without redirecting (for cart page)
+                const successMsg = document.createElement('div');
+                successMsg.className = 'alert alert-success';
+                successMsg.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 9999; padding: 15px 20px; border-radius: 8px; background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; box-shadow: 0 4px 6px rgba(0,0,0,0.1);';
+                successMsg.innerHTML = `
+                  <strong><i class="fas fa-check-circle"></i> Success!</strong><br>
+                  ${data.message}
+                `;
+                document.body.appendChild(successMsg);
+                
+                // Auto-remove the notice after 4 seconds
+                setTimeout(() => {
+                  successMsg.remove();
+                }, 4000);
+                
+                // Refresh the saved addresses list without page reload
+                if (typeof loadModalAddresses === 'function') {
+                  // If modal is open, refresh it
+                  const modal = document.getElementById('saved-addresses-modal');
+                  if (modal && modal.style.display === 'block') {
+                    loadModalAddresses();
+                  }
+                }
+                
+                // Also update the main page address display if needed
+                if (typeof updateAddressDisplay === 'function') {
+                  updateAddressDisplay();
+                }
+              } else {
+                // Reload page (for manage-addresses page)
+                location.reload();
+              }
+            } else {
+              alert(data.message || 'Error saving address');
+            }
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            alert('Error saving address. Please try again.');
+          });
+        
+        return false;
+       }
+       
+       // Address Modal Functions
+       function openAddressModal() {
+         document.getElementById('addressModal').style.display = 'block';
+         loadModalAddresses();
+       }
+
+       function closeAddressModal() {
+         document.getElementById('addressModal').style.display = 'none';
+       }
+
+       function loadModalAddresses() {
+         fetch('/get-saved-addresses/')
+           .then(response => response.json())
+           .then(data => {
+             const addressList = document.getElementById('modalAddressList');
+             addressList.innerHTML = '';
+             
+             if (data.addresses && data.addresses.length > 0) {
+               // Add bulk delete controls
+               const bulkControls = document.createElement('div');
+               bulkControls.className = 'bulk-delete-controls';
+               bulkControls.innerHTML = `
+                 <div class="bulk-actions">
+                   <input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)">
+                   <label for="selectAll">Select All</label>
+                   <button onclick="deleteSelectedAddresses()" class="btn-sm btn-danger" id="deleteSelectedBtn" style="display: none; margin-left: 10px;">Delete Selected</button>
+                 </div>
+               `;
+               addressList.appendChild(bulkControls);
+               
+               data.addresses.forEach(address => {
+                 // Construct full address from individual fields
+                 const fullAddress = `${address.street_address}, ${address.barangay}, ${address.citymun}, ${address.province}, ${address.region}, ${address.postal_code}`;
+                 
+                 const addressDiv = document.createElement('div');
+                 addressDiv.className = 'modal-address-item';
+                 addressDiv.innerHTML = `
+                   <div class="address-content">
+                     <div class="address-checkbox">
+                       ${!address.is_default ? 
+                         `<input type="checkbox" class="address-select" value="${address.id}" onchange="updateDeleteButton()">` : 
+                         '<span class="checkbox-disabled">📍</span>'
+                       }
+                     </div>
+                     <div class="address-text">${fullAddress}</div>
+                     <div class="address-actions">
+                       ${address.is_default ? 
+                         '<span class="default-badge">Default</span>' : 
+                         `<button onclick="setModalDefaultAddress(${address.id})" class="btn-sm btn-success">Set Default</button>`
+                       }
+                       ${!address.is_default ? 
+                         `<button onclick="deleteModalAddress(${address.id})" class="btn-sm btn-danger">Delete</button>` : ''
+                       }
+                     </div>
+                   </div>
+                 `;
+                 addressList.appendChild(addressDiv);
+               });
+             } else {
+               addressList.innerHTML = '<p class="no-addresses">No saved addresses found.</p>';
+             }
+           })
+           .catch(error => {
+             console.error('Error loading addresses:', error);
+             document.getElementById('modalAddressList').innerHTML = '<p class="error">Error loading addresses.</p>';
+           });
+       }
+
+       function setModalDefaultAddress(addressId) {
+         fetch(`/set-default-address/${addressId}/`, {
+           method: 'POST',
+           headers: {
+             'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+             'Content-Type': 'application/json'
+           }
+         })
+         .then(response => response.json())
+         .then(data => {
+           if (data.success) {
+             loadModalAddresses();
+             location.reload(); // Refresh to update main page
+           } else {
+             alert('Error setting default address');
+           }
+         })
+         .catch(error => {
+           console.error('Error:', error);
+           alert('Error setting default address');
+         });
+       }
+
+       function deleteModalAddress(addressId) {
+         if (confirm('Are you sure you want to delete this address?')) {
+           fetch(`/delete-address/${addressId}/`, {
+             method: 'POST',
+             headers: {
+               'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+               'Content-Type': 'application/json'
+             }
+           })
+           .then(response => response.json())
+           .then(data => {
+             if (data.status === 'success') {
+               // Refresh modal content
+               loadModalAddresses();
+               // Update the main page address display if needed
+               if (typeof updateAddressDisplay === 'function') {
+                 updateAddressDisplay();
+               }
+               // Show success message
+               alert('Address deleted successfully!');
+             } else {
+               alert(data.message || 'Error deleting address');
+             }
+           })
+           .catch(error => {
+             console.error('Error:', error);
+             alert('Error deleting address');
+           });
+         }
+       }
+
+       // Bulk delete functionality
+       function toggleSelectAll(selectAllCheckbox) {
+         const checkboxes = document.querySelectorAll('.address-select');
+         checkboxes.forEach(checkbox => {
+           checkbox.checked = selectAllCheckbox.checked;
+         });
+         updateDeleteButton();
+       }
+
+       function updateDeleteButton() {
+         const selectedCheckboxes = document.querySelectorAll('.address-select:checked');
+         const deleteBtn = document.getElementById('deleteSelectedBtn');
+         const selectAllCheckbox = document.getElementById('selectAll');
+         
+         if (selectedCheckboxes.length > 0) {
+           deleteBtn.style.display = 'inline-block';
+           deleteBtn.textContent = `Delete Selected (${selectedCheckboxes.length})`;
+         } else {
+           deleteBtn.style.display = 'none';
+         }
+         
+         // Update select all checkbox state
+         const allCheckboxes = document.querySelectorAll('.address-select');
+         if (allCheckboxes.length > 0) {
+           selectAllCheckbox.checked = selectedCheckboxes.length === allCheckboxes.length;
+           selectAllCheckbox.indeterminate = selectedCheckboxes.length > 0 && selectedCheckboxes.length < allCheckboxes.length;
+         }
+       }
+
+       function deleteSelectedAddresses() {
+         const selectedCheckboxes = document.querySelectorAll('.address-select:checked');
+         const selectedIds = Array.from(selectedCheckboxes).map(cb => cb.value);
+         
+         if (selectedIds.length === 0) {
+           alert('Please select addresses to delete.');
+           return;
+         }
+         
+         if (confirm(`Are you sure you want to delete ${selectedIds.length} selected address(es)?`)) {
+           // Delete addresses one by one
+           let deletedCount = 0;
+           let errors = [];
+           
+           const deletePromises = selectedIds.map(addressId => {
+             return fetch(`/delete-address/${addressId}/`, {
+               method: 'POST',
+               headers: {
+                 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                 'Content-Type': 'application/json'
+               }
+             })
+             .then(response => response.json())
+             .then(data => {
+               if (data.status === 'success') {
+                 deletedCount++;
+               } else {
+                 errors.push(data.message || 'Unknown error');
+               }
+             })
+             .catch(error => {
+               console.error('Error:', error);
+               errors.push('Network error');
+             });
+           });
+           
+           Promise.all(deletePromises).then(() => {
+             // Refresh modal content
+             loadModalAddresses();
+             
+             // Update the main page address display if needed
+             if (typeof updateAddressDisplay === 'function') {
+               updateAddressDisplay();
+             }
+             
+             // Show result message
+             if (deletedCount > 0) {
+               alert(`Successfully deleted ${deletedCount} address(es).${errors.length > 0 ? ` ${errors.length} error(s) occurred.` : ''}`);
+             } else {
+               alert('No addresses were deleted. Errors: ' + errors.join(', '));
+             }
+           });
+         }
+       }
+       
+       // Initial address values
+      const initialProvince = "{{ user.customer.province|escapejs }}";
+      const initialCitymun = "{{ user.customer.citymun|escapejs }}";
+      const initialBarangay = "{{ user.customer.barangay|escapejs }}";
+      
+      // Calculate totals
+      function calculateTotals() {
+        // Use VAT-inclusive calculation (same as backend)
+        let vatAmount = subtotal * 12 / 112;
+        let grandTotal = subtotal + deliveryFee;
+        
+        // Update display
+        const deliveryAmountEl = document.getElementById('delivery-amount');
+        const vatValueEl = document.getElementById('vat-value');
+        const grandTotalValueEl = document.getElementById('grand-total-value');
+        const footerTotalEl = document.getElementById('footer-total');
+    
+        if (deliveryAmountEl) deliveryAmountEl.textContent = deliveryFee.toLocaleString();
+        if (vatValueEl) vatValueEl.textContent = vatAmount.toFixed(2);
+        if (grandTotalValueEl) grandTotalValueEl.textContent = grandTotal.toFixed(2);
+        if (footerTotalEl) footerTotalEl.textContent = grandTotal.toFixed(2);
+        
+        return grandTotal;
+      }
+    
+      // Update delivery fee based on region selection
+      function updateDeliveryFee() {
+        const regionSelect = document.getElementById('region-select');
+        const selectedOption = regionSelect.options[regionSelect.selectedIndex];
+        deliveryFee = parseInt(selectedOption.dataset.fee) || 50;
+        calculateTotals();
+      }
+    
+      // Address form functions
+      function showAddressForm() {
+        document.getElementById('address-form').style.display = 'block';
+      }
+    
+      function hideAddressForm() {
+        document.getElementById('address-form').style.display = 'none';
+      }
+    
+      // Modal open/close
+      const openModalBtn = document.getElementById('openModalBtn');
+      const closeModalBtn = document.getElementById('closeModalBtn');
+      const modal = document.getElementById('checkoutModal');
+      const paypalContainer = document.getElementById('paypal-button-container');
+      const gcashContainer = document.getElementById('gcash-button-container');
+      const codForm = document.getElementById('cod-form');
+      const paymentButtons = document.querySelectorAll('.payment-method-btn');
+    
+      // Check if cart is empty
+      const cartIsEmpty = {{ products|length|default_if_none:0 }} === 0;
+    
+      openModalBtn.addEventListener('click', (e) => {
+        if (cartIsEmpty) {
+          e.preventDefault();
+          alert('Your cart is empty. Please add items before proceeding to checkout.');
+          return;
+        }
+        modal.style.display = 'flex';
+      });
+    
+      closeModalBtn.addEventListener('click', () => {
+        modal.style.display = 'none';
+        paypalContainer.style.display = 'none';
+        gcashContainer.style.display = 'none';
+        codForm.style.display = 'none';
+      });
+    
+      // Payment method selection
+      paymentButtons.forEach(button => {
+        button.addEventListener('click', () => {
+          const method = button.dataset.method;
+          paymentButtons.forEach(btn => btn.style.background = 'white');
+          button.style.background = '#f0f0f0';
+    
+          if (method === 'paypal') {
+            paypalContainer.style.display = 'block';
+            gcashContainer.style.display = 'none';
+            codForm.style.display = 'none';
+          } else if (method === 'cod') {
+            paypalContainer.style.display = 'none';
+            gcashContainer.style.display = 'none';
+            codForm.style.display = 'block';
+          } else if (method === 'gcash') {
+            paypalContainer.style.display = 'none';
+            gcashContainer.style.display = 'block';
+            codForm.style.display = 'none';
+          }
+        });
+      });
+    
+      // COD Form Submission
+      document.getElementById('cod-checkout-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        window.location.href = '/payment-success?method=cod';
+      });
+    
+      // GCash Button Click Handler
+      document.getElementById('gcash-pay-button').addEventListener('click', () => {
+        window.location.href = '/pay-with-gcash/';
+      });
+    
+      // PayPal Button
+      paypal.Buttons({
+        createOrder: function (data, actions) {
+          const grandTotal = calculateTotals();
+          return actions.order.create({
+            purchase_units: [{
+              amount: {
+                currency_code: "PHP",
+                value: grandTotal.toFixed(2)
+              }
+            }]
+          });
+        },
+        onApprove: function (data, actions) {
+          return actions.order.capture().then(function (details) {
+            window.location.href = `/payment-success?method=paypal&paymentId=${details.id}`;
+          });
+        }
+      }).render('#paypal-button-container');
+    
+      // Initialize calculations and address cascade on page load
+      document.addEventListener('DOMContentLoaded', function() {
+        calculateTotals();
+    
+        // Initialize PH Address Cascade for cart address form
+        window.initPHAddressCascadeAPI({
+          region: 'region-select',
+          province: 'province-select',
+          citymun: 'citymun-select',
+          barangay: 'barangay-select'
+        });
+    
+        // Trigger region change event after a short delay to populate provinces
+        setTimeout(function() {
+          const regionSelect = document.getElementById('region-select');
+          if (regionSelect.value) {
+            regionSelect.dispatchEvent(new Event('change'));
+          }
+          // Set initial values after dropdowns are populated
+          setTimeout(function() {
+            if (initialProvince) {
+              document.getElementById('province-select').value = initialProvince;
+              document.getElementById('province-select').dispatchEvent(new Event('change'));
+            }
+          }, 500);
+          setTimeout(function() {
+            if (initialCitymun) {
+              document.getElementById('citymun-select').value = initialCitymun;
+              document.getElementById('citymun-select').dispatchEvent(new Event('change'));
+            }
+          }, 900);
+          setTimeout(function() {
+            if (initialBarangay) {
+              document.getElementById('barangay-select').value = initialBarangay;
+            }
+          }, 1300);
+        }, 100);
+    
+        // Update address display
+        updateAddressDisplay();
+      });
+    </script>
+    <!-- Payment Success Message (if applicable) -->
+    {% if payment_success %}
+    <div class="alert alert-success" style="margin: 40px auto; max-width: 600px; text-align: center; font-size: 1.2em;">
+      <strong>Payment Successful!</strong><br>
+      Thank you for your purchase. Your order has been placed and is being processed.<br>
+      <a href="/customer-home" class="btn btn-success" style="margin-top: 15px;">Continue Shopping</a>
+    </div>
+    {% endif %}
+
+    <script src="{% static 'js/ph-address-cascade-api.js' %}"></script>
+    <script>
+      // Function to fetch and display address names
+      async function updateAddressDisplay() {
+        const regionCode = "{{ user.customer.region }}";
+        const provinceCode = "{{ user.customer.province }}";
+        const cityCode = "{{ user.customer.citymun }}";
+        const barangayCode = "{{ user.customer.barangay }}";
+
+        // Use region code directly (supports PSGC or stored code)
+    
+        try {
+          // Fetch region name
+          const regionsResponse = await fetch('/api/regions/').then(res => res.json());
+          const regions = Array.isArray(regionsResponse) ? regionsResponse : regionsResponse.regions || [];
+          const region = regions.find(r => r.psgc_code === regionCode || r.code === regionCode);
+          const regionName = region ? region.name : regionCode;
+    
+          // Fetch province name
+          let provinceName = provinceCode;
+          if (regionCode !== 'NCR') {
+            const provincesResponse = await fetch(`/api/provinces/?region_id=${regionCode}`).then(res => res.json());
+            const provinces = Array.isArray(provincesResponse) ? provincesResponse : provincesResponse.provinces || [];
+            const province = provinces.find(p => p.psgc_id === provinceCode || p.code === provinceCode);
+            provinceName = province ? province.name : provinceCode;
+          }
+    
+          // Fetch city name
+          const citiesResponse = await fetch(`/api/cities/?${regionCode === 'NCR' ? 'region_id=' + regionCode : 'province_id=' + provinceCode}`).then(res => res.json());
+          const cities = Array.isArray(citiesResponse) ? citiesResponse : citiesResponse.cities || [];
+          const city = cities.find(c => c.psgc_id === cityCode || c.code === cityCode);
+          const cityName = city ? city.name : cityCode;
+    
+          // Fetch barangay name
+          const barangaysResponse = await fetch(`/api/barangays/?city_id=${cityCode}`).then(res => res.json());
+          const barangays = Array.isArray(barangaysResponse) ? barangaysResponse : barangaysResponse.barangays || [];
+          const barangay = barangays.find(b => b.psgc_id === barangayCode || b.code === barangayCode);
+          const barangayName = barangay ? barangay.name : barangayCode;
+    
+          // Update the address display
+          const addressText = document.querySelector('.address-text');
+          if (addressText) {
+            addressText.innerHTML = `
+              {% if user.customer.street_address %}
+                {{ user.customer.street_address }}, ${barangayName}, ${cityName}, ${provinceName}, ${regionName}, {{ user.customer.postal_code }}
+              {% else %}
+                2565 Pasigline Street, Sta. Ana, Barangay 778, Santa Ana, Metro Manila, Metro Manila 1009
+              {% endif %}
+            `;
+          }
+        } catch (error) {
+          console.error('Error updating address display:', error);
+        }
+      }
+      
+      // Call the function when the page loads
+      document.addEventListener('DOMContentLoaded', updateAddressDisplay);
+    </script>
+    
+    <script>
+
+        function showSavedAddressesModal() {
+          // Fetch saved addresses
+          fetch('/get-saved-addresses/')
+            .then(response => response.json())
+            .then(data => {
+              if (data.status === 'success') {
+                const addressesList = document.getElementById('saved-addresses-list');
+                addressesList.innerHTML = '';
+                
+                data.addresses.forEach(address => {
+                  const addressCard = document.createElement('div');
+                  addressCard.className = `saved-address-card ${address.is_default ? 'default' : ''}`;
+                  
+                  if (address.is_default) {
+                    addressCard.innerHTML += '<span class="default-badge">Default</span>';
+                  }
+                  
+                  addressCard.innerHTML += `
+                    <div class="address-text">
+                      ${address.street_address}, ${address.barangay}, ${address.citymun}, ${address.province}, 
+                      ${address.region}, ${address.postal_code}
+                    </div>
+                    <div class="address-actions">
+                      ${!address.is_default ? `
+                        <button class="btn btn-sm btn-success" onclick="setDefaultAddress(${address.id})">Set as Default</button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteAddress(${address.id})">Delete</button>
+                      ` : ''}
+                    </div>
+                  `;
+                  
+                  addressesList.appendChild(addressCard);
+                });
+              }
+            });
+          
+          document.getElementById('saved-addresses-modal').style.display = 'block';
+        }
+
+        function closeSavedAddressesModal() {
+          document.getElementById('saved-addresses-modal').style.display = 'none';
+        }
+
+        function setDefaultAddress(addressId) {
+          fetch(`/set-default-address/${addressId}/`, {
+            method: 'POST',
+            headers: {
+              'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            }
+          })
+            .then(response => response.json())
+            .then(data => {
+              if (data.status === 'success') {
+                location.reload();
+              } else {
+                alert(data.message);
+              }
+            });
+        }
+
+        function deleteAddress(addressId) {
+          if (confirm('Are you sure you want to delete this address?')) {
+            fetch(`/delete-address/${addressId}/`, {
+              method: 'POST',
+              headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+              }
+            })
+              .then(response => response.json())
+              .then(data => {
+                if (data.status === 'success') {
+                  showSavedAddressesModal();  // Refresh the modal
+                } else {
+                  alert(data.message);
+                }
+              });
+          }
+        }
+
+        // Modify the existing showAddressForm function
+        function showAddressForm() {
+          closeSavedAddressesModal();  // Close the modal if it's open
+          document.getElementById('address-form').style.display = 'block';
+        }
+      </script>
+
+<!-- Saved Addresses Modal -->
+<div id="saved-addresses-modal" class="saved-addresses-modal">
+  <div class="saved-addresses-content">
+    <div class="modal-header">
+      <h3>Select Delivery Address</h3>
+      <span class="close-modal" onclick="closeSavedAddressesModal()">&times;</span>
+    </div>
+    <div class="modal-body">
+      <div id="saved-addresses-list">
+        <!-- Saved addresses will be dynamically populated here -->
+      </div>
+      <!-- Address management removed from cart -->
+    </div>
+  </div>
+</div>
+</div>
+
+<br><br><br><br><br>
+
+<!-- Address Management Modal -->
+<div id="addressModal" class="address-modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5);">
+  <div class="modal-content" style="background-color: #fefefe; margin: 5% auto; padding: 0; border: 1px solid #ddd; width: 90%; max-width: 600px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
+    <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; padding: 20px 25px; border-bottom: 1px solid #eee; background-color: #f8f9fa; border-radius: 12px 12px 0 0;">
+      <h3 style="margin: 0; color: #333; font-size: 18px; font-weight: 600;">📍 Manage Addresses</h3>
+      <span class="close" onclick="closeAddressModal()" style="color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer;">&times;</span>
+    </div>
+    <div class="modal-body" style="padding: 20px 25px; max-height: 60vh; overflow-y: auto;">
+      <div id="modalAddressList">
+        <!-- Addresses will be loaded here -->
+      </div>
+      <div style="text-align: center; margin-top: 20px;">
+        <button onclick="closeAddressModal()" style="background-color: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.address-modal .modal-address-item {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 10px;
+  background-color: #fafafa;
+}
+
+.address-modal .bulk-delete-controls {
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 15px;
+}
+
+.address-modal .bulk-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.address-modal .bulk-actions label {
+  font-weight: 500;
+  color: #495057;
+  margin: 0;
+}
+
+.address-modal .address-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.address-modal .address-checkbox {
+  display: flex;
+  align-items: center;
+  min-width: 24px;
+}
+
+.address-modal .address-checkbox input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.address-modal .checkbox-disabled {
+  font-size: 16px;
+  color: #28a745;
+}
+
+.address-modal .address-text {
+  flex: 1;
+  font-size: 14px;
+  color: #333;
+  padding-left: 8px;
+}
+
+.address-modal .address-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.address-modal .default-badge {
+  background-color: #4CAF50;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+}
+
+.address-modal .btn-sm {
+  padding: 4px 8px;
+  font-size: 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.address-modal .btn-success {
+  background-color: #28a745;
+  color: white;
+}
+
+.address-modal .btn-danger {
+  background-color: #dc3545;
+  color: white;
+}
+
+.address-modal .no-addresses {
+  text-align: center;
+  color: #666;
+  font-style: italic;
+  padding: 20px;
+}
+
+.address-modal .error {
+  text-align: center;
+  color: #dc3545;
+  padding: 20px;
+}
+</style>
+
+{% endblock content %}
+
+/* Saved Addresses Modal Styles */
+.saved-addresses-modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.5);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.saved-addresses-modal.show {
+  opacity: 1;
+}
+
+.saved-addresses-content {
+  background-color: #fefefe;
+  margin: 5% auto;
+  padding: 0;
+  border: 1px solid #ddd;
+  width: 90%;
+  max-width: 700px;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+  transform: translateY(-20px);
+  transition: transform 0.3s ease;
+}
+
+.saved-addresses-modal.show .saved-addresses-content {
+  transform: translateY(0);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 25px;
+  border-bottom: 1px solid #eee;
+  background-color: #f8f9fa;
+  border-radius: 12px 12px 0 0;
+}
+
+.modal-header h3 {
+  margin: 0;
+  color: #333;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.modal-body {
+  padding: 20px 25px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.add-address-section {
+  margin-top: 20px;
+  padding-top: 15px;
+  border-top: 1px solid #eee;
+}
+
+.btn-block {
+  width: 100%;
+  padding: 12px;
+  font-weight: 500;
+}
+
+.saved-address-card {
+  border: 2px solid #e9ecef;
+  border-radius: 10px;
+  padding: 18px;
+  margin-bottom: 15px;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background-color: #fff;
+}
+
+.saved-address-card:hover {
+  border-color: #007bff;
+  box-shadow: 0 2px 8px rgba(0,123,255,0.15);
+  transform: translateY(-1px);
+}
+
+.saved-address-card.default {
+  border-color: #28a745;
+  background-color: #f8fff8;
+}
+
+.saved-address-card.selected {
+  border-color: #007bff;
+  background-color: #e3f2fd;
+  box-shadow: 0 2px 8px rgba(0,123,255,0.2);
+}
+
+.default-badge {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background-color: #28a745;
+  color: white;
+  padding: 4px 10px;
+  border-radius: 15px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.address-text {
+  font-size: 14px;
+  color: #495057;
+  line-height: 1.5;
+  margin-bottom: 12px;
+  padding-right: 80px;
+}
+
+.address-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.address-actions .btn {
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+.select-address-btn {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.select-address-btn:hover {
+  background-color: #0056b3;
+}
+
+.close-modal {
+  color: #aaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.close-modal:hover {
+  color: black;
+}
+
+function showSavedAddressesModal() {
+  // Fetch saved addresses
+  fetch('/get-saved-addresses/')
+    .then(response => response.json())
+    .then(data => {
+      if (data.status === 'success') {
+        const addressesList = document.getElementById('saved-addresses-list');
+        addressesList.innerHTML = '';
+        
+        if (data.addresses.length === 0) {
+          addressesList.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">No saved addresses found. Add your first address below.</p>';
+        } else {
+          data.addresses.forEach(address => {
+            const addressCard = document.createElement('div');
+            addressCard.className = `saved-address-card ${address.is_default ? 'default' : ''}`;
+            addressCard.setAttribute('data-address-id', address.id);
+            
+            let badgeHtml = '';
+            if (address.is_default) {
+              badgeHtml = '<span class="default-badge">Default</span>';
+            }
+            
+            let actionsHtml = `
+              <button class="select-address-btn" onclick="selectAddressFromModal(${address.id}, '${address.street_address}, ${address.barangay}, ${address.citymun}, ${address.province}, ${address.region}, ${address.postal_code}')">Select This Address</button>
+            `;
+            
+            if (!address.is_default) {
+              actionsHtml += `
+                <button class="btn btn-sm btn-outline-success" onclick="setDefaultAddress(${address.id})">Set as Default</button>
+                <button class="btn btn-sm btn-outline-danger" onclick="deleteAddress(${address.id})">Delete</button>
+              `;
+            }
+            
+            addressCard.innerHTML = `
+              ${badgeHtml}
+              <div class="address-text">
+                ${address.street_address}, ${address.barangay}, ${address.citymun}, ${address.province}, ${address.region}, ${address.postal_code}
+              </div>
+              <div class="address-actions">
+                ${actionsHtml}
+              </div>
+            `;
+            
+            addressesList.appendChild(addressCard);
+          });
+        }
+      } else {
+        document.getElementById('saved-addresses-list').innerHTML = '<p style="text-align: center; color: #dc3545; padding: 20px;">Error loading addresses. Please try again.</p>';
+      }
+    })
+    .catch(error => {
+      console.error('Error fetching addresses:', error);
+      document.getElementById('saved-addresses-list').innerHTML = '<p style="text-align: center; color: #dc3545; padding: 20px;">Error loading addresses. Please try again.</p>';
+    });
+  
+  const modal = document.getElementById('saved-addresses-modal');
+  modal.style.display = 'block';
+  setTimeout(() => {
+    modal.classList.add('show');
+  }, 10);
+  
+  // Close modal when clicking outside of it
+  modal.onclick = function(event) {
+    if (event.target === modal) {
+      closeSavedAddressesModal();
+    }
+  }
+}
+
+function closeSavedAddressesModal() {
+  const modal = document.getElementById('saved-addresses-modal');
+  modal.classList.remove('show');
+  setTimeout(() => {
+    modal.style.display = 'none';
+  }, 300); // Match transition duration
+}
+
+// New function to select address from modal
+function selectAddressFromModal(addressId, fullAddress) {
+  // Update the delivery address display
+  const addressTextElement = document.querySelector('.delivery-address-display .address-text');
+  if (addressTextElement) {
+    addressTextElement.textContent = fullAddress;
+  }
+  
+  // Store the selected address ID for checkout
+  sessionStorage.setItem('selectedAddressId', addressId);
+  
+  // Show success message
+  const successMsg = document.createElement('div');
+  successMsg.className = 'alert alert-success';
+  successMsg.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 9999; padding: 10px 15px; border-radius: 5px; background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb;';
+  successMsg.textContent = 'Address selected successfully!';
+  document.body.appendChild(successMsg);
+  
+  setTimeout(() => {
+    successMsg.remove();
+  }, 3000);
+  
+  // Close the modal
+  closeSavedAddressesModal();
+}
+
+function setDefaultAddress(addressId) {
+  fetch(`/set-default-address/${addressId}/`, {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+    }
+  })
+    .then(response => response.json())
+    .then(data => {
+      if (data.status === 'success') {
+        // Refresh the modal instead of reloading the entire page
+        showSavedAddressesModal();
+        // Also update the main address display
+        location.reload();
+      } else {
+        alert(data.message);
+      }
+    });
+}
+
+function deleteAddress(addressId) {
+  if (confirm('Are you sure you want to delete this address?')) {
+    fetch(`/delete-address/${addressId}/`, {
+      method: 'POST',
+      headers: {
+        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+      }
+    })
+      .then(response => response.json())
+      .then(data => {
+        if (data.status === 'success') {
+          // Refresh the modal to show updated list
+          showSavedAddressesModal();
+        } else {
+          alert(data.message);
+        }
+      });
+  }
+}
+
+// saveNewAddress function is now defined in the earlier script block
+
+// Function to hide address form
+function hideAddressForm() {
+  document.getElementById('address-form').style.display = 'none';
+}
+
+// Modify the existing showAddressForm function
+function showAddressForm() {
+  closeSavedAddressesModal();  // Close the modal if it's open
+  const addressForm = document.getElementById('address-form');
+  if (addressForm) {
+    addressForm.style.display = 'block';
+    // Scroll to the form
+    addressForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+}
+
+// selectAddress function is now defined in the earlier script block
+
+// Address modal functions are now defined in the earlier script block
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+  const modal = document.getElementById('addressModal');
+  if (event.target === modal) {
+    closeAddressModal();
+  }
+}
+</script>

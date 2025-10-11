@@ -1,0 +1,146 @@
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Manage Customer Profile</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet"/>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <header class="bg-white shadow">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center">
+                <img alt="Logo" class="h-10" height="50" src="{% static 'images/logo.png' %}" width="150"/>
+            </div>
+            <nav class="hidden md:flex space-x-4">
+                <a class="text-gray-700 hover:text-gray-900" href="{% url 'home' %}">Home</a>
+                <a class="text-gray-700 hover:text-gray-900" href="{% url 'pre_order' %}">Pre-Order</a>
+                <a class="text-gray-700 hover:text-gray-900" href="{% url 'help_contact' %}">Help & Contact</a>
+                <a class="text-gray-700 hover:text-gray-900" href="{% url 'about_us' %}">About us</a>
+                <a class="text-gray-700 hover:text-gray-900" href="{% url 'reviews' %}">Reviews</a>
+                <a class="text-gray-700 hover:text-gray-900" href="{% url 'reviews' %}">Reviews</a>
+            </nav>
+            <div class="flex items-center space-x-4">
+                <div class="relative">
+                    <button class="text-gray-700 hover:text-gray-900 flex items-center">
+                        <i class="fas fa-globe"></i>
+                        <span class="ml-1">EN</span>
+                        <i class="fas fa-chevron-down ml-1"></i>
+                    </button>
+                </div>
+                <a class="text-gray-700 hover:text-gray-900" href="{% url 'profile' %}">
+                    <i class="fas fa-user"></i>
+                </a>
+                <a class="text-gray-700 hover:text-gray-900" href="{% url 'cart' %}">
+                    <i class="fas fa-shopping-cart"></i>
+                </a>
+            </div>
+        </div>
+        <div class="bg-gray-100 py-2">
+            <div class="container mx-auto px-4 flex justify-center space-x-4">
+                <a class="text-gray-700 hover:text-gray-900 flex items-center" href="{% url 'football' %}">
+                    <i class="fas fa-futbol"></i>
+                    <span class="ml-1">Football</span>
+                </a>
+                <a class="text-gray-700 hover:text-gray-900 flex items-center" href="{% url 'basketball' %}">
+                    <i class="fas fa-basketball-ball"></i>
+                    <span class="ml-1">Basketball</span>
+                </a>
+                <a class="text-gray-700 hover:text-gray-900 flex items-center" href="{% url 'volleyball' %}">
+                    <i class="fas fa-volleyball-ball"></i>
+                    <span class="ml-1">Volleyball</span>
+                </a>
+                <a class="text-gray-700 hover:text-gray-900 flex items-center" href="{% url 'cycling' %}">
+                    <i class="fas fa-bicycle"></i>
+                    <span class="ml-1">Cycling</span>
+                </a>
+                <a class="text-gray-700 hover:text-gray-900 flex items-center" href="{% url 'esports' %}">
+                    <i class="fas fa-gamepad"></i>
+                    <span class="ml-1">eSports</span>
+                </a>
+            </div>
+        </div>
+    </header>
+    <main class="bg-white py-16">
+        <div class="container mx-auto px-4">
+            <h1 class="text-4xl font-bold mb-8 text-center">Manage Customer Profile</h1>
+            <div class="bg-gray-100 p-8 rounded-lg shadow-md">
+                <form method="post" action="{% url 'profile' %}">
+                    {% csrf_token %}
+                    <div class="mb-4">
+                        <div class="flex justify-between items-center">
+                            <label class="block text-gray-700 text-sm font-bold mb-2" for="first-name">First Name</label>
+                            <button class="text-blue-500 hover:text-blue-700" type="button" onclick="toggleEdit('first-name')">Edit</button>
+                        </div>
+                        <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="first-name" name="first_name" type="text" placeholder="First Name" value="{{ user.first_name }}" disabled/>
+                    </div>
+                    <div class="mb-4">
+                        <div class="flex justify-between items-center">
+                            <label class="block text-gray-700 text-sm font-bold mb-2" for="last-name">Last Name</label>
+                            <button class="text-blue-500 hover:text-blue-700" type="button" onclick="toggleEdit('last-name')">Edit</button>
+                        </div>
+                        <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="last-name" name="last_name" type="text" placeholder="Last Name" value="{{ user.last_name }}" disabled/>
+                    </div>
+                    <div class="mb-4">
+                        <div class="flex justify-between items-center">
+                            <label class="block text-gray-700 text-sm font-bold mb-2" for="email">Email</label>
+                            <button class="text-blue-500 hover:text-blue-700" type="button" onclick="toggleEdit('email')">Edit</button>
+                        </div>
+                        <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="email" name="email" type="email" placeholder="Email" value="{{ user.email }}" disabled/>
+                    </div>
+                    <div class="mb-4">
+                        <div class="flex justify-between items-center">
+                            <label class="block text-gray-700 text-sm font-bold mb-2" for="phone">Phone Number</label>
+                            <button class="text-blue-500 hover:text-blue-700" type="button" onclick="toggleEdit('phone')">Edit</button>
+                        </div>
+                        <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="phone" name="phone" type="text" placeholder="Phone Number" value="{{ user.profile.phone }}" disabled/>
+                    </div>
+                    <div class="mb-4">
+                        <div class="flex justify-between items-center">
+                            <label class="block text-gray-700 text-sm font-bold mb-2" for="address">Address</label>
+                            <button class="text-blue-500 hover:text-blue-700" type="button" onclick="toggleEdit('address')">Edit</button>
+                        </div>
+                        <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="address" name="address" type="text" placeholder="Address" value="{{ user.profile.address }}" disabled/>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <button class="bg-red-700 hover:bg-red-800 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" type="submit">Save Changes</button>
+                        <a class="bg-gray-700 hover:bg-gray-800 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" href="{% url 'profile' %}">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+    <footer class="bg-white py-4">
+        <div class="container mx-auto px-4 flex justify-center space-x-4">
+            <a class="text-gray-700 hover:text-gray-900" href="{% url 'home' %}">
+                <i class="fas fa-home"></i>
+            </a>
+            <a class="text-gray-700 hover:text-gray-900" href="{% url 'search' %}">
+                <i class="fas fa-search"></i>
+            </a>
+            <a class="text-gray-700 hover:text-gray-900" href="{% url 'favorites' %}">
+                <i class="fas fa-heart"></i>
+            </a>
+            <a class="text-gray-700 hover:text-gray-900" href="{% url 'profile' %}">
+                <i class="fas fa-user"></i>
+            </a>
+        </div>
+    </footer>
+    <script>
+        function toggleEdit(id) {
+            var input = document.getElementById(id);
+            input.disabled = !input.disabled;
+            if (!input.disabled) {
+                input.focus();
+            }
+        }
+    </script>
+</body>
+</html>

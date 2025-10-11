@@ -1,0 +1,858 @@
+<html>
+{% load static %}
+<head>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.0/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+<link rel="stylesheet" href="{% static 'css/animations.css' %}">
+<!-- jQuery library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+<!-- Latest compiled JavaScript -->
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.0/js/bootstrap.min.js"></script>
+<title>WorksTeamWear</title>
+
+<style>
+body {
+    background-color: #f8f9fa;
+    font-family: 'Poppins', sans-serif;
+}
+
+/* Utility classes */
+.d-flex {
+  display: flex;
+}
+
+.align-center {
+  align-items: center;
+}
+
+.flex-centerY-centerX {
+  justify-content: center;
+  align-items: center;
+}
+
+/* Hero slider */
+.slider-container {
+  height: 50vh;
+  min-height: 400px;
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+  text-align: center;
+  margin-bottom: 30px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  animation: fadeIn 1s ease-out;
+}
+
+.menu {
+  position: absolute;
+  left: 0;
+  z-index: 900;
+  width: 100%;
+  bottom: 20px;
+}
+
+.menu label {
+  cursor: pointer;
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 50px;
+  margin: 0 .2em 1em;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: fadeInUp 0.5s ease-out;
+}
+
+.menu label:hover {
+  background: #fff;
+  transform: scale(1.2);
+}
+
+.slide {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 100%;
+  z-index: 10;
+  background-size: cover;
+  background-position: center;
+  transition: left 0.75s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.5s ease-out;
+}
+
+.slide-content {
+  background-color: rgba(0, 0, 0, 0.5);
+  padding: 30px;
+  border-radius: 8px;
+  max-width: 600px;
+  text-align: center;
+  color: white;
+  transform: translateY(50px);
+  opacity: 0;
+  transition: all 0.5s ease 0.3s;
+}
+
+[id^="slide"]:checked + .slide .slide-content {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+[id^="slide"]:checked + .slide {
+  left: 0;
+  z-index: 100;
+  transition: left .65s ease-out;
+}
+
+.slide-1 {
+  background-image: url("/staticfiles/images/b2.webp");
+}
+
+.slide-2 {
+  background-image: url("/staticfiles/images/b4.webp");
+}
+
+.slide-3 {
+  background-image: url("/staticfiles/images/b3.webp");
+}
+
+/* Search and filter bar */
+.search-filter-container {
+  background-color: white;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  margin-bottom: 30px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: fadeInDown 0.5s ease-out;
+}
+
+.search-filter-container:hover {
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+  transform: translateY(-2px);
+}
+
+.search-box {
+  flex: 1;
+  min-width: 250px;
+  margin-right: 15px;
+  margin-bottom: 10px;
+  position: relative;
+}
+
+.search-box input {
+  width: 100%;
+  padding: 12px 15px 12px 40px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.search-box i {
+  position: absolute;
+  left: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #999;
+}
+
+.filter-options {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.filter-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.filter-select {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  background-color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filter-select:hover {
+  border-color: #3E454C;
+}
+
+/* Products grid */
+.products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 25px;
+  margin-bottom: 40px;
+}
+
+.product-card {
+  background-color: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.product-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+}
+
+.product-image-container {
+  position: relative;
+  height: 250px;
+  overflow: hidden;
+}
+
+.product-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.product-card:hover .product-image {
+  transform: scale(1.05);
+}
+
+.login-required-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.product-card:hover .login-required-overlay {
+  opacity: 1;
+}
+
+.login-message {
+  text-align: center;
+  color: white;
+}
+
+.login-message i {
+  font-size: 24px;
+  margin-bottom: 10px;
+}
+
+.login-message p {
+  margin: 10px 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.login-btn {
+  display: inline-block;
+  padding: 8px 16px;
+  background-color: #4CAF50;
+  color: white;
+  text-decoration: none;
+  border-radius: 4px;
+  font-size: 14px;
+  transition: background-color 0.3s ease;
+}
+
+.login-btn:hover {
+  background-color: #45a049;
+  color: white;
+  text-decoration: none;
+}
+
+.product-info {
+  padding: 20px;
+}
+
+.product-name {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #333;
+  line-height: 1.4;
+}
+
+.product-price {
+  font-size: 18px;
+  font-weight: 700;
+  color: #3E454C;
+  margin-bottom: 8px;
+}
+
+.product-description {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 15px;
+  line-height: 1.5;
+}
+
+.add-to-cart-btn {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: center;
+  text-decoration: none;
+}
+
+.add-to-cart-btn:hover {
+  background-color: #2c3238;
+  transform: translateY(-2px);
+  color: white;
+  text-decoration: none;
+}
+
+.disabled-btn {
+  background-color: #999 !important;
+  cursor: not-allowed !important;
+}
+
+.disabled-btn:hover {
+  background-color: #999 !important;
+  transform: none !important;
+}
+
+.no-products {
+  text-align: center;
+  padding: 60px 20px;
+  color: #666;
+}
+
+.no-products h3 {
+  margin-bottom: 15px;
+  color: #333;
+}
+
+/* Animation effects */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fadeInUp {
+  from { transform: translateY(30px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes fadeInDown {
+  from { transform: translateY(-30px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* Responsive adjustments */
+@media (max-width: 991px) {
+  .slider-container {
+    height: 40vh;
+  }
+}
+
+@media (max-width: 767px) {
+  .slider-container {
+    height: 30vh;
+  }
+  
+  .products-grid {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  }
+  
+  .search-filter-container {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .search-box {
+    margin-right: 0;
+    margin-bottom: 15px;
+  }
+  
+  .filter-options {
+    justify-content: space-between;
+  }
+}
+
+@media (max-width: 576px) {
+  .products-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+#navbar {
+  background-color: #000000;
+  color: white;
+}
+
+.row1 {
+    padding-top: 10px;
+    padding-right: 50px
+}
+
+.row2 {
+    padding-bottom: 20px
+}
+
+.navbar-input {
+  padding: 11px 16px;
+  border-radius: 2px 0 0 2px;
+  border: 0 none;
+  outline: 0 none;
+  font-size: 15px;
+  color:#000
+}
+
+.navbar-button {
+  background-color: #0066cc;
+  border: 1px solid #0066cc;
+  border-radius: 0 2px 2px 0;
+  color: #ffffff;
+  padding: 10px 0;
+  height: 43px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.navbar-button:hover {
+  background-color: #00cc66;
+  border-color: #00cc66;
+}
+
+.cart-button {
+  background-color: #0066cc;
+  box-shadow: 0 4px 4px 0 rgb(0 0 0 / 23%), inset 1px 1px 0 0 hsl(0deg 0% 100% / 20%);
+  padding: 10px 0;
+  text-align: center;
+  height: 41px;
+  border-radius: 2px;
+  font-weight: 500;
+  width: 120px;
+  display: inline-block;
+  color: #FFFFFF;
+  text-decoration: none;
+  border: none;
+  outline: none;
+  transition: background-color 0.3s ease;
+}
+
+.cart-button:hover {
+    text-decoration: none;
+    color: #fff;
+    cursor: pointer;
+    background-color: #00cc66;
+}
+
+.cart-svg {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    vertical-align: middle;
+    margin-right: 8px
+}
+
+.item-number {
+  border-radius: 3px;
+  background-color: rgb(207 37 37 / 92%);
+  height: 20px;
+  padding: 3px 6px;
+  font-weight: 500;
+  display: inline-block;
+  color: #fff;
+  line-height: 12px;
+  margin-left: 10px;
+}
+.item-number:empty:after{
+  content:"0"
+}
+
+.upper-links {
+    display: inline-block;
+    padding: 0 11px;
+    line-height: 23px;
+    font-family: 'Roboto', sans-serif;
+    letter-spacing: 0;
+    color: inherit;
+    border: none;
+    outline: none;
+    font-size: 12px
+}
+
+.dropdown {
+    position: relative;
+    display: inline-block;
+    margin-bottom: 0px
+}
+
+.dropdown:hover {
+    background-color: #fff
+}
+
+.dropdown:hover .links {
+    color: #000
+}
+
+.dropdown:hover .dropdown-menu {
+    display: block
+}
+
+.dropdown .dropdown-menu {
+    position: absolute;
+    top: 100%;
+    display: none;
+    background-color: #fff;
+    color: #333;
+    left: 0px;
+    border: 0;
+    border-radius: 0;
+    box-shadow: 0 4px 8px -3px #555454;
+    margin: 0;
+    padding: 0px
+}
+
+.links {
+    color: #fff;
+    text-decoration: none
+}
+
+.links:hover {
+    color: #fff;
+    text-decoration: none
+}
+
+.profile-links {
+    font-size: 12px;
+    font-family: 'Roboto', sans-serif;
+    border-bottom: 1px solid #e9e9e9;
+    box-sizing: border-box;
+    display: block;
+    padding: 0 11px;
+    line-height: 23px
+}
+
+.profile-li {
+    padding-top: 2px
+}
+
+.largenav {
+    display: none
+}
+
+.smallnav {
+    display: block
+}
+
+.smallsearch {
+    margin-left: 15px;
+    margin-top: 15px
+}
+
+.menu {
+    cursor: pointer
+}
+
+        /*---------------------------------------
+           Social section
+        -----------------------------------------*/
+        footer {
+          padding: 0px 0px 0px 0px;
+          background-color: black;
+          margin: 0px;
+        }
+
+
+        #ftr {
+
+          padding: 20px;
+        }
+
+        .fa {
+          font-size: 23px;
+          width: 2em;
+          height: 2em;
+          text-align: center;
+          text-decoration: none;
+          margin: 5px 2px;
+          border-radius: 50%;
+          padding-top: 0.5em;
+      }
+
+        .fa:hover {
+          opacity: 0.5;
+          text-decoration: none;
+        }
+
+        .fa-facebook {
+          background: #3B5998;
+          color: white;
+          margin-top: 30px;
+        }
+
+        .fa-whatsapp {
+          background: #25d366;
+          color: white;
+        }
+
+        .fa-twitter {
+          background: #55ACEE;
+          color: white;
+        }
+
+        .fa-instagram {
+          background: #125688;
+          color: white;
+        }
+
+        p {
+          text-align: center;
+
+        }
+
+
+@media screen and (min-width: 768px) {
+    .largenav {
+        display: block
+    }
+
+    .smallnav {
+        display: none
+    }
+
+    .smallsearch {
+        margin: 0px
+    }
+}
+</style>
+</head>
+<body>
+  {%if request.user.is_authenticated%}
+    {% include "ecom/customer_navbar.html" %}
+  {%else%}
+  <div id="navbar">
+    <div class="container">
+        <div class="row row1">
+            <ul class="largenav pull-right">
+              <li class="upper-links dropdown"><a class="links" href="">Login & Sign Up</a>
+                  <ul class="dropdown-menu">
+                      <li class="profile-li"><a class="profile-links" href="/customerlogin">Login</a></li>
+                      <li class="profile-li"><a class="profile-links" href="/customersignup">Sign Up</a></li>
+                  </ul>
+              </li>
+                <li class="upper-links"><a class="links" href="/aboutus">About Us</a></li>
+                
+            </ul>
+        </div>
+        <div class="row row2">
+            <div class="col-sm-3">
+                <h2 style="margin:0px;"><a style="text-decoration:none; color:white;" href="/"><span class="largenav">WorksTeamWear</span></a></h2>
+            </div>
+
+
+            <div class="navbar-search smallsearch col-sm-7 col-xs-11">
+              <form  action="/search" method="get">
+                <div class="row"> <input class="navbar-input col-xs-11" type="search" value="{% if search_text %}{{ search_text }}{% endif %}" placeholder="Search for Products, Brands and more" name="query" id="query">
+                  <button class="navbar-button col-xs-1" type="submit">
+                    <svg width="15px" height="15px">
+                            <path d="M11.618 9.897l4.224 4.212c.092.09.1.23.02.312l-1.464 1.46c-.08.08-.222.072-.314-.02L9.868 11.66M6.486 10.9c-2.42 0-4.38-1.955-4.38-4.367 0-2.413 1.96-4.37 4.38-4.37s4.38 1.957 4.38 4.37c0 2.412-1.96 4.368-4.38 4.368m0-10.834C2.904.066 0 2.96 0 6.533 0 10.105 2.904 13 6.486 13s6.487-2.895 6.487-6.467c0-3.572-2.905-6.467-6.487-6.467 "></path>
+                    </svg>
+                  </button>
+                </div>
+              </form>
+            </div>
+
+
+            <div class="cart1 largenav col-sm-2"> <a class="cart-button" href="/cart"> <svg class="cart-svg " width="16 " height="16 " viewBox="0 0 16 16 ">
+                        <path d="M15.32 2.405H4.887C3 2.405 2.46.805 2.46.805L2.257.21C2.208.085 2.083 0 1.946 0H.336C.1 0-.064.24.024.46l.644 1.945L3.11 9.767c.047.137.175.23.32.23h8.418l-.493 1.958H3.768l.002.003c-.017 0-.033-.003-.05-.003-1.06 0-1.92.86-1.92 1.92s.86 1.92 1.92 1.92c.99 0 1.805-.75 1.91-1.712l5.55.076c.12.922.91 1.636 1.867 1.636 1.04 0 1.885-.844 1.885-1.885 0-.866-.584-1.593-1.38-1.814l2.423-8.832c.12-.433-.206-.86-.655-.86 " fill="#fff "></path>
+                    </svg> Cart <span class="item-number ">{{ product_count_in_cart }}</span> </a> </div>
+        </div>
+    </div>
+</div>
+  {%endif%}
+
+<!-- content start-->
+{% block content %}
+
+<!-- Hero Slider Section -->
+<div class="slider-container">
+  <div class="menu">
+    <label for="slide-dot-1"></label>
+    <label for="slide-dot-2"></label>
+    <label for="slide-dot-3"></label>
+  </div>
+
+  <input id="slide-dot-1" type="radio" name="slides" checked>
+  <div class="slide slide-1">
+    <div class="slide-content">
+      <h2>Premium Quality Jerseys</h2>
+      <p>Discover our collection of high-quality sports jerseys for all ages</p>
+      <a href="/customerlogin" class="add-to-cart-btn" style="max-width: 200px; margin: 15px auto 0; text-decoration: none;">Login to Shop</a>
+    </div>
+  </div>
+
+  <input id="slide-dot-2" type="radio" name="slides">
+  <div class="slide slide-2">
+    <div class="slide-content">
+      <h2>New Arrivals</h2>
+      <p>Check out our latest collection of team jerseys</p>
+      <a href="/customerlogin" class="add-to-cart-btn" style="max-width: 200px; margin: 15px auto 0; text-decoration: none;">Login to Explore</a>
+    </div>
+  </div>
+
+  <input id="slide-dot-3" type="radio" name="slides">
+  <div class="slide slide-3">
+    <div class="slide-content">
+      <h2>Special Offers</h2>
+      <p>Limited time discounts on selected items</p>
+      <a href="/customerlogin" class="add-to-cart-btn" style="max-width: 200px; margin: 15px auto 0; text-decoration: none;">Login to View Deals</a>
+    </div>
+  </div>
+</div>
+
+<!-- Products Section -->
+<div class="container">
+  <!-- Search and Filter Bar -->
+  <form method="GET" action="/" class="search-filter-container">
+    <div class="search-box">
+      <i class="fa fa-search"></i>
+      <input type="text" name="search" placeholder="Search products..." value="{{ search_query|default:'' }}">
+    </div>
+    <div class="filter-options">
+      <span class="filter-label">Sort by:</span>
+      <select class="filter-select" name="sort" id="sort-select" onchange="this.form.submit()">
+        <option value="featured">Featured</option>
+        <option value="price_low">Price: Low to High</option>
+        <option value="price_high">Price: High to Low</option>
+        <option value="newest">Newest</option>
+        <option value="rating">Highest Rated</option>
+        <option value="popular">Most Popular</option>
+      </select>
+      
+      <label class="filter-label">
+        <input type="checkbox" name="in_stock" value="1"> In Stock Only
+      </label>
+      
+      <button type="submit" class="filter-select" style="background-color: #3E454C; color: white; border: none; cursor: pointer;">
+        <i class="fa fa-search"></i> Search
+      </button>
+    </div>
+  </form>
+
+  <!-- Products Grid -->
+  {% if products %}
+  <h3 class="text-center mb-4" style="color:#3E454C; font-weight: 600;">{{ word }}</h3>
+
+  <div class="products-grid">
+    {% for product in products %}
+    <div class="product-card" data-product-id="{{ product.id }}">
+      <div class="product-image-container">
+        {% if product.product_image %}
+          <img src="{{ product.product_image.url }}" alt="{{ product.name }}" class="product-image">
+        {% else %}
+          <img src="/static/images/default.jpg" alt="No Image" class="product-image">
+        {% endif %}
+        
+        <!-- Login Required Overlay -->
+        <div class="login-required-overlay">
+          <div class="login-message">
+            <i class="fa fa-lock"></i>
+            <p>Login Required</p>
+            <a href="/customerlogin" class="login-btn">Login to Purchase</a>
+          </div>
+        </div>
+      </div>
+      
+      <div class="product-info">
+        <h4 class="product-name">{{ product.name }}</h4>
+        <div class="product-price">₱{{ product.price|floatformat:2 }}</div>
+        <div class="product-description">{{ product.description|truncatewords:10 }}</div>
+        
+        <!-- Disabled Add to Cart Button -->
+        <a href="/customerlogin" class="add-to-cart-btn disabled-btn">
+          <i class="fa fa-lock"></i> Login to Add to Cart
+        </a>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="no-products">
+    <h3>No products available</h3>
+    <p>Please check back later for new arrivals.</p>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock content %}
+<!-- content end-->
+<br><br><br>
+<footer>
+  <br>
+
+  <p>
+    <a href="{% url 'facebook' %}" target="_blank" class="fa fa-facebook"></a>
+    <a href="{% url 'instagram' %}" target="_blank" class="fa fa-instagram"></a>
+  </p>
+
+  <br>
+  <div class="container">
+    <div class="row">
+      <div class="col-md-12 col-sm-12">
+        <div style="color:#ffffff;" class="wow fadeInUp footer-copyright">
+            &copy; 2025 WorksTeamWear PH </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+<script>
+$(document).ready(function(){
+
+function openNav() {
+document.getElementById("mySidenav").style.width = "70%";
+
+document.body.style.backgroundColor = "rgba(0,0,0,0.4)";
+}
+
+function closeNav() {
+document.getElementById("mySidenav").style.width = "0";
+document.body.style.backgroundColor = "rgba(0,0,0,0)";
+}
+
+
+});  
+</script>
+
+<!-- Chatbot Widget -->
+{% include 'ecom/chatbot_widget.html' %}
+
+{% block support_widget %}{% endblock %}
+
+</body>
+</html>
