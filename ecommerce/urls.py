@@ -23,7 +23,7 @@ urlpatterns = [
     path('update-stock/<int:item_id>/', update_stock, name='update-stock'),
     path('',views.home_view,name=''),
     path('afterlogin', views.afterlogin_view,name='afterlogin'),
-    path('logout/', LogoutView.as_view(template_name='ecom/logout.html', next_page='customerlogin'), name='logout'),
+    path('logout/', LogoutView.as_view(template_name='ecom/logout.html'), name='logout'),
     path('about', views.aboutus_view, name='about'),
     path('contactus', views.contactus_view,name='contactus'),
     path('search', views.search_view,name='search'),

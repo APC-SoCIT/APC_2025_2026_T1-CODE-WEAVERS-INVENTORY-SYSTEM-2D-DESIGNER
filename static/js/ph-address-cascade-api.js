@@ -27,7 +27,8 @@ window.initPHAddressCascadeAPI = function(config) {
         regionSel.appendChild(opt);
       });
     } catch (e) {
-      console.error('Error loading regions:', e);
+      // Use warning to reduce error noise; UI remains usable
+      console.warn('Address regions load issue (non-blocking):', e);
     }
   }
 
@@ -68,7 +69,7 @@ window.initPHAddressCascadeAPI = function(config) {
         });
       }
     } catch (e) {
-      console.error('Error loading provinces or cities:', e);
+      console.warn('Address provinces/cities load issue (non-blocking):', e);
     }
   }
 
@@ -89,7 +90,7 @@ window.initPHAddressCascadeAPI = function(config) {
         citymunSel.appendChild(opt);
       });
     } catch (e) {
-      console.error('Error loading cities:', e);
+      console.warn('Address cities load issue (non-blocking):', e);
     }
   }
 

@@ -121,6 +121,7 @@ def order_counts(request):
     return {}
 
 
+@login_required(login_url='customerlogin')
 def home_view(request):
     products = models.Product.objects.all()
     
@@ -2133,6 +2134,7 @@ def jersey_customizer(request):
     return render(request, 'ecom/customizer.html')
 
 
+@login_required(login_url='customerlogin')
 def home(request):
     return render(request, 'ecom/home.html')
 
