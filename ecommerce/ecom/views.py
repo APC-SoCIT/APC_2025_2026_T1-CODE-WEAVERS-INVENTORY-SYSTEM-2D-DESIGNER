@@ -1988,7 +1988,7 @@ def jersey_customizer(request):
 
 
 def home(request):
-    return render(request, 'ecom/home.html')
+    return render(request, 'ecom/index.html')
 
 def manage_profile(request):
     return render(request, 'ecom/manage_profile.html')
@@ -2003,7 +2003,7 @@ def jersey_customizer_3d_view(request):
     return render(request, 'ecom/jersey_customizer_3d.html')
 
 def jersey_customizer(request):
-    return render(request, 'ecom/jersey_customizer.html')
+    return render(request, 'ecom/jersey_customizer_advanced.html')
 
 def jersey_template(request):
     return render(request, 'ecom/jersey_template.html')

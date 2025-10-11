@@ -4,10 +4,10 @@
 <html lang="en" dir="ltr">
   <head>
     <meta charset="utf-8">
-    <title>WorksTeamWear</title>
+    <title>Sign Up - WorksTeamWear</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Bodoni+Moda+SC:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style media="screen">
       * {
         margin: 0;
@@ -17,17 +17,51 @@
 
       body {
         font-family: 'Inter', sans-serif;
-        background: url('{% static "images/background.jpg" %}') no-repeat center center fixed;
-        background-size: cover;
+        background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 50%, #fed7aa 100%);
         min-height: 100vh;
+        position: relative;
+        overflow-x: hidden;
+      }
+
+      /* Added animated background gradients for athletic aesthetic */
+      body::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 100%;
+        height: 100%;
+        background: radial-gradient(circle, rgba(234, 88, 12, 0.1) 0%, transparent 70%);
+        animation: float 20s ease-in-out infinite;
+        z-index: 0;
+      }
+
+      body::after {
+        content: '';
+        position: absolute;
+        bottom: -50%;
+        left: -50%;
+        width: 100%;
+        height: 100%;
+        background: radial-gradient(circle, rgba(249, 115, 22, 0.1) 0%, transparent 70%);
+        animation: float 25s ease-in-out infinite reverse;
+        z-index: 0;
+      }
+
+      @keyframes float {
+        0%, 100% { transform: translate(0, 0) rotate(0deg); }
+        33% { transform: translate(30px, -30px) rotate(120deg); }
+        66% { transform: translate(-20px, 20px) rotate(240deg); }
       }
 
       .container {
         display: flex;
         justify-content: center;
         align-items: center;
-        min-height: calc(100vh - 800px); /* Account for navbar and footer spacing */
-        padding: 20px;
+        min-height: calc(100vh - 100px);
+        padding: 40px 20px;
+        position: relative;
+        z-index: 1;
       }
 
       .row {
@@ -36,46 +70,79 @@
         justify-content: center;
       }
 
+      /* Updated card styling with orange theme and modern glassmorphism */
       .signup-card {
-        background: rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.95);
         backdrop-filter: blur(20px);
         -webkit-backdrop-filter: blur(20px);
-        border: 1px solid rgba(255, 255, 255, 0.2);
+        border: 1px solid rgba(234, 88, 12, 0.1);
         border-radius: 20px;
         padding: 40px;
         width: 100%;
-        max-width: 480px;
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        max-width: 700px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(234, 88, 12, 0.1);
         transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         animation: fadeInUp 0.6s ease-out;
       }
 
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(30px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
       .signup-card:hover {
-        box-shadow: 1px 1px 25px 1px rgba(255, 255, 255, 0.75);
-        -webkit-box-shadow: 1px 1px 25px 1px rgba(255, 255, 255, 0.75);
-        -moz-box-shadow: 1px 1px 25px 1px rgba(255, 255, 255, 0.75);
+        box-shadow: 0 25px 70px rgba(234, 88, 12, 0.15);
         transform: translateY(-5px);
       }
 
+      /* Updated header with Playfair Display and orange accents */
       .header {
         text-align: center;
         margin-bottom: 30px;
       }
 
       .header h1 {
-        color: white;
-        font-family: 'Bodoni Moda SC', serif;
-        font-size: 28px;
-        font-weight: 600;
+        color: #1f2937;
+        font-family: 'Playfair Display', serif;
+        font-size: 32px;
+        font-weight: 900;
         margin-bottom: 8px;
         animation: fadeInDown 0.5s ease-out;
+        line-height: 1.2;
       }
 
       .header p {
-        color: rgba(255, 255, 255, 0.8);
+        color: #6b7280;
         font-size: 16px;
         font-weight: 400;
         animation: fadeInDown 0.6s ease-out;
+      }
+
+      @keyframes fadeInDown {
+        from {
+          opacity: 0;
+          transform: translateY(-20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* Added section titles for better organization */
+      .section-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #374151;
+        margin: 24px 0 16px;
+        padding-bottom: 8px;
+        border-bottom: 2px solid #ea580c;
       }
 
       .form-group {
@@ -88,57 +155,69 @@
         margin-bottom: 20px;
       }
 
+      .form-row .form-group {
+        flex: 1;
+        margin-bottom: 0;
+      }
+
       .form-group label {
         display: block;
-        color: white;
+        color: #374151;
         font-size: 14px;
-        font-weight: 500;
+        font-weight: 600;
         margin-bottom: 8px;
       }
 
+      /* Updated form controls with orange focus states */
       .form-control {
         width: 100%;
         padding: 12px 16px;
-        background: rgba(255, 255, 255, 0.1);
-        border: 2px solid rgba(255, 255, 255, 0.3);
-        border-radius: 24px;
-        color: white;
+        background: #f9fafb;
+        border: 2px solid #d1d5db;
+        border-radius: 8px;
+        color: #1f2937;
         font-size: 14px;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         outline: none;
-        text-align: center;
+        font-family: 'Inter', sans-serif;
         animation: fadeIn 0.5s ease-out;
       }
 
+      @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+
       .form-control::placeholder {
-        color: rgba(255, 255, 255, 0.7);
+        color: #9ca3af;
       }
 
       .form-control:focus {
-        border-color: #d3d3d3;
-        background: rgba(255, 255, 255, 0.15);
+        border-color: #ea580c;
+        background: white;
+        box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.1);
         transform: translateY(-1px);
       }
 
       select.form-control {
         cursor: pointer;
-        text-align: center;
       }
 
       select.form-control option {
-        background: #4a5568;
-        color: white;
+        background: white;
+        color: #1f2937;
       }
 
+      /* Updated terms container with orange theme */
       .terms-container {
         display: flex;
         align-items: flex-start;
         gap: 12px;
         margin: 25px 0;
         padding: 15px;
-        background: rgba(255, 255, 255, 0.05);
-        border-radius: 15px;
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(234, 88, 12, 0.05);
+        border-radius: 12px;
+        border: 1px solid rgba(234, 88, 12, 0.2);
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         animation: fadeIn 0.8s ease-out;
       }
@@ -147,33 +226,35 @@
         margin-top: 2px;
         width: 18px;
         height: 18px;
-        accent-color: #2ecc71;
+        accent-color: #ea580c;
         cursor: pointer;
       }
 
       .terms-text {
-        color: rgba(255, 255, 255, 0.9);
+        color: #374151;
         font-size: 13px;
         line-height: 1.5;
       }
 
       .terms-text a {
-        color: #64b5f6;
+        color: #ea580c;
         text-decoration: underline;
         cursor: pointer;
         transition: color 0.3s;
+        font-weight: 600;
       }
 
       .terms-text a:hover {
-        color: #90caf9;
+        color: #c2410c;
       }
 
+      /* Updated submit button with orange gradient */
       .submit-btn {
         width: 100%;
         padding: 14px;
-        background: none;
-        border: 2px solid #2ecc71;
-        border-radius: 24px;
+        background: linear-gradient(135deg, #ea580c 0%, #f97316 100%);
+        border: none;
+        border-radius: 8px;
         color: white;
         font-size: 16px;
         font-weight: 600;
@@ -181,19 +262,18 @@
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         margin-bottom: 20px;
         animation: fadeInUp 0.7s ease-out;
+        box-shadow: 0 4px 12px rgba(234, 88, 12, 0.3);
       }
 
       .submit-btn:hover:not(:disabled) {
-        background: #2ecc71;
         transform: translateY(-2px) scale(1.02);
-        box-shadow: 0 10px 20px rgba(46, 204, 113, 0.3);
+        box-shadow: 0 6px 20px rgba(234, 88, 12, 0.4);
       }
 
       .submit-btn:disabled {
-        opacity: 0.5;
+        opacity: 0.6;
         cursor: not-allowed;
         transform: none;
-        border-color: #666;
       }
 
       .login-link {
@@ -201,15 +281,172 @@
       }
 
       .login-link a {
-        color: rgba(255, 255, 255, 0.8);
-        text-decoration: underline;
+        color: #ea580c;
+        text-decoration: none;
         font-size: 14px;
+        font-weight: 600;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         animation: fadeIn 0.9s ease-out;
       }
 
       .login-link a:hover {
-        color: white;
+        color: #c2410c;
+        text-decoration: underline;
+      }
+
+      /* Added error and success message styling */
+      .error-messages {
+        background: #fee2e2;
+        border: 1px solid #fecaca;
+        color: #991b1b;
+        padding: 12px 16px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        font-size: 14px;
+      }
+
+      .error-messages ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+
+      .error-messages li {
+        margin-bottom: 4px;
+      }
+
+      .success-message {
+        background: #d1fae5;
+        border: 1px solid #a7f3d0;
+        color: #065f46;
+        padding: 12px 16px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        font-size: 14px;
+      }
+
+      /* Added mobile number input styling */
+      .mobile-input-wrapper {
+        display: flex;
+        align-items: center;
+      }
+
+      .mobile-prefix {
+        padding: 12px 16px;
+        background: #f3f4f6;
+        border: 2px solid #d1d5db;
+        border-right: 0;
+        border-radius: 8px 0 0 8px;
+        color: #374151;
+        font-weight: 600;
+        font-size: 14px;
+      }
+
+      .mobile-input-wrapper .form-control {
+        border-radius: 0 8px 8px 0;
+      }
+
+      .mobile-help {
+        color: #dc2626;
+        font-size: 12px;
+        margin-top: 4px;
+        display: none;
+      }
+
+      /* Added modal styling for terms and conditions */
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(4px);
+      }
+
+      .modal-content {
+        background-color: white;
+        margin: 5% auto;
+        padding: 40px;
+        border-radius: 16px;
+        width: 90%;
+        max-width: 800px;
+        max-height: 80vh;
+        overflow-y: auto;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+        animation: modalSlideIn 0.3s ease-out;
+      }
+
+      @keyframes modalSlideIn {
+        from {
+          opacity: 0;
+          transform: translateY(-50px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .modal-content h2 {
+        font-family: 'Playfair Display', serif;
+        color: #ea580c;
+        font-size: 28px;
+        margin-bottom: 20px;
+      }
+
+      .modal-content h3 {
+        color: #374151;
+        font-size: 18px;
+        margin-top: 24px;
+        margin-bottom: 12px;
+      }
+
+      .modal-content p {
+        color: #6b7280;
+        line-height: 1.6;
+        margin-bottom: 12px;
+      }
+
+      .close {
+        color: #9ca3af;
+        float: right;
+        font-size: 32px;
+        font-weight: bold;
+        line-height: 1;
+        cursor: pointer;
+        transition: color 0.2s;
+      }
+
+      .close:hover {
+        color: #ea580c;
+      }
+
+      @media (max-width: 768px) {
+        .signup-card {
+          padding: 30px 20px;
+        }
+
+        .header h1 {
+          font-size: 28px;
+        }
+
+        .form-row {
+          flex-direction: column;
+          gap: 0;
+        }
+
+        .form-row .form-group {
+          margin-bottom: 20px;
+        }
+
+        .modal-content {
+          padding: 30px 20px;
+          margin: 10% auto;
+        }
       }
     </style>
     <script src="{% static 'js/ph-address-cascade-api.js' %}"></script>
@@ -222,8 +459,8 @@
           <div class="card">
             <div class="signup-card">
               <div class="header">
-                <h1>WorksTeamWear</h1>
-                <p>Create your account to get started</p>
+                <h1>Join WorksTeamWear</h1>
+                <p>Create your account and start shopping premium jerseys</p>
               </div>
 
               <!-- Display form errors -->
@@ -256,6 +493,9 @@
               <form method="post" enctype="multipart/form-data">
                 {% csrf_token %}
 
+                <!-- Personal Information -->
+                <h3 class="section-title">Personal Information</h3>
+
                 <!-- Name fields -->
                 <div class="form-row">
                   <div class="form-group">
@@ -274,6 +514,9 @@
                   {% render_field userForm.username class="form-control" placeholder="Username" %}
                 </div>
 
+                <!-- Account Security -->
+                <h3 class="section-title">Account Security</h3>
+
                 <!-- Password -->
                 <div class="form-group">
                   <label for="{{ userForm.password.id_for_label }}">Password</label>
@@ -285,15 +528,18 @@
                   {% render_field userForm.confirm_password class="form-control" placeholder="Confirm Password" %}
                 </div>
 
+                <!-- Shipping Address -->
+                <h3 class="section-title">Shipping Address</h3>
+
                 <!-- Address Section: Region, Province, City/Municipality, Barangay -->
-                <div class="form-row" style="gap: 10px;">
-                  <div class="form-group" style="flex: 1;">
+                <div class="form-row">
+                  <div class="form-group">
                     <label for="region">Region</label>
                     <select name="region" id="region" class="form-control" required>
                       <option value="" disabled selected>Select Region</option>
                     </select>
                   </div>
-                  <div class="form-group" style="flex: 1;">
+                  <div class="form-group">
                     <label for="province">Province</label>
                     <select name="province" id="province" class="form-control" required>
                       <option value="" disabled selected>Select Province</option>
@@ -301,14 +547,14 @@
                   </div>
                 </div>
 
-                <div class="form-row" style="gap: 10px;">
-                  <div class="form-group" style="flex: 1;">
+                <div class="form-row">
+                  <div class="form-group">
                     <label for="citymun">City/Municipality</label>
                     <select name="citymun" id="citymun" class="form-control" required>
                       <option value="" disabled selected>Select City/Municipality</option>
                     </select>
                   </div>
-                  <div class="form-group" style="flex: 1;">
+                  <div class="form-group">
                     <label for="barangay">Barangay</label>
                     <select name="barangay" id="barangay" class="form-control" required>
                       <option value="" disabled selected>Select Barangay</option>
@@ -340,12 +586,12 @@
                     {% render_field customerForm.postal_code class="form-control" placeholder="Postal Code" %}
                   </div>
                   <div class="form-group">
-                    <label for="{{ customerForm.mobile.id_for_label }}">Contact</label>
-                    <div style="display:flex;align-items:center;">
-                      <span style="padding:8px 12px;background:#eee;border-radius:24px 0 0 24px;border:1px solid #ccc;border-right:0;">+63</span>
-                      {% render_field customerForm.mobile class="form-control" id="mobile_number" placeholder="956 837 0169" maxlength="13" minlength="13" pattern="^\d{3} \d{3} \d{4}$" style="border-radius:0 24px 24px 0;" oninput="autoFormatPHMobile(this)" %}
+                    <label for="{{ customerForm.mobile.id_for_label }}">Contact Number</label>
+                    <div class="mobile-input-wrapper">
+                      <span class="mobile-prefix">+63</span>
+                      {% render_field customerForm.mobile class="form-control" id="mobile_number" placeholder="956 837 0169" maxlength="13" minlength="13" pattern="^\d{3} \d{3} \d{4}$" oninput="autoFormatPHMobile(this)" %}
                     </div>
-                    <small id="mobileHelp" style="color:red;display:none;">Invalid or disallowed number.</small>
+                    <small id="mobileHelp" class="mobile-help">Invalid or disallowed number.</small>
                     <script>
                     function autoFormatPHMobile(input) {
                         let digits = input.value.replace(/\D/g, '');
@@ -463,8 +709,8 @@
         <h3>10. Contact Information</h3>
         <p>If you have any questions about these Terms and Conditions or our Privacy Policy, please contact us at:</p>
         <p><strong>Email:</strong> support@worksteamwear.com<br>
-        <strong>Phone:</strong> +1 (555) 123-4567<br>
-        <strong>Address:</strong> 123 Business Street, City, State 12345</p>
+        <strong>Phone:</strong> +63 (555) 123-4567<br>
+        <strong>Address:</strong> Manila, Philippines</p>
         
         <p style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 12px; color: #888;">
           By clicking "I agree" and creating an account, you acknowledge that you have read, understood, and agree to be bound by these Terms and Conditions and Privacy Policy.
@@ -475,25 +721,6 @@
     {% include "ecom/footer.html" %}
     <script>
       document.addEventListener('DOMContentLoaded', function() {
-        const regionCodeMap = {
-          '130000000': 'NCR',
-          '140000000': 'CAR',
-          '010000000': 'R1',
-          '020000000': 'R2',
-          '030000000': 'R3',
-          '040000000': 'R4A',
-          '170000000': 'R4B',
-          '050000000': 'R5',
-          '060000000': 'R6',
-          '070000000': 'R7',
-          '080000000': 'R8',
-          '090000000': 'R9',
-          '100000000': 'R10',
-          '110000000': 'R11',
-          '120000000': 'R12',
-          '160000000': 'R13',
-          '150000000': 'BARMM'
-        };
         const regionSelect = document.getElementById('region');
         const province = document.getElementById('province');
         const citymun = document.getElementById('citymun');
@@ -545,6 +772,32 @@
               alert('Invalid region selected. Please select a valid region.');
             }
           });
+        }
+
+        // Modal functionality
+        var modal = document.getElementById('termsModal');
+        var termsLink = document.getElementById('termsLink');
+        var privacyLink = document.getElementById('privacyLink');
+        var closeBtn = document.getElementsByClassName('close')[0];
+
+        termsLink.onclick = function(e) {
+          e.preventDefault();
+          modal.style.display = 'block';
+        }
+
+        privacyLink.onclick = function(e) {
+          e.preventDefault();
+          modal.style.display = 'block';
+        }
+
+        closeBtn.onclick = function() {
+          modal.style.display = 'none';
+        }
+
+        window.onclick = function(event) {
+          if (event.target == modal) {
+            modal.style.display = 'none';
+          }
         }
       });
     </script>

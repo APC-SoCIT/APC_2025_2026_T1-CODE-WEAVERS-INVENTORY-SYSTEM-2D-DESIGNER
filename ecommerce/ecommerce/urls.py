@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.urls import path
 from ecom import views
 from ecom import wishlist_views
-from django.contrib.auth.views import LoginView,LogoutView
+from django.contrib.auth.views import LoginView, LogoutView, PasswordResetView
 from django.views.generic import RedirectView
 from django.urls import reverse_lazy
 from ecom.views import manage_inventory, update_stock 
@@ -68,8 +68,9 @@ urlpatterns = [
 
 
 
-    path('customersignup', views.customer_signup_view),
+    path('customersignup', views.customer_signup_view, name='signup'),
     path('customerlogin', LoginView.as_view(template_name='ecom/customerlogin.html'),name='customerlogin'),
+    path('password_reset/', PasswordResetView.as_view(template_name='ecom/password_reset.html'), name='password_reset'),
     path('customer-home', views.customer_home_view,name='customer-home'),
     path('orders/pending/', views.pending_orders_view, name='pending-orders'),
     path('orders/to-ship/', views.to_ship_orders_view, name='to-ship-orders'),
@@ -142,9 +143,8 @@ urlpatterns = [
     path('api/search/', wishlist_views.search_products_api, name='search-api'),
     
 
-] + static(settings.MEDIA_URL, document_root=settings.STATIC_ROOT) if settings.DEBUG else []
+]
 
-
-# Serve media files during development
 if settings.DEBUG:
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATICFILES_DIRS[0])
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
