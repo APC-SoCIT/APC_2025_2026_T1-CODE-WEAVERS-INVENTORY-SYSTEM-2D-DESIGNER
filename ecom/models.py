@@ -360,3 +360,4 @@ class ChatbotKnowledge(models.Model):
         return [keyword.strip().lower() for keyword in self.keywords.split(',')]
 
 
+
