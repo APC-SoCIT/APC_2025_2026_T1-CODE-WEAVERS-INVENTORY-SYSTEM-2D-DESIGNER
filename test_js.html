@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>JS Test</title>
+</head>
+<body>
+    <div id="apparelContainer">Test Container</div>
+    <button id="showFrontBtn">Front</button>
+    <button id="showBackBtn">Back</button>
+    <input type="range" id="rotationSlider" min="0" max="180" value="0">
+    <input type="color" id="mainColor" value="#ff0000">
+    <input type="color" id="secondaryColor" value="#0000ff">
+    <input type="text" id="playerName" value="Player">
+    <input type="number" id="playerNumber" value="10">
+    <input type="color" id="textColor" value="#000000">
+    
+    <script>
+        console.log('Script starting...');
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded');
+            
+            // Test element access
+            const apparelContainer = document.getElementById('apparelContainer');
+            const showFrontBtn = document.getElementById('showFrontBtn');
+            const showBackBtn = document.getElementById('showBackBtn');
+            const rotationSlider = document.getElementById('rotationSlider');
+            const mainColor = document.getElementById('mainColor');
+            const secondaryColor = document.getElementById('secondaryColor');
+            const playerName = document.getElementById('playerName');
+            const playerNumber = document.getElementById('playerNumber');
+            const textColor = document.getElementById('textColor');
+            
+            console.log('Elements found:', {
+                apparelContainer: !!apparelContainer,
+                showFrontBtn: !!showFrontBtn,
+                showBackBtn: !!showBackBtn,
+                rotationSlider: !!rotationSlider,
+                mainColor: !!mainColor,
+                secondaryColor: !!secondaryColor,
+                playerName: !!playerName,
+                playerNumber: !!playerNumber,
+                textColor: !!textColor
+            });
+            
+            // Test basic functions
+            function updateRotation() {
+                console.log('updateRotation called');
+                const rotation = rotationSlider.value;
+                console.log('Rotation value:', rotation);
+            }
+            
+            function updatePlayerName() {
+                console.log('updatePlayerName called');
+                console.log('Player name:', playerName.value);
+            }
+            
+            function updatePlayerNumber() {
+                console.log('updatePlayerNumber called');
+                console.log('Player number:', playerNumber.value);
+            }
+            
+            function updateTextColor(color) {
+                console.log('updateTextColor called with:', color);
+            }
+            
+            function updateGradientPreview() {
+                console.log('updateGradientPreview called');
+            }
+            
+            // Test initialization
+            console.log('Calling initialization functions...');
+            updateRotation();
+            updatePlayerName();
+            updatePlayerNumber();
+            updateTextColor(textColor.value);
+            updateGradientPreview();
+            
+            console.log('Initialization complete');
+        });
+    </script>
+</body>
+</html>

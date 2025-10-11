@@ -1,0 +1,122 @@
+{% extends 'ecom/admin_base.html' %}
+{% load static %}
+{% block content %}
+
+<head>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <style>
+        .container {
+            max-width: 800px;
+            margin: auto;
+            margin-top: 30px;
+        }
+
+        .panel {
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            background-color: #fff;
+        }
+
+        .btnSubmit {
+            width: 100%;
+            background-color: #007bff;
+            color: white;
+            border-radius: 5px;
+            padding: 10px;
+            border: none;
+        }
+
+        .btnDelete {
+            background-color: #dc3545;
+            color: white;
+            border-radius: 5px;
+            padding: 5px 10px;
+            border: none;
+        }
+
+        .table {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .form-control {
+            border-radius: 5px;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+
+<div class="container">
+    <div class="panel">
+        <h3 class="text-primary text-center">
+            <i class="fas fa-box"></i> Manage Inventory
+        </h3>
+
+        <!-- Add Product Form -->
+        <form method="POST">
+            {% csrf_token %}
+            <div class="row">
+                <div class="col-md-6">
+                    <label class="form-label">Item Name</label>
+                    {{ form.name }}
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">Quantity</label>
+                    {{ form.quantity }}
+                </div>
+            </div>
+
+            <div class="row mt-3">
+                <div class="col-md-12 text-center">
+                    <button type="submit" class="btnSubmit">
+                        <i class="fas fa-plus"></i> Add Item
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Inventory List Table -->
+    <div class="panel mt-4">
+        <h4 class="text-dark">
+            <i class="fas fa-list"></i> Inventory List
+        </h4>
+        <table class="table table-striped table-bordered">
+            <thead class="table-dark">
+                <tr>
+                    <th>Name</th>
+                    <th>Quantity</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in inventory_items %}
+                <tr>
+                    <td>{{ item.name }}</td>
+                    <td>{{ item.quantity }}</td>
+                    <td>
+                        <a href="{% url 'edit_inventory' item.id %}" class="btn btn-warning">Modify</a>
+                        <form action="{% url 'delete_inventory' item.id %}" method="POST">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="3" class="text-muted">No inventory items found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,433 @@
+{% extends 'ecom/admin_base.html' %}
+{% load static %}
+{% load humanize %}
+{% load custom_filters %}
+{% block content %}
+
+ <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-900">Orders</h1>
+            <p class="text-gray-600">Manage and track all customer orders</p>
+        </div>
+
+        <!-- Order Status Cards -->
+        <div class="mb-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
+            <div class="bg-white rounded-lg shadow p-4 flex flex-col justify-between">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-500">Processing</p>
+                        <p class="text-2xl font-bold text-gray-900">{{ processing_count|default:0 }}</p>
+                    </div>
+                    <i data-lucide="package" class="h-8 w-8 text-yellow-500"></i>
+                </div>
+                <p class="text-xs text-gray-500 mt-2">+2 from yesterday</p>
+            </div>
+            <div class="bg-white rounded-lg shadow p-4 flex flex-col justify-between">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-500">Confirmed</p>
+                        <p class="text-2xl font-bold text-gray-900">{{ confirmed_count|default:0 }}</p>
+                    </div>
+                    <i data-lucide="check-circle" class="h-8 w-8 text-blue-500"></i>
+                </div>
+                <p class="text-xs text-gray-500 mt-2">+1 from yesterday</p>
+            </div>
+            <div class="bg-white rounded-lg shadow p-4 flex flex-col justify-between">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-500">Shipping</p>
+                        <p class="text-2xl font-bold text-gray-900">{{ shipping_count|default:0 }}</p>
+                    </div>
+                    <i data-lucide="truck" class="h-8 w-8 text-purple-500"></i>
+                </div>
+                <p class="text-xs text-gray-500 mt-2">-1 from yesterday</p>
+            </div>
+            <div class="bg-white rounded-lg shadow p-4 flex flex-col justify-between">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-500">Delivered</p>
+                        <p class="text-2xl font-bold text-gray-900">{{ delivered_count|default:0 }}</p>
+                    </div>
+                    <i data-lucide="check-circle-2" class="h-8 w-8 text-green-500"></i>
+                </div>
+                <p class="text-xs text-gray-500 mt-2">+5 from yesterday</p>
+            </div>
+            <div class="bg-white rounded-lg shadow p-4 flex flex-col justify-between">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-500">Cancelled</p>
+                        <p class="text-2xl font-bold text-gray-900">{{ cancelled_count|default:0 }}</p>
+                    </div>
+                    <i data-lucide="x-circle" class="h-8 w-8 text-red-500"></i>
+                </div>
+                <p class="text-xs text-gray-500 mt-2">+1 from yesterday</p>
+            </div>
+        </div>
+
+        <!-- Order Status Tabs -->
+        <div class="mb-6">
+            <div class="border-b border-gray-200">
+                <nav class="-mb-px flex space-x-8">
+                    <a href="{% url 'admin-view-processing-orders' %}" 
+                       class="order-tab {% if status == 'Processing' %}active border-b-2 border-blue-500 text-blue-600{% else %}border-b-2 border-transparent text-gray-500 hover:text-gray-700{% endif %} py-2 px-1 text-sm font-medium">
+                        Processing
+                    </a>
+                    <a href="{% url 'admin-view-confirmed-orders' %}" 
+                       class="order-tab {% if status == 'Order Confirmed' %}active border-b-2 border-blue-500 text-blue-600{% else %}border-b-2 border-transparent text-gray-500 hover:text-gray-700{% endif %} py-2 px-1 text-sm font-medium">
+                        Confirmed
+                    </a>
+                    <a href="{% url 'admin-view-shipping-orders' %}" 
+                       class="order-tab {% if status == 'Out for Delivery' %}active border-b-2 border-blue-500 text-blue-600{% else %}border-b-2 border-transparent text-gray-500 hover:text-gray-700{% endif %} py-2 px-1 text-sm font-medium">
+                        Shipping
+                    </a>
+                    <a href="{% url 'admin-view-delivered-orders' %}" 
+                       class="order-tab {% if status == 'Delivered' %}active border-b-2 border-blue-500 text-blue-600{% else %}border-b-2 border-transparent text-gray-500 hover:text-gray-700{% endif %} py-2 px-1 text-sm font-medium">
+                        Delivered
+                    </a>
+                    <a href="{% url 'admin-view-cancelled-orders' %}" 
+                       class="order-tab {% if status == 'Cancelled' %}active border-b-2 border-blue-500 text-blue-600{% else %}border-b-2 border-transparent text-gray-500 hover:text-gray-700{% endif %} py-2 px-1 text-sm font-medium">
+                        Cancelled
+                    </a>
+                </nav>
+            </div>
+        </div>
+
+        <!-- Bulk Actions (hidden for delivered and cancelled orders) -->
+        {% if status != 'Delivered' and status != 'Cancelled' %}
+        <div id="bulk-actions" class="bg-white rounded-lg shadow p-4 mb-6">
+            <form id="bulk-update-form" method="post" action="{% url 'bulk-update-orders' %}" class="flex flex-col sm:flex-row sm:items-center gap-4">
+                {% csrf_token %}
+                <div class="flex-1 max-w-xs">
+                    <select name="bulk_status" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" required>
+                        <option value="">Select Status</option>
+                        <option value="Processing">Processing</option>
+                        <option value="Order Confirmed">Order Confirmed</option>
+                        <option value="Out for Delivery">Out for Delivery</option>
+                        <option value="Delivered">Delivered</option>
+                    </select>
+                </div>
+                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center">
+                    <i data-lucide="check-circle" class="mr-2 h-4 w-4"></i>
+                    Update Selected Orders
+                </button>
+            </form>
+        </div>
+        {% endif %}
+
+        <!-- Orders Table -->
+        <div class="bg-white rounded-lg shadow">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+                    <div class="flex items-center gap-2 flex-1 max-w-sm border border-gray-300 rounded-md px-2 py-1">
+                        <i data-lucide="search" class="h-4 w-4 text-gray-400"></i>
+                        <input type="text" id="order-search" placeholder="Search orders..." class="w-full border-0 focus:ring-0 text-sm">
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="exportOrders()" class="px-3 py-1.5 text-sm border border-gray-300 rounded-md hover:bg-gray-50 flex items-center">
+                            <i data-lucide="download" class="mr-1 h-4 w-4"></i>
+                            Export
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                {% if status != 'Delivered' and status != 'Cancelled' %}
+                                <th class="px-6 py-3 text-left">
+                                    <input type="checkbox" id="select-all-orders" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                </th>
+                                {% endif %}
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order ID</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Address</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Products</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                {% if status != 'Delivered' and status != 'Cancelled' %}
+                            {% if status != 'Cancelled' %}
+                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            {% endif %}
+                                {% endif %}
+                            </tr>
+                        </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for order_data in orders_data %}
+                        {% with order=order_data.order customer=order_data.customer items=order_data.order_items %}
+                        <tr class="hover:bg-gray-50 order-row" data-customer="{{ customer.get_name|lower }}" data-order-id="{{ order_data.order_id|lower }}">
+                            {% if status != 'Delivered' and status != 'Cancelled' %}
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <input type="checkbox" name="order_ids" value="{{ order.id }}" form="bulk-update-form" class="order-checkbox rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                            </td>
+                            {% endif %}
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm font-medium text-gray-900">{{ order_data.order_id }}</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-900">{{ order_data.order_date }}</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm font-medium text-gray-900">{{ customer.get_name }}</div>
+                                <div class="text-sm text-gray-500">{{ customer.customer_code|default:"No ID" }}</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-900">{{ customer.mobile }}</div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="text-sm text-gray-900 max-w-xs truncate">
+                                    {{ customer.street_address }}, {{ customer.barangay|barangay_name }}, {{ customer.citymun|citymun_name }}, {{ customer.province|province_name }}, {{ customer.postal_code }}
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="text-sm text-gray-900">{{ items|length }} item{{ items|length|pluralize }}</div>
+                                <div class="text-xs text-gray-500 max-w-xs">
+                                    {% for item in items %}
+                                    {{ item.product.name }} ({{ item.size }}){% if item.quantity > 1 %} ({{ item.quantity }}x){% endif %}{% if not forloop.last %}, {% endif %}
+                                    {% endfor %}
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm font-medium text-gray-900">
+                                    ₱ {{ order_data.total_price|floatformat:2|intcomma|default:"0.00" }}
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full 
+                                    {% if order.status == 'Processing' %}bg-yellow-100 text-yellow-800
+                                    {% elif order.status == 'Order Confirmed' %}bg-blue-100 text-blue-800
+                                    {% elif order.status == 'Out for Delivery' %}bg-purple-100 text-purple-800
+                                    {% elif order.status == 'Delivered' %}bg-green-100 text-green-800
+                                    {% elif order.status == 'Cancelled' %}bg-red-100 text-red-800
+                                    {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                    {{ order.status }}
+                                </span>
+                            </td>
+                            {% if status != 'Delivered' and status != 'Cancelled' %}
+                            <td class="px-11 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <a href="{% url 'update-order' order.id %}" class="text-green-600 hover:text-green-900" title="Edit Order">
+                                    <i data-lucide="edit" class="h-4 w-4"></i>
+                                </a>
+                            </td>
+                            {% elif status == 'Delivered' %}
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <button onclick="openOrderDetail('{{ order.id }}')" class="inline-block text-blue-600 hover:text-blue-900" title="View Details">
+                                    <i data-lucide="eye" class="h-4 w-4"></i>
+                                </button>
+                            </td>
+                            {% endif %}
+                        </tr>
+                        {% endwith %}
+                        {% empty %}
+                        <tr>
+                            <td colspan="{% if status != 'Delivered' %}10{% else %}9{% endif %}" class="px-6 py-12 text-center">
+                                <div class="text-gray-500">
+                                    <i data-lucide="package" class="h-12 w-12 mx-auto mb-4 text-gray-300"></i>
+                                    <h3 class="text-lg font-medium text-gray-900 mb-2">No {{ status|lower }} orders found</h3>
+                                    <p class="text-sm">There are currently no orders with {{ status|lower }} status.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if orders_data.has_other_pages %}
+            <div class="bg-white px-4 py-3 border-t border-gray-200 sm:px-6">
+                <div class="flex items-center justify-between">
+                    <div class="flex-1 flex justify-between sm:hidden">
+                        {% if orders_data.has_previous %}
+                        <a href="?page={{ orders_data.previous_page_number }}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                            Previous
+                        </a>
+                        {% endif %}
+                        {% if orders_data.has_next %}
+                        <a href="?page={{ orders_data.next_page_number }}" class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                            Next
+                        </a>
+                        {% endif %}
+                    </div>
+                    <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                        <div>
+                            <p class="text-sm text-gray-700">
+                                Showing page {{ orders_data.number }} of {{ orders_data.paginator.num_pages }}
+                            </p>
+                        </div>
+                        <div>
+                            <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                                {% if orders_data.has_previous %}
+                                <a href="?page=1" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                    <i data-lucide="chevrons-left" class="h-4 w-4"></i>
+                                </a>
+                                <a href="?page={{ orders_data.previous_page_number }}" class="relative inline-flex items-center px-2 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                    <i data-lucide="chevron-left" class="h-4 w-4"></i>
+                                </a>
+                                {% endif %}
+                                
+                                <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-blue-50 text-sm font-medium text-blue-600">
+                                    {{ orders_data.number }}
+                                </span>
+                                
+                                {% if orders_data.has_next %}
+                                <a href="?page={{ orders_data.next_page_number }}" class="relative inline-flex items-center px-2 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                    <i data-lucide="chevron-right" class="h-4 w-4"></i>
+                                </a>
+                                <a href="?page={{ orders_data.paginator.num_pages }}" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                    <i data-lucide="chevrons-right" class="h-4 w-4"></i>
+                                </a>
+                                {% endif %}
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </main>
+
+    <!-- Order Detail Modal -->
+    <div id="orderDetailModal" class="fixed inset-0 z-50 hidden overflow-y-auto">
+        <div class="flex items-center justify-center min-h-screen px-4">
+            <div class="fixed inset-0 bg-black opacity-50"></div>
+            <div class="relative bg-white rounded-lg max-w-4xl w-full p-6 max-h-screen overflow-y-auto">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-medium text-gray-900">Order Details</h3>
+                    <button onclick="closeOrderDetail()" class="text-gray-400 hover:text-gray-600">
+                        <i data-lucide="x" class="h-6 w-6"></i>
+                    </button>
+                </div>
+                
+                <div id="orderDetailContent">
+                    <!-- Order detail content will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        // Search functionality
+        document.getElementById('order-search').addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            const rows = document.querySelectorAll('.order-row');
+            
+            rows.forEach(row => {
+                const orderId = row.dataset.orderId;
+                const customer = row.dataset.customer;
+                
+                if (orderId.includes(searchTerm) || customer.includes(searchTerm)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+
+        // Customer filter functionality
+        document.getElementById('customer-filter').addEventListener('change', function() {
+            const filterValue = this.value;
+            const rows = document.querySelectorAll('.order-row');
+            
+            rows.forEach(row => {
+                if (filterValue === '') {
+                    row.style.display = '';
+                } else {
+                    // Add your customer filtering logic here
+                    // For now, just show all rows
+                    row.style.display = '';
+                }
+            });
+        });
+
+        // Select all functionality
+        const selectAllCheckbox = document.getElementById('select-all-orders');
+        if (selectAllCheckbox) {
+            selectAllCheckbox.addEventListener('change', function() {
+                const orderCheckboxes = document.querySelectorAll('.order-checkbox');
+                orderCheckboxes.forEach(checkbox => {
+                    checkbox.checked = this.checked;
+                });
+            });
+
+            // Update select all when individual checkboxes change
+            document.querySelectorAll('.order-checkbox').forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    const totalCheckboxes = document.querySelectorAll('.order-checkbox').length;
+                    const checkedCheckboxes = document.querySelectorAll('.order-checkbox:checked').length;
+                    selectAllCheckbox.checked = totalCheckboxes === checkedCheckboxes;
+                    selectAllCheckbox.indeterminate = checkedCheckboxes > 0 && checkedCheckboxes < totalCheckboxes;
+                });
+            });
+        }
+
+        // Order detail modal functionality
+        function openOrderDetail(orderId) {
+            // Fetch order details via AJAX
+            fetch(`/admin/orders/${orderId}/detail/`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById('orderDetailContent').innerHTML = data.html;
+                        document.getElementById('orderDetailModal').classList.remove('hidden');
+                        lucide.createIcons(); // Reinitialize icons
+                    } else {
+                        alert('Error loading order details');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error loading order details');
+                });
+        }
+
+        function closeOrderDetail() {
+            document.getElementById('orderDetailModal').classList.add('hidden');
+        }
+
+        // Export functionality
+        function exportOrders() {
+            const currentUrl = new URL(window.location);
+            currentUrl.searchParams.set('export', 'csv');
+            window.location.href = currentUrl.toString();
+        }
+
+        // Bulk update form submission
+        document.getElementById('bulk-update-form').addEventListener('submit', function(e) {
+            const checkedBoxes = document.querySelectorAll('.order-checkbox:checked');
+            if (checkedBoxes.length === 0) {
+                e.preventDefault();
+                alert('Please select at least one order to update.');
+                return false;
+            }
+            
+            const bulkStatus = document.querySelector('select[name="bulk_status"]').value;
+            if (!bulkStatus) {
+                e.preventDefault();
+                alert('Please select a status to update to.');
+                return false;
+            }
+            
+            if (!confirm(`Are you sure you want to update ${checkedBoxes.length} order(s) to "${bulkStatus}" status?`)) {
+                e.preventDefault();
+                return false;
+            }
+        });
+
+        // Auto-hide success/error messages
+        setTimeout(function() {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(alert => {
+                alert.style.transition = 'opacity 0.5s';
+                alert.style.opacity = '0';
+                setTimeout(() => alert.remove(), 500);
+            });
+        }, 5000);
+    </script>
+
+{% endblock content %}

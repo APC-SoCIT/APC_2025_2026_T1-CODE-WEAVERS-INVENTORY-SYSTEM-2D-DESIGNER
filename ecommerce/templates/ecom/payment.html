@@ -1,0 +1,188 @@
+{% extends 'ecom/customer_base.html' %}
+{% load static %}
+
+{% block content %}
+<head>
+
+</head>
+<style media="screen">
+
+.panel-title {display: inline;font-weight: bold;}
+.checkbox.pull-right { margin: 0; }
+.pl-ziro { padding-left: 0px; }
+</style>
+<br><br>
+<br><br>
+<div class="container" style="text-align:center; padding-left:300px;">
+    <div class="row">
+        <div class="col-xs-12 col-md-4" style="height:500px; width:600px;">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title">
+                        Payment Details
+                    </h3>
+                    <div class="checkbox pull-right">
+                        <label>
+                            <input type="checkbox" />
+                            Remember
+                        </label>
+                    </div>
+                </div>
+                <div class="panel-body">
+                    <form role="form" method="post" id="paymentForm">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <label for="paymentMethod">Select Payment Method:</label>
+                            <select class="form-control" id="paymentMethod" name="payment_method" required>
+                                <option value="">Choose payment method</option>
+                                <option value="card">Credit/Debit Card</option>
+                                <option value="paypal">PayPal</option>
+                                <option value="cod">Cash on Delivery</option>
+                            </select>
+                        </div>
+
+                        {% if not cart_items %}
+                        <div class="alert alert-warning">
+                            <p><strong>Your cart is empty!</strong></p>
+                            <p>Please add items to your cart before proceeding to payment.</p>
+                            <a href="{% url 'customer-home' %}" class="btn btn-primary">Continue Shopping</a>
+                        </div>
+                        {% else %}
+                        <div class="form-group">
+                            <label>Payment Method</label>
+                            <div class="payment-method-selection">
+                                <div class="radio">
+                                    <label>
+                                        <input type="radio" name="paymentMethod" value="card" checked>
+                                        Credit/Debit Card
+                                    </label>
+                                </div>
+                                <div class="radio">
+                                    <label>
+                                        <input type="radio" name="paymentMethod" value="paypal">
+                                        PayPal
+                                    </label>
+                                </div>
+                                <div class="radio">
+                                    <label>
+                                        <input type="radio" name="paymentMethod" value="cod">
+                                        Cash on Delivery (COD)
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="cardPaymentDetails">
+                            <div class="form-group">
+                                <label for="cardNumber">CARD NUMBER</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="cardNumber" placeholder="xxxx xxxx xxxx xxxx" required />
+                                    <span class="input-group-addon"><span class="glyphicon glyphicon-lock"></span></span>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-xs-4 col-md-4 pull-left">
+                                    <div class="form-group">
+                                        <label for="expityMonth">MONTH</label>
+                                        <input type="text" class="form-control" id="expityMonth" placeholder="MM - 02" required />
+                                    </div>
+                                </div>
+                                <div class="col-xs-4 col-md-4">
+                                    <div class="form-group">
+                                        <label for="expityYear">EXPIRY DATE</label>
+                                        <input type="text" class="form-control" id="expityYear" placeholder="YY - 22" required />
+                                    </div>
+                                </div>
+                                <div class="col-xs-4 col-md-4 pull-right">
+                                    <div class="form-group">
+                                        <label for="cvCode">CV CODE</label>
+                                        <input type="password" class="form-control" id="cvCode" placeholder="CV - xxx" required />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="paypalPaymentDetails" style="display: none;">
+                            <div class="alert alert-info">
+                                <p><strong>PayPal Payment:</strong></p>
+                                <p>You will be redirected to PayPal to complete your payment securely.</p>
+                            </div>
+                        </div>
+                        
+                        <div id="codPaymentDetails" style="display: none;">
+                            <div class="alert alert-info">
+                                <p><strong>Cash on Delivery Terms:</strong></p>
+                                <ul>
+                                    <li>Payment will be collected upon delivery</li>
+                                    <li>Please prepare the exact amount</li>
+                                    <li>Cash only, no checks accepted</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <ul class="nav nav-pills nav-stacked">
+                <li class="active">
+                    <div class="form-group">
+                    </div>
+                </li>
+                <li class="active"><a href="#"><span class="badge pull-right">₱{{total}}</span>  Final Payment</a></li>
+                </ul>
+                <br/>
+                <button type="submit" class="btn btn-success btn-lg btn-block" id="payButton" {% if not product_in_cart %}disabled{% endif %}>Pay</button>
+
+                <script>
+                $(document).ready(function() {
+                    // Handle payment method selection
+                    $("#paymentMethod").change(function() {
+                        var method = $(this).val();
+                        $("#cardPaymentDetails").hide();
+                        $("#paypalPaymentDetails").hide();
+                        $("#codPaymentDetails").hide();
+                        
+                        if (method === "card") {
+                            $("#cardPaymentDetails").show();
+                        } else if (method === "paypal") {
+                            $("#paypalPaymentDetails").show();
+                        } else if (method === "cod") {
+                            $("#codPaymentDetails").show();
+                        }
+                    });
+
+                    $("#paymentForm").submit(function(e) {
+                        e.preventDefault();
+                        var form = this;
+                        var paymentMethod = $("#paymentMethod").val();
+
+                        if (!paymentMethod) {
+                            alert("Please select a payment method");
+                            return;
+                        }
+
+                        switch(paymentMethod) {
+                            case "card":
+                                if (form.checkValidity()) {
+                                    window.location.href = '/payment-success';
+                                } else {
+                                    form.reportValidity();
+                                }
+                                break;
+                            case "paypal":
+                                window.location.href = '/payment-success';
+                                break;
+                            case "cod":
+                                if (confirm("Confirm Cash on Delivery order?")) {
+                                    window.location.href = '/payment-success';
+                                }
+                                break;
+                        }
+                    });
+                });
+                </script>
+        </div>
+    </div>
+</div>
+
+
+{% endblock content %}

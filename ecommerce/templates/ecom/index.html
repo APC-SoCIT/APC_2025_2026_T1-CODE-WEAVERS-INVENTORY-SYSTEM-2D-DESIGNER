@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WorksTeamWear - Premium Sports Jerseys & Teamwear</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #ea580c;
+            --primary-hover: #c2410c;
+            --secondary: #f97316;
+            --background: #ffffff;
+            --foreground: #0a0a0a;
+            --card: #fafafa;
+            --muted: #f5f5f5;
+            --muted-foreground: #737373;
+            --border: #e5e5e5;
+            --accent: #fef3c7;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background-color: var(--background);
+            color: var(--foreground);
+            line-height: 1.6;
+        }
+
+        .font-playfair {
+            font-family: 'Playfair Display', serif;
+        }
+
+        /* Navbar */
+        .navbar {
+            background-color: var(--foreground);
+            color: white;
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .navbar-container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .navbar-brand {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .navbar-menu {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+            align-items: center;
+        }
+
+        .navbar-menu a {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .navbar-menu a:hover {
+            color: var(--primary);
+        }
+
+        .btn {
+            padding: 0.625rem 1.25rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(234, 88, 12, 0.3);
+        }
+
+        .btn-outline {
+            background-color: transparent;
+            color: var(--foreground);
+            border: 2px solid var(--border);
+        }
+
+        .btn-outline:hover {
+            background-color: var(--muted);
+            border-color: var(--primary);
+        }
+
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(135deg, var(--background) 0%, var(--card) 50%, var(--muted) 100%);
+            padding: 5rem 1rem;
+        }
+
+        .hero-container {
+            max-width: 1280px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+            align-items: center;
+        }
+
+        .hero-content {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .hero-rating {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .stars {
+            display: flex;
+            gap: 0.25rem;
+        }
+
+        .star {
+            color: var(--primary);
+            font-size: 1rem;
+        }
+
+        .hero-title {
+            font-size: 3.5rem;
+            font-weight: 900;
+            line-height: 1.1;
+            color: var(--foreground);
+        }
+
+        .hero-title .highlight {
+            color: var(--primary);
+            display: block;
+        }
+
+        .hero-description {
+            font-size: 1.125rem;
+            color: var(--muted-foreground);
+            max-width: 500px;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .hero-stats {
+            display: flex;
+            gap: 2rem;
+            padding-top: 1rem;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--foreground);
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            color: var(--muted-foreground);
+        }
+
+        .hero-image-container {
+            position: relative;
+        }
+
+        .hero-image {
+            width: 100%;
+            height: 600px;
+            object-fit: cover;
+            border-radius: 1rem;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+        }
+
+        .floating-card {
+            position: absolute;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .floating-card-top {
+            top: -1rem;
+            left: -1rem;
+        }
+
+        .floating-card-bottom {
+            bottom: -1rem;
+            right: -1rem;
+        }
+
+        .pulse-dot {
+            width: 0.75rem;
+            height: 0.75rem;
+            background-color: #22c55e;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Products Section */
+        .products-section {
+            padding: 4rem 1rem;
+            background-color: var(--card);
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .section-title {
+            font-size: 2.5rem;
+            font-weight: 900;
+            margin-bottom: 1rem;
+            color: var(--foreground);
+        }
+
+        .section-description {
+            font-size: 1.125rem;
+            color: var(--muted-foreground);
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .products-grid {
+            max-width: 1280px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .product-card {
+            background: white;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s;
+        }
+
+        .product-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+        }
+
+        .product-image-container {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .product-image {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+            transition: transform 0.3s;
+        }
+
+        .product-card:hover .product-image {
+            transform: scale(1.05);
+        }
+
+        .product-badge {
+            position: absolute;
+            top: 0.75rem;
+            left: 0.75rem;
+            background-color: var(--primary);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .product-badge.sale {
+            background-color: #dc2626;
+        }
+
+        .product-badge.new {
+            background-color: #16a34a;
+        }
+
+        .product-info {
+            padding: 1rem;
+        }
+
+        .product-name {
+            font-weight: 600;
+            color: var(--foreground);
+            margin-bottom: 0.5rem;
+            transition: color 0.3s;
+        }
+
+        .product-card:hover .product-name {
+            color: var(--primary);
+        }
+
+        .product-rating {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+            font-size: 0.875rem;
+            color: var(--muted-foreground);
+        }
+
+        .product-price {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .price-current {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .price-original {
+            font-size: 0.875rem;
+            color: var(--muted-foreground);
+            text-decoration: line-through;
+        }
+
+        .product-colors {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .color-dots {
+            display: flex;
+            gap: 0.25rem;
+        }
+
+        .color-dot {
+            width: 1rem;
+            height: 1rem;
+            border-radius: 50%;
+            border: 1px solid var(--border);
+        }
+
+        /* Footer */
+        .footer {
+            background-color: var(--foreground);
+            color: white;
+            padding: 3rem 1rem 1.5rem;
+        }
+
+        .footer-container {
+            max-width: 1280px;
+            margin: 0 auto;
+        }
+
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .footer-section h3 {
+            color: var(--primary);
+            margin-bottom: 1rem;
+            font-size: 1.125rem;
+        }
+
+        .footer-links {
+            list-style: none;
+        }
+
+        .footer-links li {
+            margin-bottom: 0.5rem;
+        }
+
+        .footer-links a {
+            color: #d4d4d4;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .footer-links a:hover {
+            color: var(--primary);
+        }
+
+        .footer-bottom {
+            border-top: 1px solid #404040;
+            padding-top: 1.5rem;
+            text-align: center;
+            color: #a3a3a3;
+        }
+
+        .social-links {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .social-link {
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 50%;
+            background-color: #262626;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+
+        .social-link:hover {
+            background-color: var(--primary);
+            transform: translateY(-3px);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero-container {
+                grid-template-columns: 1fr;
+            }
+
+            .hero-title {
+                font-size: 2.5rem;
+            }
+
+            .navbar-menu {
+                gap: 1rem;
+            }
+
+            .hero-stats {
+                gap: 1rem;
+            }
+
+            .products-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="navbar-container">
+            <a href="/" class="navbar-brand font-playfair">WorksTeamWear</a>
+            <ul class="navbar-menu">
+                <li><a href="/">Home</a></li>
+                <li><a href="{% url 'customer-home' %}">Products</a></li>
+                <li><a href="/about">About</a></li>
+                <li><a href="{% url 'contactus' %}">Contact</a></li>
+                <li><a href="{% url 'customerlogin' %}" class="btn btn-primary">Login</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-container">
+            <div class="hero-content">
+                <div class="hero-rating">
+                    <div class="stars">
+                        <span class="star">★</span>
+                        <span class="star">★</span>
+                        <span class="star">★</span>
+                        <span class="star">★</span>
+                        <span class="star">★</span>
+                    </div>
+                    <span style="color: var(--muted-foreground); font-size: 0.875rem;">Trusted by 10,000+ teams</span>
+                </div>
+
+                <h1 class="hero-title font-playfair">
+                    Premium Sports
+                    <span class="highlight">Jerseys & Teamwear</span>
+                </h1>
+
+                <p class="hero-description">
+                    Elevate your team's performance with our high-quality, custom-designed jerseys and athletic wear. Built for champions, worn by winners.
+                </p>
+
+                <div class="hero-buttons">
+                    <a href="{% url 'customer-home' %}" class="btn btn-primary">
+                        Shop Now
+                        <span>→</span>
+                    </a>
+                    <a href="{% url 'jersey_customizer' %}" class="btn btn-outline">Custom Design</a>
+                </div>
+
+                <div class="hero-stats">
+                    <div class="stat">
+                        <div class="stat-value">50K+</div>
+                        <div class="stat-label">Happy Customers</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">1000+</div>
+                        <div class="stat-label">Team Designs</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">24/7</div>
+                        <div class="stat-label">Support</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="hero-image-container">
+                <img src="{{ MEDIA_URL }}hero-jersey.jpg" alt="Professional sports team in custom jerseys" class="hero-image">
+                
+                <div class="floating-card floating-card-top">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <div class="pulse-dot"></div>
+                        <span style="font-size: 0.875rem; font-weight: 600;">Live Customization</span>
+                    </div>
+                </div>
+
+                <div class="floating-card floating-card-bottom">
+                    <div style="text-align: center;">
+                        <div style="font-size: 1.125rem; font-weight: 700; color: var(--primary);">48h</div>
+                        <div style="font-size: 0.75rem; color: var(--muted-foreground);">Fast Delivery</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Featured Products Section -->
+    <section class="products-section">
+        <div class="section-header">
+            <h2 class="section-title font-playfair">Featured Products</h2>
+            <p class="section-description">
+                Discover our most popular jerseys and uniforms, trusted by teams worldwide for their quality, comfort, and performance.
+            </p>
+        </div>
+
+        <div class="products-grid">
+            <!-- Product 1 -->
+            <div class="product-card">
+                <div class="product-image-container">
+                    <img src="{{ MEDIA_URL }}product-1.jpg" alt="Pro Elite Football Jersey" class="product-image">
+                    <span class="product-badge">Best Seller</span>
+                </div>
+                <div class="product-info">
+                    <h3 class="product-name">Pro Elite Football Jersey</h3>
+                    <div class="product-rating">
+                        <span class="star">★</span>
+                        <span>4.8</span>
+                        <span>(124)</span>
+                    </div>
+                    <div class="product-price">
+                        <span class="price-current">$89.99</span>
+                        <span class="price-original">$119.99</span>
+                    </div>
+                    <div class="product-colors">
+                        <span style="font-size: 0.75rem; color: var(--muted-foreground);">Colors:</span>
+                        <div class="color-dots">
+                            <div class="color-dot" style="background-color: #ea580c;"></div>
+                            <div class="color-dot" style="background-color: #ffffff;"></div>
+                            <div class="color-dot" style="background-color: #000000;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Product 2 -->
+            <div class="product-card">
+                <div class="product-image-container">
+                    <img src="{{ MEDIA_URL }}product-2.jpg" alt="Championship Basketball Uniform" class="product-image">
+                    <span class="product-badge new">New</span>
+                </div>
+                <div class="product-info">
+                    <h3 class="product-name">Championship Basketball Uniform</h3>
+                    <div class="product-rating">
+                        <span class="star">★</span>
+                        <span>4.9</span>
+                        <span>(89)</span>
+                    </div>
+                    <div class="product-price">
+                        <span class="price-current">$94.99</span>
+                    </div>
+                    <div class="product-colors">
+                        <span style="font-size: 0.75rem; color: var(--muted-foreground);">Colors:</span>
+                        <div class="color-dots">
+                            <div class="color-dot" style="background-color: #ea580c;"></div>
+                            <div class="color-dot" style="background-color: #1e3a8a;"></div>
+                            <div class="color-dot" style="background-color: #ffffff;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Product 3 -->
+            <div class="product-card">
+                <div class="product-image-container">
+                    <img src="{{ MEDIA_URL }}product-3.jpg" alt="Victory Soccer Kit" class="product-image">
+                    <span class="product-badge sale">Sale</span>
+                </div>
+                <div class="product-info">
+                    <h3 class="product-name">Victory Soccer Kit</h3>
+                    <div class="product-rating">
+                        <span class="star">★</span>
+                        <span>4.7</span>
+                        <span>(156)</span>
+                    </div>
+                    <div class="product-price">
+                        <span class="price-current">$79.99</span>
+                        <span class="price-original">$99.99</span>
+                    </div>
+                    <div class="product-colors">
+                        <span style="font-size: 0.75rem; color: var(--muted-foreground);">Colors:</span>
+                        <div class="color-dots">
+                            <div class="color-dot" style="background-color: #ea580c;"></div>
+                            <div class="color-dot" style="background-color: #ffffff;"></div>
+                            <div class="color-dot" style="background-color: #3b82f6;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Product 4 -->
+            <div class="product-card">
+                <div class="product-image-container">
+                    <img src="{{ MEDIA_URL }}product-4.jpg" alt="Classic Baseball Uniform" class="product-image">
+                </div>
+                <div class="product-info">
+                    <h3 class="product-name">Classic Baseball Uniform</h3>
+                    <div class="product-rating">
+                        <span class="star">★</span>
+                        <span>4.6</span>
+                        <span>(73)</span>
+                    </div>
+                    <div class="product-price">
+                        <span class="price-current">$84.99</span>
+                    </div>
+                    <div class="product-colors">
+                        <span style="font-size: 0.75rem; color: var(--muted-foreground);">Colors:</span>
+                        <div class="color-dots">
+                            <div class="color-dot" style="background-color: #ea580c;"></div>
+                            <div class="color-dot" style="background-color: #6b7280;"></div>
+                            <div class="color-dot" style="background-color: #ffffff;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div style="text-align: center;">
+            <a href="{% url 'customer-home' %}" class="btn btn-outline">View All Products</a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3 class="font-playfair">WorksTeamWear</h3>
+                    <p style="color: #d4d4d4; margin-bottom: 1rem;">
+                        Premium sports jerseys and teamwear for champions. Quality you can trust, performance you can feel.
+                    </p>
+                    <div class="social-links">
+                        <a href="{% url 'facebook' %}" target="_blank" class="social-link">f</a>
+                        <a href="{% url 'instagram' %}" target="_blank" class="social-link">📷</a>
+                    </div>
+                </div>
+
+                <div class="footer-section">
+                    <h3>Shop</h3>
+                    <ul class="footer-links">
+                        <li><a href="{% url 'customer-home' %}">All Products</a></li>
+                        <li><a href="#">Football Jerseys</a></li>
+                        <li><a href="#">Basketball Uniforms</a></li>
+                        <li><a href="#">Soccer Kits</a></li>
+                        <li><a href="#">Custom Design</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-section">
+                    <h3>Company</h3>
+                    <ul class="footer-links">
+                        <li><a href="/about">About Us</a></li>
+                        <li><a href="{% url 'contactus' %}">Contact</a></li>
+                        <li><a href="#">Careers</a></li>
+                        <li><a href="#">Press</a></li>
+                        <li><a href="#">Blog</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-section">
+                    <h3>Support</h3>
+                    <ul class="footer-links">
+                        <li><a href="#">Help Center</a></li>
+                        <li><a href="#">Shipping Info</a></li>
+                        <li><a href="#">Returns</a></li>
+                        <li><a href="#">Size Guide</a></li>
+                        <li><a href="#">Track Order</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <p>&copy; 2025 WorksTeamWear. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

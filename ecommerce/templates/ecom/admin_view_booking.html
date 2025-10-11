@@ -1,0 +1,196 @@
+{% extends 'ecom/admin_base.html' %}
+{% load static %}
+{% block content %}
+
+<head>
+  <link href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
+  <script src="//netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js"></script>
+  <script src="//code.jquery.com/jquery-1.11.1.min.js"></script>
+
+  <style media="screen">
+    a:link {
+      text-decoration: none;
+    }
+
+    h6 {
+      text-align: center;
+    }
+
+    .row {
+      margin: 100px;
+    }
+
+    .bulk-actions {
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<div class="container">
+  <div class="panel panel-primary">
+    <div class="panel-heading">
+      <h6 class="panel-title">Total Orders by Status</h6>
+    </div>
+
+    <div class="bulk-actions">
+      <form id="bulk-update-form" method="post" action="{% url 'bulk-update-orders' %}">
+        {% csrf_token %}
+        <div class="row" style="margin: 10px;">
+          <div class="col-md-4">
+            <select name="bulk_status" class="form-control" required>
+              <option value="">Select Status</option>
+              <option value="Processing">Processing</option>
+              <option value="Order Confirmed">Order Confirmed</option>
+              <option value="Out for Delivery">Out for Delivery</option>
+              <option value="Delivered">Delivered</option>
+              <option value="Cancelled">Cancelled</option>
+            </select>
+          </div>
+          <div class="col-md-2">
+            <button type="submit" class="btn btn-primary">Update Selected Orders</button>
+          </div>
+          <div class="col-md-2">
+            <a href="{% url 'admin-view-cancelled-orders' %}" class="btn btn-danger">View Cancelled Orders</a>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    {% regroup data by 2.status as orders_by_status %}
+    {% for status_group in orders_by_status %}
+    {% if status_group.grouper == 'Processing' %}
+    <div class="panel panel-info" style="margin: 20px 0;">
+      <div class="panel-heading">
+        <h6 class="panel-title">Pending Orders</h6>
+      </div>
+      <table class="table table-hover table-bordered" id="dev-table-pending">
+        <thead>
+          <tr>
+            <th><input type="checkbox" class="select-all-status" data-status="Pending" /></th>
+            <th>Customer</th>
+            <th>Contact</th>
+            <th>Shipping Address</th>
+            <th>Product</th>
+            <th>Quantity</th>
+            <th>Image</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        {% for item in status_group.list %}
+        {% with product=item.0 customer=item.1 order=item.2 %}
+        <tr>
+        <td>
+          <input type="checkbox" name="order_ids" value="{{ order.id }}" form="bulk-update-form" class="order-checkbox" />
+        </td>
+        {% for c in customer %}
+        <td> {{c.get_name}}</td>
+        <td>{{c.mobile}}</td>
+        <td>{{order.address}}</td>
+        {% endfor %}
+
+        {% with items=item.3 %}
+        {% for p in product %}
+        {% for item_info in items %}
+        {% if item_info.product == p %}
+        <td> {{p.name}}</td>
+        <td> {{item_info.quantity}}</td>
+        <td> <img src="{% static p.product_image.url %}" alt="Profile Pic" height="40px" width="40px" /></td>
+        <td>{{order.status}}</td>
+        {% endif %}
+        {% endfor %}
+        {% endfor %}
+        {% endwith %}
+        <td>
+          <a class="btn btn-primary btn-xs" href="{% url 'update-order' order.id  %}"><span class="glyphicon glyphicon-edit"></span></a>
+        </td>
+      </tr>
+      {% endwith %}
+      {% endfor %}
+    </table>
+    </div>
+    {% elif status_group.grouper != 'Processing' %}
+    <div class="panel panel-info" style="margin: 20px 0;">
+      <div class="panel-heading">
+        <h6 class="panel-title">{{ status_group.grouper }} Orders</h6>
+      </div>
+      <table class="table table-hover table-bordered" id="dev-table-{{ status_group.grouper|slugify }}">
+        <thead>
+          <tr>
+            <th><input type="checkbox" class="select-all-status" data-status="{{ status_group.grouper }}" /></th>
+            <th>Customer</th>
+            <th>Contact</th>
+            <th>Shipping Address</th>
+            <th>Product</th>
+            <th>Quantity</th>
+            <th>Image</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        {% for item in status_group.list %}
+        {% with product=item.0 customer=item.1 order=item.2 %}
+        <tr>
+        <td>
+          {% if order.status != 'Delivered' and order.status != 'Cancelled' %}
+            <input type="checkbox" name="order_ids" value="{{ order.id }}" form="bulk-update-form" class="order-checkbox" />
+          {% else %}
+            <input type="checkbox" disabled title="Cannot modify {{order.status}} orders" />
+          {% endif %}
+        </td>
+        {% for c in customer %}
+        <td> {{c.get_name}}</td>
+        <td>{{c.mobile}}</td>
+        <td>{{order.address}}</td>
+        {% endfor %}
+
+        {% with items=item.3 %}
+        {% for p in product %}
+        {% for item_info in items %}
+        {% if item_info.product == p %}
+        <td> {{p.name}}</td>
+        <td> {{item_info.quantity}}</td>
+        <td> <img src="{% static p.product_image.url %}" alt="Profile Pic" height="40px" width="40px" /></td>
+        <td>{{order.status}}</td>
+        {% endif %}
+        {% endfor %}
+        {% endfor %}
+        {% endwith %}
+        <td>
+          {% if order.status != 'Delivered' and order.status != 'Cancelled' %}
+            <a class="btn btn-primary btn-xs" href="{% url 'update-order' order.id  %}"><span class="glyphicon glyphicon-edit"></span></a>
+          {% else %}
+            <span class="text-muted">No actions available</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endwith %}
+      {% endfor %}
+    </table>
+    </div>
+    {% endif %}
+    {% endfor %}
+  </div>
+</div>
+
+<script>
+  $(document).ready(function() {
+    // Handle select all checkbox for each status section
+    $('.select-all-status').change(function() {
+      var status = $(this).data('status');
+      var tableId = '#dev-table-' + status.toLowerCase().replace(/ /g, '-');
+      $(tableId + ' .order-checkbox').prop('checked', $(this).prop('checked'));
+    });
+
+    // Update select all checkbox when individual checkboxes change
+    $('.order-checkbox').change(function() {
+      var status = $(this).closest('table').find('.select-all-status').data('status');
+      var tableId = '#dev-table-' + status.toLowerCase().replace(/ /g, '-');
+      var totalCheckboxes = $(tableId + ' .order-checkbox').length;
+      var checkedCheckboxes = $(tableId + ' .order-checkbox:checked').length;
+      
+      $(tableId + ' .select-all-status').prop('checked', totalCheckboxes === checkedCheckboxes);
+    });
+  });
+</script>
+
+{% endblock content %}

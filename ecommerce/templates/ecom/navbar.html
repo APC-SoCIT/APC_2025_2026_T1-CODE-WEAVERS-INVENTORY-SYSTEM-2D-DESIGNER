@@ -1,0 +1,233 @@
+<html>
+<head>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.0/css/bootstrap.min.css">
+<!-- jQuery library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+
+<!-- Latest compiled JavaScript -->
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.0/js/bootstrap.min.js"></script>
+
+<style>
+body {
+    background-color: #f7f7f7;
+}
+
+#navbar {
+    background-color: #000000;
+    color: white;
+}
+
+.row1 {
+    padding-top: 5px;
+    padding-right: 20px
+}
+
+.row2 {
+    padding-bottom: 10px
+}
+
+.navbar-input {
+    padding: 11px 16px;
+    border-radius: 2px 0 0 2px;
+    border: 0 none;
+    outline: 0 none;
+    font-size: 15px;
+    color:#000
+}
+
+.navbar-button {
+    background-color: #0c8fc1;
+    border: 1px solid #0c8fc1;
+    border-radius: 0 2px 2px 0;
+    color: #ffffff;
+    padding: 15px 0;
+    height: 43px;
+    cursor: pointer;
+  }
+
+  .cart-button {
+    /* background-color: #bfbfbf; */
+    background-color: #0c8fc1;
+    box-shadow: 0 4px 4px 0 rgb(0 0 0 / 23%), inset 1px 1px 0 0 hsl(0deg 0% 100% / 20%);
+    padding: 10px 0;
+    text-align: center;
+    height: 41px;
+    border-radius: 2px;
+    font-weight: 500;
+    width: 120px;
+    display: inline-block;
+    color: #FFFFFF;
+    text-decoration: none;
+    color: inherit;
+    border: none;
+    outline: none;
+}
+
+.cart-button:hover {
+    text-decoration: none;
+    color: #fff;
+    cursor: pointer
+}
+
+.cart-svg {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    vertical-align: middle;
+    margin-right: 8px
+}
+
+.item-number {
+    border-radius: 3px;
+    background-color: rgb(207 37 37 / 92%);
+    height: 20px;
+    padding: 3px 6px;
+    font-weight: 500;
+    display: inline-block;
+    color: #fff;
+    line-height: 12px;
+    margin-left: 10px;
+}
+.item-number:empty:after{
+    content:"0"
+  }
+
+.upper-links {
+    display: inline-block;
+    padding: 0 11px;
+    line-height: 23px;
+    font-family: 'Roboto', sans-serif;
+    letter-spacing: 0;
+    color: inherit;
+    border: none;
+    outline: none;
+    font-size: 12px
+}
+
+.dropdown {
+    position: relative;
+    display: inline-block;
+    margin-bottom: 0px
+}
+
+.dropdown:hover {
+    background-color: #fff
+}
+
+.dropdown:hover .links {
+    color: #000
+}
+
+.dropdown:hover .dropdown-menu {
+    display: block
+}
+
+.dropdown .dropdown-menu {
+    position: absolute;
+    top: 100%;
+    display: none;
+    background-color: #fff;
+    color: #333;
+    left: 0px;
+    border: 0;
+    border-radius: 0;
+    box-shadow: 0 4px 8px -3px #555454;
+    margin: 0;
+    padding: 0px
+}
+
+.links {
+    color: #fff;
+    text-decoration: none
+}
+
+.links:hover {
+    color: #fff;
+    text-decoration: none
+}
+
+.profile-links {
+    font-size: 12px;
+    font-family: 'Roboto', sans-serif;
+    border-bottom: 1px solid #e9e9e9;
+    box-sizing: border-box;
+    display: block;
+    padding: 0 11px;
+    line-height: 23px
+}
+
+.profile-li {
+    padding-top: 2px
+}
+
+.largenav {
+    display: none
+}
+
+.smallnav {
+    display: block
+}
+
+.smallsearch {
+    margin-left: 15px;
+    margin-top: 15px
+}
+
+.menu {
+    cursor: pointer
+}
+
+@media screen and (min-width: 768px) {
+    .largenav {
+        display: block
+    }
+
+    .smallnav {
+        display: none
+    }
+
+    .smallsearch {
+        margin: 0px
+    }
+}
+</style>
+</head>
+<body>
+    <div id="navbar">
+        <div class="container">
+            <div class="row row1">
+                <ul class="largenav pull-right">
+                    <li class="upper-links"><a class="links" href="/">Home</a></li>
+                    <li class="upper-links"><a class="links" href="/about">About Us</a></li>
+                    
+                </ul>
+            </div>
+        <div class="row row2">
+            <div class="col-sm-3">
+                <h2 style="margin:0px;"><a style="text-decoration:none; color:white;" href="/"><span class="largenav">WorksTeamWear</span></a></h2>
+            </div>
+              </form>
+            </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function(){
+
+function openNav() {
+document.getElementById("mySidenav").style.width = "70%";
+
+document.body.style.backgroundColor = "rgba(0,0,0,0.4)";
+}
+
+function closeNav() {
+document.getElementById("mySidenav").style.width = "0";
+document.body.style.backgroundColor = "rgba(0,0,0,0)";
+}
+
+
+});
+</script>
+
+</body>
+</html>

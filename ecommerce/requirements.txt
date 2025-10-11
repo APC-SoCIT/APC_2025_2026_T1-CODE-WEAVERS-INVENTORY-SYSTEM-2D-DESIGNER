@@ -1,0 +1,6 @@
+Django==3.0.5
+Pillow==8.3.2
+requests==2.25.1
+django-widget-tweaks==1.4.8
+python-decouple==3.4
+django-humanize==0.1.2
