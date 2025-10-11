@@ -130,7 +130,7 @@ try { renderer.toneMappingExposure = 1.0 } catch (e) {}
   // Load jersey model based on selected type
   function loadJerseyModel() {
     const loader = new THREE.GLTFLoader()
-    const modelPath = window.modelPath || "static/jersey_customizer/model/t_shirt.gltf'"
+    const modelPath = window.modelPath || "static/jersey_customizer/models/t_shirt.gltf'"
     console.log('Using modelPath:', modelPath);
 
     // Remove existing jersey if any
