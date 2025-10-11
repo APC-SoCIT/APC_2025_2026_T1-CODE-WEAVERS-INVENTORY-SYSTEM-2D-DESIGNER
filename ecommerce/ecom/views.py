@@ -271,11 +271,7 @@ def customer_signup_view(request):
             customer = customerForm.save(commit=False)
             customer.user = user
 
-            # Resolve and save names for region, province, citymun, barangay
-            customer.region = utils.get_region_name(customer.region)
-            customer.province = utils.get_province_name(customer.province)
-            customer.citymun = utils.get_citymun_name(customer.citymun)
-            customer.barangay = utils.get_barangay_name(customer.barangay)
+            # Keep raw codes (region code and PSGC codes); names resolved on display
 
             customer.save()
             my_customer_group = Group.objects.get_or_create(name='CUSTOMER')

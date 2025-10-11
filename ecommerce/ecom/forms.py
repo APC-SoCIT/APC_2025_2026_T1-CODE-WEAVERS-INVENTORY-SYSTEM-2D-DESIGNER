@@ -16,6 +16,12 @@ class CustomerUserForm(forms.ModelForm):
         widgets = {
             'password': forms.PasswordInput()
         }
+        # Override default unique error for username
+        error_messages = {
+            'username': {
+                'unique': 'Unable to use this username. Please choose another.',
+            }
+        }
 
     def clean(self):
         cleaned_data = super().clean()
@@ -33,7 +39,7 @@ class CustomerForm(forms.ModelForm):
         # Accepts format: 956 837 0169 (10 digits, 2 spaces)
         pattern = r'^\d{3} \d{3} \d{4}$'
         if not re.match(pattern, mobile):
-            raise forms.ValidationError("Enter number as '956 837 0169' (10 digits, spaces required).")
+            raise forms.ValidationError("Enter number as '912 345 6789' (10 digits, spaces required).")
         return mobile
     region = forms.CharField(max_length=100)
     province = forms.CharField(max_length=100, required=False)
