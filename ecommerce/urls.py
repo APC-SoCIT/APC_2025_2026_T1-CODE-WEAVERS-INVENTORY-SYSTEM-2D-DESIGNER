@@ -114,6 +114,12 @@ urlpatterns = [
     path('update-address/', views.update_address, name='update-address'),
     path('admin-manage-inventory/', admin_manage_inventory_view, name='admin-manage-inventory'),
 
+    # PSGC address APIs for cascade
+    path('api/regions/', api_views.get_regions, name='api-regions'),
+    path('api/provinces/', api_views.get_provinces, name='api-provinces'),
+    path('api/cities/', api_views.get_cities, name='api-cities'),
+    path('api/barangays/', api_views.get_barangays, name='api-barangays'),
+
     # PSGC API proxy endpoints
     path('api/regions/', api_views.get_regions, name='api-regions'),
     path('api/provinces/', api_views.get_provinces, name='api-provinces'),

@@ -105,7 +105,8 @@
             .edit-profile-card { padding: 18px 6px; }
         }
     </style>
-    <script src="{% static 'js/ph-address-cascade-api.js' %}"></script>
+    <!-- Load the PH address cascade script from the correct static path -->
+    <script src="{% static 'ecom/ph-address-cascade.js' %}"></script>
     <script>
       // Pass initial values from Django to JS
       const initialRegion = "{{ customerForm.region.value|escapejs }}";
@@ -135,43 +136,60 @@
       };
 
       function getMappedRegionCode() {
-        let psaCode = document.getElementById('region').value;
+        let psaCode = document.getElementById('id_region').value;
         if (psaCode.length > 9) psaCode = psaCode.slice(0, 9);
         return regionCodeMap[psaCode] || '';
       }
 
       document.addEventListener('DOMContentLoaded', function() {
-        if (window.initPHAddressCascadeAPI) {
-          window.initPHAddressCascadeAPI({
-            region: 'region',
-            province: 'province',
-            citymun: 'citymun',
-            barangay: 'barangay'
+        if (window.initPHAddressCascade) {
+          // Initialize using correct element IDs and static directory for JSON files
+          window.initPHAddressCascade({
+            region: 'id_region',
+            province: 'id_province',
+            citymun: 'id_citymun',
+            barangay: 'id_barangay',
+            staticPath: "{% static 'ecom/' %}"
           });
+
+          // Helper: set select option by matching value OR displayed text
+          function setSelectByValueOrText(selectEl, value) {
+            if (!selectEl || !value) return;
+            const opts = Array.from(selectEl.options);
+            const byValue = opts.find(o => String(o.value) === String(value));
+            if (byValue) { selectEl.value = byValue.value; return; }
+            const byText = opts.find(o => String(o.textContent).trim() === String(value).trim());
+            if (byText) { selectEl.value = byText.value; }
+          }
+
           // Set initial values after dropdowns are populated
           setTimeout(function() {
             if (initialRegion) {
-              document.getElementById('region').value = initialRegion;
-              document.getElementById('region').dispatchEvent(new Event('change'));
+              const sel = document.getElementById('id_region');
+              setSelectByValueOrText(sel, initialRegion);
+              sel && sel.dispatchEvent(new Event('change'));
             }
-          }, 300);
+          }, 400);
           setTimeout(function() {
             if (initialProvince) {
-              document.getElementById('province').value = initialProvince;
-              document.getElementById('province').dispatchEvent(new Event('change'));
+              const sel = document.getElementById('id_province');
+              setSelectByValueOrText(sel, initialProvince);
+              sel && sel.dispatchEvent(new Event('change'));
             }
-          }, 700);
+          }, 800);
           setTimeout(function() {
             if (initialCitymun) {
-              document.getElementById('citymun').value = initialCitymun;
-              document.getElementById('citymun').dispatchEvent(new Event('change'));
+              const sel = document.getElementById('id_citymun');
+              setSelectByValueOrText(sel, initialCitymun);
+              sel && sel.dispatchEvent(new Event('change'));
             }
-          }, 1100);
+          }, 1200);
           setTimeout(function() {
             if (initialBarangay) {
-              document.getElementById('barangay').value = initialBarangay;
+              const sel = document.getElementById('id_barangay');
+              setSelectByValueOrText(sel, initialBarangay);
             }
-          }, 1500);
+          }, 1600);
         }
 
         // On form submit, set region value to Django code using a hidden input
@@ -238,19 +256,19 @@
                 <!-- Address Section: Region, Province, City/Municipality, Barangay -->
                 <div class="form-group">
                     <span class="input-icon"><i class="fa fa-map"></i></span>
-                    {% render_field customerForm.region class="form-control" %}
+                    {% render_field customerForm.region class="form-control" id="id_region" %}
                 </div>
                 <div class="form-group">
                     <span class="input-icon"><i class="fa fa-map-marker"></i></span>
-                    {% render_field customerForm.province class="form-control" %}
+                    {% render_field customerForm.province class="form-control" id="id_province" %}
                 </div>
                 <div class="form-group">
                     <span class="input-icon"><i class="fa fa-building"></i></span>
-                    {% render_field customerForm.citymun class="form-control" %}
+                    {% render_field customerForm.citymun class="form-control" id="id_citymun" %}
                 </div>
                 <div class="form-group">
                     <span class="input-icon"><i class="fa fa-location-arrow"></i></span>
-                    {% render_field customerForm.barangay class="form-control" %}
+                    {% render_field customerForm.barangay class="form-control" id="id_barangay" %}
                 </div>
                 <div class="form-group">
                     <span class="input-icon"><i class="fa fa-home"></i></span>

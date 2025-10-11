@@ -97,7 +97,7 @@ def get_region_name(region_code):
                 return name
     except Exception as e:
         print(f"Local data error for region {region_code}: {e}")
-    
+
     return f"Region {region_code}"
 
 def get_province_name(province_code):
