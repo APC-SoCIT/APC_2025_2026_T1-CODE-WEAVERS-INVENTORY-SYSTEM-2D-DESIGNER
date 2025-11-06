@@ -14,10 +14,10 @@
     <link rel="preconnect" href="https://cdn.jsdelivr.net">
     <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <!-- Lucide Icons (deferred) -->
-    <link rel="preconnect" href="https://unpkg.com">
-    <link rel="dns-prefetch" href="https://unpkg.com">
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js" defer></script>
+    <!-- Lucide Icons (pinned + deferred) -->
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+    <script src="https://cdn.jsdelivr.net/npm/lucide@0.454.0/dist/umd/lucide.min.js" defer></script>
     <script>window.lucide = window.lucide || { createIcons: function(){} };</script>
     {% block head_scripts %}{% endblock %}
     <style>
@@ -148,6 +148,7 @@
                             <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
                                 <i data-lucide="user" class="h-4 w-4 text-white"></i>
                             </div>
+                            <span id="current-customer-name" class="inline text-sm font-medium text-gray-700"></span>
                         </button>
                     </div>
                 </div>
@@ -199,13 +200,50 @@
         })();
     </script>
     <script>
-        // Ensure lucide icons render after scripts load
+        // Ensure lucide icons render without blocking first paint
         const initLucide = () => { try { if (window.lucide && typeof window.lucide.createIcons === 'function') { window.lucide.createIcons(); } } catch(_){} };
-        if (document.readyState === 'loading') {
+        if ('requestIdleCallback' in window) {
+            try { requestIdleCallback(initLucide, { timeout: 200 }); } catch(_) { document.addEventListener('DOMContentLoaded', initLucide); }
+        } else if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', initLucide);
         } else {
             initLucide();
         }
+    </script>
+    <script>
+        // Populate the header icon label with the selected customer's name, if any
+        (function(){
+            function setHeaderCustomerName(name){
+                var el = document.getElementById('current-customer-name');
+                if (!el) return;
+                if (name && name.trim().length){
+                    el.textContent = name.trim();
+                    el.classList.remove('hidden');
+                } else {
+                    el.textContent = '';
+                    el.classList.add('hidden');
+                }
+            }
+            // Read persisted selection
+            try {
+                var stored = localStorage.getItem('selectedCustomerName');
+                setHeaderCustomerName(stored || '');
+            } catch(_){ /* ignore */ }
+
+            // Expose a global setter so pages can update it
+            window.__setSelectedCustomerName = function(name){
+                try { localStorage.setItem('selectedCustomerName', name || ''); } catch(_){}
+                setHeaderCustomerName(name || '');
+            };
+
+            // Global click handler: any element with data-customer-name updates header label
+            document.addEventListener('click', function(e){
+                var link = e.target.closest('[data-customer-name]');
+                if (!link) return;
+                var name = link.getAttribute('data-customer-name') || '';
+                window.__setSelectedCustomerName(name);
+            });
+        })();
     </script>
 </body>
 </html>

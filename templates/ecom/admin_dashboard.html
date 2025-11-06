@@ -1,43 +1,84 @@
 {% extends 'ecom/admin_reports.html' %}
+{% load humanize %}
 {% block content %}
   {{ block.super }}
   <style>
-    /* Dashboard should only show the top Reports summary; hide tabs and their contents */
+    /* Dashboard focuses on KPI cards only */
     .tabs, .tab-content { display: none !important; }
   </style>
+  <div class="kpi-grid">
+            <div class="kpi-card">
+                <div class="kpi-content">
+                    <h3>Total Revenue (Enhanced)</h3>
+                    <div class="kpi-value">₱ {{ total_revenue|floatformat:2|intcomma }}</div>
+                    <div class="kpi-change up">Items + Delivery fees</div>
+                </div>
+                <div class="kpi-icon">💰</div>
+            </div>
+
+            <div class="kpi-card">
+                <div class="kpi-content">
+                    <h3>Total Orders</h3>
+                    <div class="kpi-value">{{ total_orders_all }}</div>
+                    <div class="kpi-change up">All orders in system</div>
+                </div>
+                <div class="kpi-icon">🛒</div>
+            </div>
+
+            <div class="kpi-card">
+                <div class="kpi-content">
+                    <h3>Delivered Orders</h3>
+                    <div class="kpi-value">{{ total_delivered_orders }}</div>
+                    <div class="kpi-change up">Successfully completed</div>
+                </div>
+                <div class="kpi-icon">✅</div>
+            </div>
+
+            <div class="kpi-card">
+                <div class="kpi-content">
+                    <h3>Total Customers</h3>
+                    <div class="kpi-value">{{ total_customers }}</div>
+                    <div class="kpi-change up">Registered customers</div>
+                </div>
+                <div class="kpi-icon">👥</div>
+            </div>
+
+            <div class="kpi-card">
+                <div class="kpi-content">
+                    <h3>Items Sold</h3>
+                    <div class="kpi-value">{{ total_items_sold }}</div>
+                    <div class="kpi-change up">Total quantity delivered</div>
+                </div>
+                <div class="kpi-icon">📦</div>
+            </div>
+
+            <div class="kpi-card">
+                <div class="kpi-content">
+                    <h3>Avg Order Value</h3>
+                    <div class="kpi-value">₱ {{ avg_order_value|floatformat:2|intcomma }}</div>
+                    <div class="kpi-change up">Per delivered order</div>
+                </div>
+                <div class="kpi-icon">📈</div>
+            </div>
+
+            <div class="kpi-card">
+                <div class="kpi-content">
+                    <h3>Conversion Rate</h3>
+                    <div class="kpi-value">{{ conversion_rate|floatformat:1 }}%</div>
+                    <div class="kpi-change up">Customers with orders</div>
+                </div>
+                <div class="kpi-icon">📊</div>
+            </div>
+
+            <div class="kpi-card">
+                <div class="kpi-content">
+                    <h3>Active Users</h3>
+                    <div class="kpi-value">{{ active_users }}</div>
+                    <div class="kpi-change up">Last 30 days</div>
+                </div>
+                <div class="kpi-icon">👤</div>
+            </div>
+        </div>
 {% endblock content %}
-                                    if (label) {
-                                        label += ': ';
-                                    }
-                                    if (context.parsed.y !== null) {
-                                        label += 'R' + context.parsed.y.toLocaleString();
-                                    }
-                                    return label;
-                                }
-                            }
-                        },
-                        legend: {
-                            display: false
-                        }
-                    },
-                    hover: {
-                        mode: 'nearest',
-                        intersect: true
-                    }
-                }
-            });
-        });
-        
-
-    </script>
-    <script>
-  document.addEventListener('DOMContentLoaded', function() {
-    lucide.createIcons();
-  });
-</script>
-    <!-- Admin Support Widget -->
-    {% include 'ecom/admin_support_widget.html' %}
-
-{% endblock %}
 
 

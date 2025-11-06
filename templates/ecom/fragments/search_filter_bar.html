@@ -1,0 +1,32 @@
+{% load static %}
+<div class="glass-card" style="padding:14px;">
+  <div class="search-bar">
+    <form action="/search" method="get" style="flex:1; display:flex; gap:10px;">
+      <input class="search-input" type="search" name="query" placeholder="Search products, brands" value="{% if search_text %}{{ search_text }}{% endif %}">
+      <select name="category" class="chip" style="padding:10px;">
+        <option value="all">All Categories</option>
+        <option value="jerseys">Jerseys</option>
+        <option value="accessories">Accessories</option>
+        <option value="shoes">Shoes</option>
+      </select>
+      <input type="date" name="available_date" class="chip" style="padding:10px;" />
+      <select name="size" class="chip" style="padding:10px;">
+        <option value="">Size</option>
+        <option value="S">S</option>
+        <option value="M">M</option>
+        <option value="L">L</option>
+        <option value="XL">XL</option>
+      </select>
+      <input type="number" name="quantity" min="1" value="1" class="chip" style="padding:10px; width:90px;"/>
+      <button class="btn primary" type="submit">Search</button>
+    </form>
+    <a class="chip" href="/wishlist" title="Wishlist">
+      <i class="fa fa-heart" style="color:#ff7a59"></i>
+    </a>
+  </div>
+  <div class="chip-nav" style="margin-top:8px;">
+    <a class="chip active" href="/customer-home?filter=popular">Popular</a>
+    <a class="chip" href="/customer-home?filter=recommended">Recommended</a>
+    <a class="chip" href="/customer-home?filter=top-rated">Top Rated</a>
+  </div>
+</div>

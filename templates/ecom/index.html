@@ -433,17 +433,17 @@ img {
                 </div>
 
                 {% if request.user.is_authenticated %}
-                <a class="cart" href="{% url 'add-to-cart' p.id  %}">
+                <a class="cart" href="{% url 'add-to-cart' p.id  %}" title="Add to cart" aria-label="Add to cart">
                   <span class="price">${{p.price}}</span>
                   <span class="add-to-cart">
-                    <span class="txt"><i class="fa fa-shopping-cart"></i> Add To Cart</span>
+                    <i class="fa fa-shopping-cart" style="font-size:16px;"></i>
                   </span>
                 </a>
                 {% else %}
-                <a class="cart" href="/customerlogin">
+                <a class="cart" href="/customerlogin" title="Login to add to cart" aria-label="Login to add to cart">
                   <span class="price">${{p.price}}</span>
                   <span class="add-to-cart">
-                    <span class="txt"><i class="fa fa-shopping-cart"></i> Login to Add To Cart</span>
+                    <i class="fa fa-shopping-cart" style="font-size:16px;"></i>
                   </span>
                 </a>
                 {% endif %}

@@ -111,7 +111,19 @@
         });
     });
 
-    // Initialize Lucide icons
-    lucide.createIcons();
+    // Icons are initialized in the base template
 </script>
 {% endblock %}
+<script>
+    // Ensure the header icon label shows the current customer's name on this page
+    (function(){
+        var name = "{{ customer.get_name }}";
+        try {
+            if (window.__setSelectedCustomerName) {
+                window.__setSelectedCustomerName(name);
+            } else {
+                localStorage.setItem('selectedCustomerName', name);
+            }
+        } catch(_){}
+    })();
+</script>

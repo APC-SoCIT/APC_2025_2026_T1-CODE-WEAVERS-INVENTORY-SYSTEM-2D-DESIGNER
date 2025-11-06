@@ -334,14 +334,7 @@
             return setTimeout(fn, 10);
         };
 
-        // Initialize Lucide icons lightly to avoid blocking paint
-        scheduleLight(() => {
-            try {
-                if (window.lucide && typeof window.lucide.createIcons === 'function') {
-                    window.lucide.createIcons();
-                }
-            } catch (_) {}
-        });
+        // Lucide icons are initialized centrally in the base template
 
         // Search functionality (guard if element missing)
         scheduleLight(() => {

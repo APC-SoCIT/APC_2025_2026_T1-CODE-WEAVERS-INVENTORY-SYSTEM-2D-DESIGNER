@@ -74,7 +74,7 @@
                             {% endif %}
                         </td>
                         <td class="px-10 py-4 whitespace-nowrap text-right text-sm font-medium align-middle">
-                    <a href="{% url 'user_profile_page' user.user_id %}" class="inline-block text-gray-600 hover:text-gray-900" title="View Details">
+                    <a href="{% url 'user_profile_page' user.user_id %}" data-customer-name="{{ user.name }} {{ user.surname }}" class="inline-block text-gray-600 hover:text-gray-900 user-action-view" title="View Details">
                          <i data-lucide="user-check" class="h-4 w-4"></i>
                     </a>
                         </td>
@@ -126,11 +126,11 @@
 {% endif %}
 
 <script>
-    // Initialize Lucide icons
-    lucide.createIcons();
-
     // Search functionality
-    document.getElementById('user-search').addEventListener('input', function() {
+    (function(){
+    const searchInput = document.getElementById('user-search');
+    if (!searchInput) return;
+    searchInput.addEventListener('input', function() {
         const searchTerm = this.value.toLowerCase();
         const rows = document.querySelectorAll('.user-row');
         
@@ -145,9 +145,13 @@
             }
         });
     });
+    })();
 
     // Status filter functionality
-    document.getElementById('status-filter').addEventListener('change', function() {
+    (function(){
+    const statusFilter = document.getElementById('status-filter');
+    if (!statusFilter) return;
+    statusFilter.addEventListener('change', function() {
         const filterValue = this.value.toLowerCase();
         const rows = document.querySelectorAll('.user-row');
         
@@ -164,6 +168,7 @@
             }
         });
     });
+    })();
 
     // User tab functionality
     function showUserTab(tabName) {
@@ -199,5 +204,23 @@
             }
         });
     }
+
+    // Update header icon label with selected customer's name when clicking action buttons
+    (function(){
+        const tableBody = document.getElementById('users-table-body');
+        if (!tableBody) return; // guard if markup changes
+        tableBody.addEventListener('click', function(e){
+            const actionLink = e.target.closest('a.user-action-view');
+            if (!actionLink) return;
+            const name = actionLink.getAttribute('data-customer-name') || '';
+            try {
+                if (window.__setSelectedCustomerName) {
+                    window.__setSelectedCustomerName(name);
+                } else {
+                    localStorage.setItem('selectedCustomerName', name);
+                }
+            } catch(_){}
+        });
+    })();
 </script>
 {% endblock %}
