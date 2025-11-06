@@ -1,0 +1,38 @@
+{% extends "ecom/homebase.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-check-circle me-2"></i>
+                        Email Verified
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
+                        {% if already_verified %}
+                            <h5>Your email is already verified.</h5>
+                        {% else %}
+                            <h5>Your email has been successfully verified!</h5>
+                        {% endif %}
+                        {% if email %}
+                            <p class="lead"><strong>{{ email }}</strong></p>
+                        {% endif %}
+                    </div>
+                    <div class="mt-3 text-center">
+                        <a class="btn btn-primary" href="{% url 'customerlogin' %}">
+                            <i class="fas fa-sign-in-alt me-2"></i>
+                            Proceed to Login
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

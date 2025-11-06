@@ -599,8 +599,8 @@ class EmailVerification(models.Model):
         return f"Email verification for {self.user.username} - {'Verified' if self.is_verified else 'Pending'}"
     
     def is_token_expired(self):
-        """Check if verification token has expired (24 hours)"""
-        expiry_time = self.created_at + timedelta(hours=24)
+        """Check if verification token has expired (5 minutes)"""
+        expiry_time = self.created_at + timedelta(minutes=5)
         return timezone.now() > expiry_time
     
     def verify_email(self):

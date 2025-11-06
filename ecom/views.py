@@ -117,6 +117,27 @@ def superadmin_required(view_func):
         return view_func(request, *args, **kwargs)
     return wrapper
 
+def manager_or_superadmin_required(view_func):
+    """
+    Decorator that ensures only Managers or SuperAdmins can access a view.
+    Managers are users in the 'Managers' group. Staff-only users are denied.
+    """
+    def wrapper(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            messages.error(request, 'Please log in to access this page.')
+            return redirect('adminlogin')
+        # Allow SuperAdmin
+        if is_superadmin(request.user):
+            return view_func(request, *args, **kwargs)
+        # Allow Managers group
+        try:
+            if request.user.groups.filter(name="Managers").exists():
+                return view_func(request, *args, **kwargs)
+        except Exception:
+            pass
+        messages.error(request, 'Access denied. Manager or SuperAdmin privileges required.')
+        return redirect('admin-dashboard')
+    return wrapper
 @admin_required
 def user_profile_page(request, user_id):
     import logging
@@ -4295,7 +4316,7 @@ def customer_confirm_received(request, order_id):
             'message': f'An error occurred: {str(e)}'
         })
 
-@admin_required
+@manager_or_superadmin_required
 def admin_transactions_view(request):
     """
     Admin view for transactions page
@@ -5007,9 +5028,19 @@ def build_admin_reports_context(request):
     total_revenue_alt = float(sum(order.get_total_amount() for order in delivered_orders))
     total_orders = models.Orders.objects.filter(time_filter).count()
     total_delivered_orders = models.Orders.objects.filter(status='Delivered').filter(time_filter).count()
-    total_customers = models.Customer.objects.count()
+    # Total Customers should reflect the selected date range based on account creation
+    # Use the linked User's date_joined as the account creation timestamp
+    total_customers = models.Customer.objects.filter(
+        user__date_joined__date__gte=start_date,
+        user__date_joined__date__lte=end_date,
+    ).count()
     avg_order_value = total_revenue / total_delivered_orders if total_delivered_orders > 0 else 0
-    total_items_sold = models.OrderItem.objects.filter(order__status='Delivered').aggregate(total=Sum('quantity'))['total'] or 0
+    # Make Items Sold date-range aware (Delivered orders within selected window)
+    total_items_sold = models.OrderItem.objects.filter(
+        order__status='Delivered',
+        order__created_at__date__gte=start_date,
+        order__created_at__date__lte=end_date,
+    ).aggregate(total=Sum('quantity'))['total'] or 0
     customers_with_orders = models.Customer.objects.filter(orders__isnull=False).distinct().count()
     conversion_rate = (customers_with_orders / total_customers * 100) if total_customers > 0 else 0
     thirty_days_ago = timezone.now() - timedelta(days=30)
@@ -5652,7 +5683,7 @@ def manage_users_view(request):
     return render(request, 'ecom/manage_users.html', context)
 
 
-@superadmin_required
+@manager_or_superadmin_required
 def create_staff_view(request):
     """
     Create new Staff user
