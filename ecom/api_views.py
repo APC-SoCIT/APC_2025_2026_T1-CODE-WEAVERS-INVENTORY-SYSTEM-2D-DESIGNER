@@ -7,6 +7,37 @@ from django.views.decorators.csrf import csrf_exempt, csrf_protect
 
 PSGC_BASE_URL = "https://psgc.gitlab.io/api"
 
+# Allow region params like 'R2', 'NCR', etc. by mapping to PSGC numeric codes
+DJANGO_TO_PSGC_REGION = {
+    'R1': '010000000',
+    'R2': '020000000',
+    'R3': '030000000',
+    'R4A': '040000000',
+    'R4B': '170000000',
+    'R5': '050000000',
+    'R6': '060000000',
+    'R7': '070000000',
+    'R8': '080000000',
+    'R9': '090000000',
+    'R10': '100000000',
+    'R11': '110000000',
+    'R12': '120000000',
+    'NCR': '130000000',
+    'CAR': '140000000',
+    'R13': '160000000',
+    'BARMM': '150000000',
+}
+
+def normalize_region_id(region_id: str) -> str:
+    """Return PSGC numeric code for region; passthrough if already numeric."""
+    if not region_id:
+        return region_id
+    # If already looks numeric, keep as-is
+    if region_id.isdigit():
+        return region_id
+    # Map Django-style code to PSGC numeric
+    return DJANGO_TO_PSGC_REGION.get(region_id, region_id)
+
 @require_GET
 def get_regions(request):
     try:
@@ -23,7 +54,8 @@ def get_provinces(request):
     if not region_id:
         return JsonResponse({"error": "region_id parameter is required"}, status=400)
     try:
-        response = requests.get(f"{PSGC_BASE_URL}/regions/{region_id}/provinces/")
+        norm_id = normalize_region_id(region_id)
+        response = requests.get(f"{PSGC_BASE_URL}/regions/{norm_id}/provinces/")
         response.raise_for_status()
         data = response.json()
         return JsonResponse(data, safe=False)
@@ -42,7 +74,8 @@ def get_cities(request):
             return JsonResponse(data, safe=False)
         elif region_id:
             # For NCR and similar regions without provinces
-            response = requests.get(f"{PSGC_BASE_URL}/regions/{region_id}/cities-municipalities/")
+            norm_id = normalize_region_id(region_id)
+            response = requests.get(f"{PSGC_BASE_URL}/regions/{norm_id}/cities-municipalities/")
             response.raise_for_status()
             data = response.json()
             return JsonResponse(data, safe=False)
