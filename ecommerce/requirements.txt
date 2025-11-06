@@ -9,3 +9,7 @@ social-auth-app-django==5.4.0
 beautifulsoup4==4.12.3
 whitenoise==6.7.0
 dj-database-url==2.1.0
+
+# Slimmed down for Vercel serverless:
+# - Excludes selenium, xhtml2pdf, reportlab, psycopg2-binary
+# - Uses SQLite on Vercel via vercel_settings

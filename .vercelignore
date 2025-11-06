@@ -15,8 +15,10 @@ __pycache__/
 *.log
 logs/
 
-# Local media/static outputs (keep DB to allow read-only serverless usage)
-staticfiles/
+# Local heavy artifacts (do NOT exclude app static assets)
+# Keep media/ and static/ so WhiteNoise can serve them in serverless
+# Exclude large development apps and caches to keep function bundle small
+t-shirt-designer-webapp/
 
 # Large archives and binaries
 ecommerce.zip

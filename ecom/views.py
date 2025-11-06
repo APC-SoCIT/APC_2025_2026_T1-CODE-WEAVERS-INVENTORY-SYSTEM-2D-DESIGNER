@@ -197,15 +197,26 @@ def get_transactions_by_month(request):
 
 def order_counts(request):
     if request.user.is_authenticated and is_customer(request.user):
-        customer = models.Customer.objects.get(user_id=request.user.id)
-        context = {
-            'pending_count': models.Orders.objects.filter(customer=customer, status='Pending').count(),
-            'to_ship_count': models.Orders.objects.filter(customer=customer, status='Processing').count(),
-            'to_receive_count': models.Orders.objects.filter(customer=customer, status='Shipping').count(),
-            'delivered_count': models.Orders.objects.filter(customer=customer, status='Delivered').count(),
-            'cancelled_count': models.Orders.objects.filter(customer=customer, status='Cancelled').count(),
-        }
-        return context
+        try:
+            customer = models.Customer.objects.get(user_id=request.user.id)
+            context = {
+                'pending_count': models.Orders.objects.filter(customer=customer, status='Pending').count(),
+                'to_ship_count': models.Orders.objects.filter(customer=customer, status='Processing').count(),
+                'to_receive_count': models.Orders.objects.filter(customer=customer, status='Shipping').count(),
+                'delivered_count': models.Orders.objects.filter(customer=customer, status='Delivered').count(),
+                'cancelled_count': models.Orders.objects.filter(customer=customer, status='Cancelled').count(),
+            }
+            return context
+        except Exception:
+            # When DB is not ready (cold start) or Customer record missing,
+            # avoid raising and return safe zero counts.
+            return {
+                'pending_count': 0,
+                'to_ship_count': 0,
+                'to_receive_count': 0,
+                'delivered_count': 0,
+                'cancelled_count': 0,
+            }
     return {}
 
 
@@ -410,12 +421,14 @@ def multi_step_signup_view(request, step=1):
     """Multi-step signup process"""
     step = int(step)
     
-    # Initialize session data if not exists
-    if 'signup_data' not in request.session:
-        request.session['signup_data'] = {}
+    # Avoid writing to session on GET to prevent DB errors on cold starts.
+    # We'll only create/modify session data during POST handling.
     
     # Handle form submission
     if request.method == 'POST':
+        # Ensure signup_data dict exists when processing form submissions
+        if 'signup_data' not in request.session:
+            request.session['signup_data'] = {}
         if step == 1:
             form = forms.PersonalInformationForm(request.POST, request.FILES)
             if form.is_valid():
