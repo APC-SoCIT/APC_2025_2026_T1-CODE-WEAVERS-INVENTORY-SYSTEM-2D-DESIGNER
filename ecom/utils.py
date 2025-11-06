@@ -4,6 +4,91 @@ import os
 from django.core.cache import cache
 from django.conf import settings
 
+# Prefer LOCAL data lookups and in-process caches for speed.
+# Only hit external PSGC API if explicitly enabled via settings.
+PSGC_USE_API = getattr(settings, 'PSGC_USE_API', False)
+
+# Module-level maps for O(1) lookups without repeated file reads
+_REGION_MAP = {}
+_PROVINCE_MAP = {}
+_CITYMUN_MAP = {}
+_BARANGAY_MAP = {}
+
+def _init_local_maps():
+    """Initialize local PSGC maps once per process."""
+    global _REGION_MAP, _PROVINCE_MAP, _CITYMUN_MAP, _BARANGAY_MAP
+    try:
+        data = load_local_psgc_data()
+
+        # Regions: support different file structures
+        _REGION_MAP = {}
+        regions_src = data.get('regions')
+        if isinstance(regions_src, dict):
+            regions_src = regions_src.get('region') or regions_src.get('regions') or []
+        if not isinstance(regions_src, list):
+            regions_src = []
+        for r in regions_src:
+            if not isinstance(r, dict):
+                continue
+            key = str(
+                r.get('regCode') or r.get('psgcCode') or r.get('code') or ''
+            ).strip()
+            val = (
+                r.get('regDesc') or r.get('name') or r.get('desc') or ''
+            )
+            if key:
+                _REGION_MAP[key] = val
+
+        # Provinces
+        _PROVINCE_MAP = {}
+        provinces_src = data.get('provinces')
+        if isinstance(provinces_src, dict):
+            provinces_src = provinces_src.get('province') or provinces_src.get('provinces') or []
+        if not isinstance(provinces_src, list):
+            provinces_src = []
+        for p in provinces_src:
+            if not isinstance(p, dict):
+                continue
+            key = str(p.get('provCode') or p.get('code') or '').strip()
+            val = p.get('provDesc') or p.get('name') or ''
+            if key:
+                _PROVINCE_MAP[key] = val
+
+        # City/Municipalities
+        _CITYMUN_MAP = {}
+        citymun_src = data.get('citymun')
+        if isinstance(citymun_src, dict):
+            citymun_src = citymun_src.get('citymun') or citymun_src.get('cities') or []
+        if not isinstance(citymun_src, list):
+            citymun_src = []
+        for c in citymun_src:
+            if not isinstance(c, dict):
+                continue
+            key = str(c.get('citymunCode') or c.get('code') or '').strip()
+            val = c.get('citymunDesc') or c.get('name') or ''
+            if key:
+                _CITYMUN_MAP[key] = val
+
+        # Barangays
+        _BARANGAY_MAP = {}
+        barangay_src = data.get('barangays')
+        if isinstance(barangay_src, dict):
+            barangay_src = barangay_src.get('barangay') or barangay_src.get('barangays') or []
+        if not isinstance(barangay_src, list):
+            barangay_src = []
+        for b in barangay_src:
+            if not isinstance(b, dict):
+                continue
+            key = str(b.get('brgyCode') or b.get('code') or '').strip()
+            val = b.get('brgyDesc') or b.get('name') or ''
+            if key:
+                _BARANGAY_MAP[key] = val
+    except Exception as e:
+        # Keep maps empty if any error; functions will fallback to generic labels
+        print(f"Error initializing PSGC maps: {e}")
+
+# Defer initializing maps until after load_local_psgc_data is defined
+
 def load_local_psgc_data():
     """Load local PSGC data as fallback"""
     try:
@@ -56,6 +141,9 @@ def load_local_psgc_data():
             'barangays': []
         }
 
+# Initialize maps now that load_local_psgc_data is available
+_init_local_maps()
+
 def get_region_name(region_code):
     """Get region name from PSGC API or local data"""
     if not region_code:
@@ -66,37 +154,32 @@ def get_region_name(region_code):
     cached_name = cache.get(cache_key)
     if cached_name:
         return cached_name
-    
-    try:
-        # Try API first
-        base_url = getattr(settings, 'PSGC_API_BASE_URL', 'https://psgc.gitlab.io/api')
-        url = f"{base_url}/regions/{region_code}"
-        response = requests.get(url, timeout=5)
-        response.raise_for_status()
-        data = response.json()
-        
-        name = None
-        if isinstance(data, dict) and 'name' in data:
-            name = data['name']
-        elif isinstance(data, list) and len(data) > 0 and 'name' in data[0]:
-            name = data[0]['name']
-            
-        if name:
-            cache.set(cache_key, name, 3600)  # Cache for 1 hour
-            return name
-    except Exception as e:
-        print(f"API error for region {region_code}: {e}")
-    
-    # Fallback to local data
-    try:
-        local_data = load_local_psgc_data()
-        for region in local_data['regions']:
-            if str(region.get('regCode')) == str(region_code):
-                name = region.get('regDesc', f"Region {region_code}")
-                cache.set(cache_key, name, 3600)
+    # Prefer local map first (fast, in-process)
+    key = str(region_code)
+    name = _REGION_MAP.get(key)
+    if name:
+        cache.set(cache_key, name, 3600)
+        return name
+
+    # Optional: hit API only if enabled
+    if PSGC_USE_API:
+        try:
+            base_url = getattr(settings, 'PSGC_API_BASE_URL', 'https://psgc.gitlab.io/api')
+            url = f"{base_url}/regions/{region_code}"
+            response = requests.get(url, timeout=5)
+            response.raise_for_status()
+            data = response.json()
+
+            name = None
+            if isinstance(data, dict) and 'name' in data:
+                name = data['name']
+            elif isinstance(data, list) and len(data) > 0 and 'name' in data[0]:
+                name = data[0]['name']
+            if name:
+                cache.set(cache_key, name, 3600)  # Cache for 1 hour
                 return name
-    except Exception as e:
-        print(f"Local data error for region {region_code}: {e}")
+        except Exception as e:
+            print(f"API error for region {region_code}: {e}")
 
     return f"Region {region_code}"
 
@@ -110,38 +193,32 @@ def get_province_name(province_code):
     cached_name = cache.get(cache_key)
     if cached_name:
         return cached_name
-    
-    try:
-        # Try API first
-        base_url = getattr(settings, 'PSGC_API_BASE_URL', 'https://psgc.gitlab.io/api')
-        url = f"{base_url}/provinces/{province_code}"
-        response = requests.get(url, timeout=5)
-        response.raise_for_status()
-        data = response.json()
-        
-        name = None
-        if isinstance(data, dict) and 'name' in data:
-            name = data['name']
-        elif isinstance(data, list) and len(data) > 0 and 'name' in data[0]:
-            name = data[0]['name']
-            
-        if name:
-            cache.set(cache_key, name, 3600)
-            return name
-    except Exception as e:
-        print(f"API error for province {province_code}: {e}")
-    
-    # Fallback to local data
-    try:
-        local_data = load_local_psgc_data()
-        for province in local_data['provinces']:
-            if str(province.get('provCode')) == str(province_code):
-                name = province.get('provDesc', f"Province {province_code}")
+    # Prefer local map first
+    key = str(province_code)
+    name = _PROVINCE_MAP.get(key)
+    if name:
+        cache.set(cache_key, name, 3600)
+        return name
+
+    if PSGC_USE_API:
+        try:
+            base_url = getattr(settings, 'PSGC_API_BASE_URL', 'https://psgc.gitlab.io/api')
+            url = f"{base_url}/provinces/{province_code}"
+            response = requests.get(url, timeout=5)
+            response.raise_for_status()
+            data = response.json()
+
+            name = None
+            if isinstance(data, dict) and 'name' in data:
+                name = data['name']
+            elif isinstance(data, list) and len(data) > 0 and 'name' in data[0]:
+                name = data[0]['name']
+            if name:
                 cache.set(cache_key, name, 3600)
                 return name
-    except Exception as e:
-        print(f"Local data error for province {province_code}: {e}")
-    
+        except Exception as e:
+            print(f"API error for province {province_code}: {e}")
+
     return f"Province {province_code}"
 
 def get_citymun_name(citymun_code):
@@ -154,38 +231,32 @@ def get_citymun_name(citymun_code):
     cached_name = cache.get(cache_key)
     if cached_name:
         return cached_name
-    
-    try:
-        # Try API first
-        base_url = getattr(settings, 'PSGC_API_BASE_URL', 'https://psgc.gitlab.io/api')
-        url = f"{base_url}/cities-municipalities/{citymun_code}"
-        response = requests.get(url, timeout=5)
-        response.raise_for_status()
-        data = response.json()
-        
-        name = None
-        if isinstance(data, dict) and 'name' in data:
-            name = data['name']
-        elif isinstance(data, list) and len(data) > 0 and 'name' in data[0]:
-            name = data[0]['name']
-            
-        if name:
-            cache.set(cache_key, name, 3600)
-            return name
-    except Exception as e:
-        print(f"API error for citymun {citymun_code}: {e}")
-    
-    # Fallback to local data
-    try:
-        local_data = load_local_psgc_data()
-        for citymun in local_data['citymun']:
-            if str(citymun.get('citymunCode')) == str(citymun_code):
-                name = citymun.get('citymunDesc', f"City/Municipality {citymun_code}")
+    # Prefer local map first
+    key = str(citymun_code)
+    name = _CITYMUN_MAP.get(key)
+    if name:
+        cache.set(cache_key, name, 3600)
+        return name
+
+    if PSGC_USE_API:
+        try:
+            base_url = getattr(settings, 'PSGC_API_BASE_URL', 'https://psgc.gitlab.io/api')
+            url = f"{base_url}/cities-municipalities/{citymun_code}"
+            response = requests.get(url, timeout=5)
+            response.raise_for_status()
+            data = response.json()
+
+            name = None
+            if isinstance(data, dict) and 'name' in data:
+                name = data['name']
+            elif isinstance(data, list) and len(data) > 0 and 'name' in data[0]:
+                name = data[0]['name']
+            if name:
                 cache.set(cache_key, name, 3600)
                 return name
-    except Exception as e:
-        print(f"Local data error for citymun {citymun_code}: {e}")
-    
+        except Exception as e:
+            print(f"API error for citymun {citymun_code}: {e}")
+
     return f"City/Municipality {citymun_code}"
 
 def get_barangay_name(barangay_code):
@@ -198,36 +269,30 @@ def get_barangay_name(barangay_code):
     cached_name = cache.get(cache_key)
     if cached_name:
         return cached_name
-    
-    try:
-        # Try API first
-        base_url = getattr(settings, 'PSGC_API_BASE_URL', 'https://psgc.gitlab.io/api')
-        url = f"{base_url}/barangays/{barangay_code}"
-        response = requests.get(url, timeout=5)
-        response.raise_for_status()
-        data = response.json()
-        
-        name = None
-        if isinstance(data, dict) and 'name' in data:
-            name = data['name']
-        elif isinstance(data, list) and len(data) > 0 and 'name' in data[0]:
-            name = data[0]['name']
-            
-        if name:
-            cache.set(cache_key, name, 3600)
-            return name
-    except Exception as e:
-        print(f"API error for barangay {barangay_code}: {e}")
-    
-    # Fallback to local data
-    try:
-        local_data = load_local_psgc_data()
-        for barangay in local_data['barangays']:
-            if str(barangay.get('brgyCode')) == str(barangay_code):
-                name = barangay.get('brgyDesc', f"Barangay {barangay_code}")
+    # Prefer local map first
+    key = str(barangay_code)
+    name = _BARANGAY_MAP.get(key)
+    if name:
+        cache.set(cache_key, name, 3600)
+        return name
+
+    if PSGC_USE_API:
+        try:
+            base_url = getattr(settings, 'PSGC_API_BASE_URL', 'https://psgc.gitlab.io/api')
+            url = f"{base_url}/barangays/{barangay_code}"
+            response = requests.get(url, timeout=5)
+            response.raise_for_status()
+            data = response.json()
+
+            name = None
+            if isinstance(data, dict) and 'name' in data:
+                name = data['name']
+            elif isinstance(data, list) and len(data) > 0 and 'name' in data[0]:
+                name = data[0]['name']
+            if name:
                 cache.set(cache_key, name, 3600)
                 return name
-    except Exception as e:
-        print(f"Local data error for barangay {barangay_code}: {e}")
-    
+        except Exception as e:
+            print(f"API error for barangay {barangay_code}: {e}")
+
     return f"Barangay {barangay_code}"

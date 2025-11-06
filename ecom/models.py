@@ -261,6 +261,13 @@ class Orders(models.Model):
             return True
         return False
 
+    class Meta:
+        indexes = [
+            models.Index(fields=['status']),
+            models.Index(fields=['created_at']),
+            models.Index(fields=['status', 'created_at']),
+        ]
+
 class OrderItem(models.Model):
     order = models.ForeignKey(Orders, on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)

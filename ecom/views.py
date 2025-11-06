@@ -725,8 +725,17 @@ def admin_view_users(request):
     import csv
     from django.http import HttpResponse
     from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+    from django.db.models import Count, Q
 
-    customers = models.Customer.objects.select_related('user').all()
+    # Limit selected columns and join user to avoid N+1 queries
+    customers = (
+        models.Customer.objects
+        .select_related('user')
+        .only(
+            'id', 'mobile', 'street_address', 'barangay', 'citymun', 'province', 'region', 'postal_code',
+            'user__id', 'user__first_name', 'user__last_name', 'user__email', 'user__is_active'
+        )
+    )
     # Paginate queryset first to avoid building a huge in-memory list
     page = request.GET.get('page', 1)
     # Allow configurable page size via query param, default to 5
@@ -786,17 +795,21 @@ def admin_view_users(request):
             ])
         return response
 
+    # Efficient single aggregation for counts
+    counts = models.Customer.objects.aggregate(
+        total=Count('id'),
+        active=Count('id', filter=Q(user__is_active=True)),
+    )
+
     context = {
         'users': users,
         'page_obj': page_obj,
         'paginator': paginator,
         'page_size': page_size,
-        # Count based on actual persisted field: User.is_active
-        'active_count': models.Customer.objects.filter(user__is_active=True).count(),
-        # No persisted "Pending" or "Suspended" state for Customer; keep keys for template compatibility
+        'active_count': counts.get('active', 0),
         'pending_count': 0,
         'suspended_count': 0,
-        'total_count': customers.count(),
+        'total_count': counts.get('total', 0),
     }
     return render(request, 'ecom/admin_view_users.html', context)
 
@@ -963,16 +976,30 @@ def admin_view_booking_view(request):
 
 def get_order_status_counts():
     try:
-        counts = {
-            'processing': models.Orders.objects.filter(status__in=['Pending', 'Processing']).count(),
-            'confirmed': models.Orders.objects.filter(status='Order Confirmed').count(),
-            'shipping': models.Orders.objects.filter(status='Out for Delivery').count(),
-            'delivered': models.Orders.objects.filter(status='Delivered').count(),
-            'cancelled': models.Orders.objects.filter(status='Cancelled').count(),
+        from django.db.models import Count
+        rows = models.Orders.objects.values('status').annotate(count=Count('id'))
+        result = {
+            'processing': 0,
+            'confirmed': 0,
+            'shipping': 0,
+            'delivered': 0,
+            'cancelled': 0,
         }
-        return counts
+        for r in rows:
+            s = r['status']
+            c = r['count']
+            if s in ['Pending', 'Processing']:
+                result['processing'] += c
+            elif s == 'Order Confirmed':
+                result['confirmed'] += c
+            elif s == 'Out for Delivery':
+                result['shipping'] += c
+            elif s == 'Delivered':
+                result['delivered'] += c
+            elif s == 'Cancelled':
+                result['cancelled'] += c
+        return result
     except Exception:
-        # Return default counts if database schema issues occur
         return {
             'processing': 0,
             'confirmed': 0,
@@ -1062,10 +1089,40 @@ def prepare_admin_order_view(request, orders, status, template, extra_context=No
     from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
     # Apply select_related/prefetch and ordering
-    orders_qs = orders.select_related('customer', 'customer__user').prefetch_related(
-        Prefetch('orderitem_set', queryset=models.OrderItem.objects.select_related('product')),
-        Prefetch('customorderitem_set', queryset=models.CustomOrderItem.objects.all()),
-    ).order_by('-created_at')
+    orders_qs = (
+        orders
+        .select_related('customer', 'customer__user')
+        .only(
+            # Orders fields
+            'id', 'customer_id', 'status', 'order_ref', 'order_date', 'address', 'created_at',
+            # Customer fields used by get_full_address and display
+            'customer__id', 'customer__region', 'customer__province', 'customer__citymun', 'customer__barangay',
+            'customer__street_address', 'customer__postal_code', 'customer__user_id',
+            # User display fields
+            'customer__user__id', 'customer__user__first_name', 'customer__user__last_name', 'customer__user__email'
+        )
+        .prefetch_related(
+            Prefetch(
+                'orderitem_set',
+                queryset=(
+                    models.OrderItem.objects
+                    .select_related('product')
+                    .only(
+                        'id', 'order_id', 'product_id', 'quantity', 'price', 'size',
+                        'product__id', 'product__name', 'product__product_image'
+                    )
+                )
+            ),
+            Prefetch(
+                'customorderitem_set',
+                queryset=(
+                    models.CustomOrderItem.objects
+                    .only('id', 'order_id', 'quantity', 'price', 'size', 'custom_design_id')
+                )
+            ),
+        )
+        .order_by('-created_at')
+    )
 
     # Paginate at the queryset level to avoid building huge lists
     page_num = request.GET.get('page', 1)
