@@ -898,9 +898,11 @@ def admin_add_product_view(request):
                 errors = productForm.errors.as_json()
                 return JsonResponse({'success': False, 'errors': errors})
             else:
-                # If form is invalid, render the form with errors
-                return render(request,'ecom/admin_add_products.html',{'productForm':productForm})
-    return render(request,'ecom/admin_add_products.html',{'productForm':productForm})
+                # If form is invalid in non-AJAX submission, redirect back to products page
+                messages.error(request, 'Please correct the errors in the product form.')
+                return redirect('admin-products')
+    # Remove standalone page: redirect any GET (or other non-POST) to products listing
+    return redirect('admin-products')
 
 
 from django.views.decorators.csrf import csrf_exempt

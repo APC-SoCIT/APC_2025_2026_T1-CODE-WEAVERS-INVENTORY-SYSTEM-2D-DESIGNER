@@ -46,12 +46,12 @@
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200" id="product-list-body">
                         {% for product in products %}
-                        <tr class="hover:bg-gray-50" data-category="{{ product.category|default_if_none:''|lower }}">
+                        <tr id="product-row-{{ product.id }}" class="hover:bg-gray-50" data-category="{{ product.category|default_if_none:''|lower }}">
                             <td class="px-6 py-4 whitespace-nowrap align-middle text-left">
                                 {% if product.product_image %}
                                 <img src="{{ product.product_image.url }}" alt="{{ product.name }}" class="h-10 w-10 rounded-md object-cover">
                                 {% else %}
-                                <img src="https://via.placeholder.com/40x40" alt="{{ product.name }}" class="h-10 w-10 rounded-md object-cover">
+                                <img src="/static/images/success.png" alt="{{ product.name }}" class="h-10 w-10 rounded-md object-cover">
                                 {% endif %}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap align-middle text-left">
@@ -120,7 +120,7 @@
                 <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                     <div>
                         <p class="text-sm text-gray-700">
-                            Showing <span class="font-medium">1</span> to <span class="font-medium">{{ products|length }}</span> of <span class="font-medium">{{ products|length }}</span> products
+                            Showing <span id="showing-start" class="font-medium">1</span> to <span id="showing-end" class="font-medium">{{ products|length }}</span> of <span id="total-count" class="font-medium">{{ products|length }}</span> products
                         </p>
                     </div>
                     <div>
@@ -213,7 +213,7 @@
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Product Image</label>
 <input type="file" id="productImage" name="product_image" accept="image/*" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                 <div id="imagePreview" class="mt-2 hidden">
-                                    <img id="previewImg" src="/placeholder.svg" alt="Preview" class="w-32 h-32 object-cover rounded-md border">
+                                    <img id="previewImg" src="/static/images/success.png" alt="Preview" class="w-32 h-32 object-cover rounded-md border">
                                     <button type="button" onclick="removeImagePreview()" class="mt-2 text-red-600 text-sm hover:text-red-800">Remove Image</button>
                                 </div>
                             </div>
@@ -366,7 +366,7 @@
                 document.getElementById('previewImg').src = productImageCell.src;
                 document.getElementById('imagePreview').classList.remove('hidden');
             } else {
-                document.getElementById('previewImg').src = '/placeholder.svg';
+                document.getElementById('previewImg').src = '/static/images/success.png';
                 document.getElementById('imagePreview').classList.add('hidden');
             }
 
@@ -439,20 +439,33 @@
                 method: 'POST',
                 headers: {
                     'X-CSRFToken': getCookie('csrftoken'),
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
                 },
                 body: JSON.stringify({}) // Send empty body for POST
             })
-            .then(response => {
-                if (response.ok) {
-                    alert('Product deleted successfully!');
+            .then(async (response) => {
+                // Try to parse JSON if provided
+                let isJson = false;
+                let data = null;
+                const ct = response.headers.get('content-type') || '';
+                if (ct.includes('application/json')) {
+                    isJson = true;
+                    try { data = await response.json(); } catch (e) { /* ignore */ }
+                }
+
+                // Treat 2xx and 3xx as success, unless JSON explicitly says success: false
+                const statusOk = response.status >= 200 && response.status < 400;
+                const jsonOk = isJson ? (data && data.success !== false) : true;
+
+                if (statusOk && jsonOk) {
+                    // Optional: toast/notification could be shown here
                     closeDeleteProductModal();
-                    // Remove the deleted product row from the table
-                    const row = document.querySelector(`button[onclick="confirmDeleteProduct(${currentDeletingProductId})"]`).closest('tr');
-                    if (row) {
-                        row.remove();
-                    }
+                    const rowEl = document.getElementById(`product-row-${currentDeletingProductId}`);
+                    if (rowEl) { rowEl.remove(); }
+                    updateProductCountsAndEmptyState();
                 } else {
+                    console.warn('Delete product returned non-success response', {status: response.status, data});
                     alert('Failed to delete product.');
                 }
             })
@@ -477,6 +490,22 @@
                 }
             }
             return cookieValue;
+        }
+
+        // Update product counts and show empty state row when list becomes empty
+        function updateProductCountsAndEmptyState() {
+            const tbody = document.getElementById('product-list-body');
+            const remainingRows = tbody ? tbody.querySelectorAll('tr').length : 0;
+            const totalCountEl = document.getElementById('total-count');
+            const showingEndEl = document.getElementById('showing-end');
+            if (totalCountEl) totalCountEl.textContent = remainingRows;
+            if (showingEndEl) showingEndEl.textContent = remainingRows;
+
+            if (remainingRows === 0 && tbody) {
+                const emptyRow = document.createElement('tr');
+                emptyRow.innerHTML = '<td colspan="8" class="text-center py-4 text-gray-500">No products found.</td>';
+                tbody.appendChild(emptyRow);
+            }
         }
 
         // Image Preview Functionality

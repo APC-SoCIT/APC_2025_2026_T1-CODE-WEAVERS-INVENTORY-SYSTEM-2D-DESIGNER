@@ -1,345 +1,96 @@
+{% extends 'ecom/customer_base.html' %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WorksTeamWear | About Us</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/alpinejs/3.10.2/cdn.min.js" defer></script>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
-
+{% block content %}
     <style>
         .fade-mask {
             -webkit-mask-image: linear-gradient(to right, rgba(0,0,0,0), rgba(0,0,0,1) 20%, rgba(0,0,0,1) 80%, rgba(0,0,0,0));
             mask-image: linear-gradient(to right, rgba(0,0,0,0), rgba(0,0,0,1) 20%, rgba(0,0,0,1) 80%, rgba(0,0,0,0));
         }
-
-        .team-member {
-            opacity: 0;
-            transform: translateY(50px);
-        }
-
-        .team-member.visible {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        /* Footer styling from the first code */
-        footer {
-          padding: 0;
-          background-color: white;
-          margin: 0;
-          border-color: gray;
-          border-width: 1px;
-          border-style: solid;
-        }
-
-        .fa {
-          font-size: 23px;
-          width: 2em;
-          height: 2em;
-          text-align: center;
-          text-decoration: none;
-          margin: 5px 2px;
-          border-radius: 50%;
-          padding-top: 0.5em;
-        }
-
-        .fa:hover {
-          opacity: 0.5;
-        }
-
-        /* Cart button styles */
-        .cart-button {
-          background-color: #00cc66;
-          box-shadow: 0 4px 4px 0 rgb(0 0 0 / 23%), inset 1px 1px 0 0 hsl(0deg 0% 100% / 20%);
-          padding: 0 12px;
-          text-align: center;
-          height: 41px;
-          border-radius: 2px;
-          font-weight: 500;
-          width: auto;
-          display: inline-flex;
-          align-items: center;
-          color: #FFFFFF;
-          text-decoration: none;
-          border: none;
-          outline: none;
-          transition: background-color 0.3s ease;
-          margin-left: 10px;
-        }
-
-        .cart-button:hover {
-          opacity: .5;
-          text-decoration: none;
-          color: #fff;
-          cursor: pointer;
-        }
-
-        .cart-button:active {
-          opacity: 0.7;
-          text-decoration: none;
-        }
-
-        .cart-svg {
-          display: inline-block;
-          width: 16px;
-          height: 16px;
-          vertical-align: middle;
-          margin-right: 8px;
-        }
-
-        .item-number {
-          border-radius: 3px;
-          background-color: rgb(207 37 37 / 92%);
-          height: 20px;
-          padding: 3px 6px;
-          font-weight: 500;
-          display: inline-block;
-          color: #fff;
-          line-height: 12px;
-          margin-left: 10px;
-        }
-
-        .item-number:empty:after {
-          content: "0";
-        }
-
-        .fa-facebook {
-          background: #3B5998;
-          color: white;
-          margin-top: 30px;
-        }
-
-        .fa-instagram {
-          background: #125688;
-          color: white;
-        }
-
-        footer p {
-          text-align: center;
-        }
+        .team-member { opacity: 0; transform: translateY(50px); }
+        .team-member.visible { opacity: 1; transform: translateY(0); }
     </style>
-</head>
-<body class="bg-gray-100">
-  
-  <!-- Navigation -->
 
-<nav class="bg-white shadow-md">
-  <div class="max-w-7xl mx-auto px-4">
-    <div class="flex items-center justify-between h-16">
-      
-      <!-- Logo (Left) -->
-      <div class="text-gray-800 font-weight:500 text-xl font-bold">WorksTeamWear</div>
-
-      <!-- Main Nav Links (Center) -->
-      <div class="flex space-x-4 items-center">
-
-        <a href="{% url 'customer-home' %}" class="text-gray-700 hover:text-gray-900 px-3 py-2">Home</a>
-
-        <!-- Track Orders Dropdown -->
-        <div x-data="{ open: false }" class="relative">
-          <button @click="open = !open" class="text-gray-700 hover:text-gray-900 px-3 py-2 flex items-center">
-            Track Orders
-            <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" stroke-width="2"
-                 viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
-            </svg>
-          </button>
-
-          <!-- Dropdown Menu -->
-          <div x-show="open" @click.away="open = false"
-               class="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg z-50 py-2">
-            
-            <a href="{% url 'pending-orders' %}" class="flex justify-between items-center px-4 py-2 text-gray-700 hover:bg-gray-100">
-              <div class="flex items-center">
-                <i class="fa fa-clock-o mr-2 text-yellow-600"></i>
-                <span>Pending Orders</span>
-              </div>
-              {% if pending_count %}<span class="bg-yellow-100 text-yellow-700 text-xs font-semibold px-2 py-1 rounded-full">{{ pending_count }}</span>{% endif %}
-            </a>
-
-            <a href="{% url 'to-ship-orders' %}" class="flex justify-between items-center px-4 py-2 text-gray-700 hover:bg-gray-100">
-              <div class="flex items-center">
-                <i class="fa fa-ship mr-2 text-blue-600"></i>
-                <span>To Ship</span>
-              </div>
-              {% if to_ship_count %}<span class="bg-blue-100 text-blue-700 text-xs font-semibold px-2 py-1 rounded-full">{{ to_ship_count }}</span>{% endif %}
-            </a>
-
-            <a href="{% url 'to-receive-orders' %}" class="flex justify-between items-center px-4 py-2 text-gray-700 hover:bg-gray-100">
-              <div class="flex items-center">
-                <i class="fa fa-truck mr-2 text-indigo-600"></i>
-                <span>To Receive</span>
-              </div>
-              {% if to_receive_count %}<span class="bg-indigo-100 text-indigo-700 text-xs font-semibold px-2 py-1 rounded-full">{{ to_receive_count }}</span>{% endif %}
-            </a>
-
-            <a href="{% url 'delivered-orders' %}" class="flex justify-between items-center px-4 py-2 text-gray-700 hover:bg-gray-100">
-              <div class="flex items-center">
-                <i class="fa fa-check-circle mr-2 text-green-600"></i>
-                <span>Delivered</span>
-              </div>
-              {% if delivered_count %}<span class="bg-green-100 text-green-700 text-xs font-semibold px-2 py-1 rounded-full">{{ delivered_count }}</span>{% endif %}
-            </a>
-
-            <a href="{% url 'cancelled-orders' %}" class="flex justify-between items-center px-4 py-2 text-gray-700 hover:bg-gray-100">
-              <div class="flex items-center">
-                <i class="fa fa-times-circle mr-2 text-red-600"></i>
-                <span>Cancelled</span>
-              </div>
-              {% if cancelled_count %}<span class="bg-red-100 text-red-700 text-xs font-semibold px-2 py-1 rounded-full">{{ cancelled_count }}</span>{% endif %}
-            </a>
-          </div>
-        </div>
-        <!-- End Track Orders Dropdown -->
-
-        <a href="/wishlist" class="text-gray-700 hover:text-gray-900 px-3 py-2">Wishlist</a>
-        <a href="/jersey-designer/" class="text-gray-700 hover:text-gray-900 px-3 py-2">3D Designer</a>
-        <a href="{% url 'about' %}" class="text-gray-700 hover:text-gray-900 px-3 py-2">About Us</a>
-      </div>
-
-      <!-- Right Section: Cart, Profile, Logout -->
-      <div class="flex space-x-2 items-center">
-        <!-- Cart Button -->
-        <a href="/cart" class="cart-button">
-          <svg class="cart-svg" width="16" height="16" viewBox="0 0 16 16">
-            <path d="M15.32 2.405H4.887C3 2.405 2.46.805 2.46.805L2.257.21C2.208.085 2.083 0 1.946 0H.336C.1 0-.064.24.024.46l.644 1.945L3.11 9.767c.047.137.175.23.32.23h8.418l-.493 1.958H3.768l.002.003c-.017 0-.033-.003-.05-.003-1.06 0-1.92.86-1.92 1.92s.86 1.92 1.92 1.92c.99 0 1.805-.7 1.92-1.68h7.16c.9 0 1.63-.73 1.63-1.63 0-.9-.73-1.63-1.63-1.63H4.717l.447-1.78h8.428c.4 0 .77-.26.9-.64l1.41-4.2c.07-.22.07-.46-.01-.67-.08-.21-.24-.38-.46-.46z" fill="currentColor"/>
-          </svg>
-          Cart
-          <span class="item-number">{{ product_count_in_cart }}</span>
-        </a>
-        
-        <a href="/my-profile" class="text-gray-700 hover:text-gray-900 px-3 py-2">Profile</a>
-        
-        <!-- Logout Form -->
-        <form method="post" action="{% url 'logout' %}" style="margin: 0; padding: 0; display: inline;">
-          {% csrf_token %}
-          <button type="submit" class="text-gray-700 hover:text-gray-900 px-3 py-2" style="background: none; border: none; padding: 12px; margin: 0; font-size: 14px; cursor: pointer;">Logout</button>
-        </form>
-      </div>
-    </div>
-  </div>
-</nav>
-
-
-
-  <!-- Image Slider -->
-  <div class="relative max-w-5xl mx-auto mt-1 overflow-hidden" 
-   x-data="{ currentIndex: 0, images: ['{% static 'images/company3.jpg' %}', '{% static 'images/g1.png' %}', '{% static 'images/g2.png' %}', '{% static 'images/g3.png' %}', '{% static 'images/g4.png' %}', '{% static 'images/g6.png' %}', '{% static 'images/company2.jpg' %}', '{% static 'images/company1.jpg' %}'], interval: null }"
-   x-init="interval = setInterval(() => { currentIndex = (currentIndex + 1) % images.length }, 5000)">
-  
-    <div class="relative flex items-center">
-        <!-- Previous Button -->
-        <button @click="currentIndex = (currentIndex > 0) ? currentIndex - 1 : images.length - 1" 
-            class="absolute left-0 z-10 p-3 bg-black bg-opacity-50 text-white rounded-full shadow-md hover:bg-opacity-80 transition-all">
-            &#10094;
-        </button>
-
-        <div class="w-full h-96 flex items-center justify-center relative">
-            <template x-for="(image, index) in images" :key="index">
-                <img x-show="currentIndex === index" 
-                    x-transition:enter="transform scale-95 opacity-0 transition ease-out duration-500"
-                    x-transition:enter-end="transform scale-100 opacity-100"
-                    x-transition:leave="transform scale-100 opacity-100 transition ease-in duration-500"
-                    x-transition:leave-end="transform scale-95 opacity-0"
-                    :src="image" 
-                    class="absolute inset-0 w-full h-full object-cover rounded-lg shadow-lg fade-mask">
-            </template>
+    <!-- Image Slider -->
+    <div class="relative" id="about-slider" data-alpine>
+        <div class="relative" style="max-width: 1100px; margin: 10px auto; overflow: hidden;">
+            <div class="relative" id="about-slider-images">
+                <img src="{% static 'images/company3.jpg' %}" class="fade-mask" style="width:100%; height:380px; object-fit:cover; border-radius:10px; display:block;" alt="Company 3">
+            </div>
+            <button type="button" class="btn btn-default" id="about-prev" style="position:absolute; left:10px; top:50%; transform:translateY(-50%);">&#10094;</button>
+            <button type="button" class="btn btn-default" id="about-next" style="position:absolute; right:10px; top:50%; transform:translateY(-50%);">&#10095;</button>
         </div>
 
         <!-- Next Button -->
-        <button @click="currentIndex = (currentIndex + 1) % images.length" 
-            class="absolute right-0 z-10 p-3 bg-black bg-opacity-50 text-white rounded-full shadow-md hover:bg-opacity-80 transition-all">
-            &#10095;
-        </button>
+        
     </div>
 
-    <!-- Indicators -->
-    <div class="absolute bottom-3 left-1/2 transform -translate-x-1/2 flex space-x-2">
-        <template x-for="(image, index) in images" :key="index">
-            <div @click="currentIndex = index" 
-                 class="w-3 h-3 rounded-full cursor-pointer transition-all"
-                 :class="currentIndex === index ? 'bg-white scale-125' : 'bg-gray-500'">
+    <script>
+        (function(){
+            var imgs = [
+                "{% static 'images/company3.jpg' %}",
+                "{% static 'images/g1.png' %}",
+                "{% static 'images/g2.png' %}",
+                "{% static 'images/g3.png' %}",
+                "{% static 'images/g4.png' %}",
+                "{% static 'images/g6.png' %}",
+                "{% static 'images/company2.jpg' %}",
+                "{% static 'images/company1.jpg' %}"
+            ];
+            var i = 0;
+            var el = document.getElementById('about-slider-images');
+            function render(){ el.innerHTML = '<img src="'+imgs[i]+'" class="fade-mask" style="width:100%; height:380px; object-fit:cover; border-radius:10px; display:block;"/>'; }
+            function next(){ i = (i+1)%imgs.length; render(); }
+            function prev(){ i = (i?i-1:imgs.length-1); render(); }
+            render();
+            var timer = setInterval(next, 5000);
+            document.getElementById('about-next').addEventListener('click', function(){ next(); });
+            document.getElementById('about-prev').addEventListener('click', function(){ prev(); });
+        })();
+    </script>
+
+    <!-- About Section -->
+    <div class="container" style="padding: 30px 0;">
+        <div class="row">
+            <div class="col-md-12 text-center">
+                <h2 style="font-weight:600;">About WorksTeamWear</h2>
+                <p style="margin-top:10px; color:#6b7280; font-size:18px;">We're passionate about creating high-quality custom jerseys for teams and individuals.</p>
             </div>
-        </template>
+        </div>
+        <div class="row" style="margin-top:25px;">
+            <div class="col-md-10 col-md-offset-1">
+                <p>
+                    WorksTeamWear was founded in 2010 with a simple mission: to provide high-quality, customizable jerseys for sports teams, events, and individuals. Our team of designers and developers has created an innovative 3D jersey customizer that allows you to see your design in real-time.
+                </p>  
+                <p style="margin-top:10px;">
+                    We use premium materials and state-of-the-art printing technology to ensure that your custom jersey not only looks great but also performs well and lasts for years to come.
+                </p>
+                <p style="margin-top:10px;">
+                    Our commitment to quality and customer satisfaction has made us a trusted name in the custom apparel industry. We work with teams of all sizes, from local recreational leagues to professional organizations.
+                </p>
+                <h3 style="margin-top:20px; font-weight:600;">Our Values</h3>
+                <ul style="margin-top:10px; padding-left:18px;">
+                    <li>Quality: We use only the best materials and printing techniques.</li>
+                    <li>Innovation: Our 3D customizer provides a unique design experience.</li>
+                    <li>Customer Service: We're dedicated to ensuring your satisfaction.</li>
+                    <li>Sustainability: We strive to minimize our environmental impact.</li>
+                </ul>
+            </div>
+        </div>
     </div>
-  </div>
 
-  <!-- About Section -->
-  <div class="py-12 bg-white">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div class="lg:text-center">
-              <h2 class="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
-                  About WorksTeamWear
-              </h2>
-              <p class="mt-4 max-w-2xl text-xl text-gray-500 lg:mx-auto">
-                  We're passionate about creating high-quality custom jerseys for teams and individuals.
-              </p>
-          </div>
-
-          <div class="mt-12">
-              <div class="prose prose-lg mx-auto">
-                  <p>
-                      WorksTeamWear was founded in 2010 with a simple mission: to provide high-quality, customizable jerseys for sports teams, events, and individuals. Our team of designers and developers has created an innovative 2D jersey customizer that allows you to see your design in real-time.
-                  </p>
-                  <p class="mt-4">
-                      We use premium materials and state-of-the-art printing technology to ensure that your custom jersey not only looks great but also performs well and lasts for years to come.
-                  </p>
-                  <p class="mt-4">
-                      Our commitment to quality and customer satisfaction has made us a trusted name in the custom apparel industry. We work with teams of all sizes, from local recreational leagues to professional organizations.
-                  </p>
-                  <h3 class="text-xl font-bold mt-8">Our Values</h3>
-                  <ul class="mt-4 list-disc pl-5">
-                      <li>Quality: We use only the best materials and printing techniques.</li>
-                      <li>Innovation: Our 3D customizer provides a unique design experience.</li>
-                      <li>Customer Service: We're dedicated to ensuring your satisfaction.</li>
-                      <li>Sustainability: We strive to minimize our environmental impact.</li>
-                  </ul>
-              </div>
-          </div>
-      </div>
-  </div>
-
-  <!-- Footer from first code -->
-  <footer>
-    <br>
-    <p>
-      <a href="{% url 'facebook' %}" target="_blank" class="fa fa-facebook"></a>
-      <a href="{% url 'instagram' %}" target="_blank" class="fa fa-instagram"></a>
-    </p>
-
-    <br>
-    <div class="container mx-auto px-4">
-      <div class="text-center text-black">
-        &copy; 2025 WorksTeamWear PH
-      </div>
-    </div>
-    <br>
-  </footer>
-
-  <script>
-      const observer = new IntersectionObserver((entries, observer) => {
-          entries.forEach(entry => {
-              if (entry.isIntersecting) {
-                  entry.target.classList.add('visible');
-              } else {
-                  entry.target.classList.remove('visible');
-              }
-          });
-      }, {
-          rootMargin: '0px 0px -100px 0px',
-      });
-
-      document.querySelectorAll('.team-member').forEach(element => {
-          observer.observe(element);
-      });
-  </script>
-
-  <!-- Customer Support Widget -->
-  {% block support_widget %}
-      {% include 'ecom/customer_support_widget.html' %}
-  {% endblock %}
-</body>
-</html>
+    <script>
+        (function(){
+            var els = document.querySelectorAll('.team-member');
+            function onScroll(){
+                var wh = window.innerHeight || document.documentElement.clientHeight;
+                els.forEach(function(el){
+                    var rect = el.getBoundingClientRect();
+                    if (rect.top < wh - 100) { el.classList.add('visible'); }
+                    else { el.classList.remove('visible'); }
+                });
+            }
+            document.addEventListener('scroll', onScroll);
+            onScroll();
+        })();
+    </script>
+{% endblock %}

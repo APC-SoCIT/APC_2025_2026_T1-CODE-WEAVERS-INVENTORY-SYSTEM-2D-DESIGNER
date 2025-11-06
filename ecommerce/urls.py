@@ -80,7 +80,7 @@ urlpatterns = [
     path('api/admin/track-delivery/<int:order_id>/', views.track_delivery_status, name='api-track-delivery'),
     path('api/admin/mark-delivered/<int:order_id>/', views.mark_order_delivered, name='api-mark-delivered'),
     
-    path('delete-product/<int:pk>', views.delete_product_view,name='delete-product'),
+    path('delete-product/<int:pk>/', views.delete_product_view,name='delete-product'),
     path('update-product/<int:pk>', views.update_product_view,name='update-product'),
 
     path('admin-view-booking', views.admin_view_booking_view, name='admin-view-booking'),
