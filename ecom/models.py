@@ -109,6 +109,8 @@ class Product(models.Model):
         ('XL', 'Extra Large'),
     )
     size = models.CharField(max_length=2, choices=SIZE_CHOICES, default='M')
+    # Archive flag to hide products from customer-facing listings
+    is_archived = models.BooleanField(default=False, db_index=True)
     
     def __str__(self):
         return self.name
@@ -176,6 +178,7 @@ class Orders(models.Model):
     status_updated_at = models.DateTimeField(null=True, blank=True, help_text='When the status was last changed')
     estimated_delivery_date = models.DateField(null=True, blank=True, help_text='Estimated delivery date')
     notes = models.TextField(blank=True, null=True, help_text='Additional notes about the order')
+    tracking_url = models.URLField(max_length=500, blank=True, null=True, help_text='External delivery tracking link')
     payment_method = models.CharField(max_length=10, choices=PAYMENT_METHODS, default='cod', help_text='Payment method for the order')
     transaction_id = models.CharField(max_length=100, null=True, blank=True, help_text='PayPal or GCash transaction ID for paid orders')
     order_ref = models.CharField(max_length=12, unique=True, null=True, blank=True, help_text='Unique short order reference ID')

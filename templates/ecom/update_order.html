@@ -82,6 +82,16 @@
                 <div class="row">
                     <div class="col-md-12">
                         <div class="form-group">
+                            <label>Tracking URL:</label>
+                            {% render_field orderForm.tracking_url class="form-control" placeholder="Paste courier tracking link here" %}
+                            <small class="form-text text-muted">Halimbawa: https://tracking.courier.ph/ABC123</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="form-group">
                             <label>Notes:</label>
                             {% render_field orderForm.notes class="form-control" placeholder="Add any additional notes about the order status" %}
                         </div>

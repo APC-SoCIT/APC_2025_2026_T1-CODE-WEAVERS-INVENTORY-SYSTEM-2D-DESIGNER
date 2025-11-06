@@ -421,9 +421,10 @@ class FeedbackForm(forms.ModelForm):
 class OrderForm(forms.ModelForm):
     class Meta:
         model = models.Orders
-        fields = ['status', 'estimated_delivery_date', 'notes']
+        fields = ['status', 'estimated_delivery_date', 'tracking_url', 'notes']
         widgets = {
             'estimated_delivery_date': forms.DateInput(attrs={'type': 'date'}),
+            'tracking_url': forms.URLInput(attrs={'placeholder': 'https://tracking.example.com/ABC123'}),
             'notes': forms.Textarea(attrs={'rows': 3}),
         }
 

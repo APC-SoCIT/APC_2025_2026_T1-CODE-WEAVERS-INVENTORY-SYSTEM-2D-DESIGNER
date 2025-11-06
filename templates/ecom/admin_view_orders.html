@@ -67,6 +67,10 @@
         <div class="mb-6">
             <div class="border-b border-gray-200">
                 <nav class="-mb-px flex space-x-8">
+                    <a href="{% url 'admin-view-all-orders' %}"
+                       class="order-tab {% if status == 'All' %}active border-b-2 border-blue-500 text-blue-600{% else %}border-b-2 border-transparent text-gray-500 hover:text-gray-700{% endif %} py-2 px-1 text-sm font-medium">
+                        All Orders
+                    </a>
                     <a href="{% url 'admin-view-processing-orders' %}" 
                        class="order-tab {% if status == 'Processing' %}active border-b-2 border-blue-500 text-blue-600{% else %}border-b-2 border-transparent text-gray-500 hover:text-gray-700{% endif %} py-2 px-1 text-sm font-medium">
                         Processing
@@ -117,10 +121,10 @@
         <div class="bg-white rounded-lg shadow">
             <div class="p-6 border-b border-gray-200">
                 <div class="flex flex-col sm:flex-row sm:items-center gap-4">
-                    <div class="flex items-center gap-2 flex-1 max-w-sm border border-gray-300 rounded-md px-2 py-1">
+                    <form method="get" class="flex items-center gap-2 flex-1 max-w-sm border border-gray-300 rounded-md px-2 py-1">
                         <i data-lucide="search" class="h-4 w-4 text-gray-400"></i>
-                        <input type="text" id="order-search" placeholder="Search orders..." class="w-full border-0 focus:ring-0 text-sm">
-                    </div>
+                        <input type="text" id="order-search" name="q" value="{{ request.GET.q|default:'' }}" placeholder="Search orders..." class="w-full border-0 focus:ring-0 text-sm">
+                    </form>
                     <div class="flex items-center gap-2">
                         <button onclick="exportOrders()" class="px-3 py-1.5 text-sm border border-gray-300 rounded-md hover:bg-gray-50 flex items-center">
                             <i data-lucide="download" class="mr-1 h-4 w-4"></i>
@@ -258,12 +262,12 @@
                 <div class="flex items-center justify-between">
                     <div class="flex-1 flex justify-between sm:hidden">
                         {% if orders_data.has_previous %}
-                        <a href="?page={{ orders_data.previous_page_number }}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                        <a href="?page={{ orders_data.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q|urlencode }}{% endif %}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
                             Previous
                         </a>
                         {% endif %}
                         {% if orders_data.has_next %}
-                        <a href="?page={{ orders_data.next_page_number }}" class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                        <a href="?page={{ orders_data.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q|urlencode }}{% endif %}" class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
                             Next
                         </a>
                         {% endif %}
@@ -277,10 +281,10 @@
                         <div>
                             <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
                                 {% if orders_data.has_previous %}
-                                <a href="?page=1" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                <a href="?page=1{% if request.GET.q %}&q={{ request.GET.q|urlencode }}{% endif %}" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                                     <i data-lucide="chevrons-left" class="h-4 w-4"></i>
                                 </a>
-                                <a href="?page={{ orders_data.previous_page_number }}" class="relative inline-flex items-center px-2 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                <a href="?page={{ orders_data.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q|urlencode }}{% endif %}" class="relative inline-flex items-center px-2 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                                     <i data-lucide="chevron-left" class="h-4 w-4"></i>
                                 </a>
                                 {% endif %}
@@ -290,10 +294,10 @@
                                 </span>
                                 
                                 {% if orders_data.has_next %}
-                                <a href="?page={{ orders_data.next_page_number }}" class="relative inline-flex items-center px-2 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                <a href="?page={{ orders_data.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q|urlencode }}{% endif %}" class="relative inline-flex items-center px-2 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                                     <i data-lucide="chevron-right" class="h-4 w-4"></i>
                                 </a>
-                                <a href="?page={{ orders_data.paginator.num_pages }}" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                <a href="?page={{ orders_data.paginator.num_pages }}{% if request.GET.q %}&q={{ request.GET.q|urlencode }}{% endif %}" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                                     <i data-lucide="chevrons-right" class="h-4 w-4"></i>
                                 </a>
                                 {% endif %}

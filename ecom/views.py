@@ -1084,6 +1084,20 @@ def admin_view_cancelled_orders(request):
     }
     return prepare_admin_order_view(request, orders, 'Cancelled', 'ecom/admin_view_orders.html', extra_context=context)
 
+@admin_required
+def admin_view_all_orders(request):
+    """Admin view that lists all orders regardless of status."""
+    orders = models.Orders.objects.all()
+    counts = get_order_status_counts()
+    context = {
+        'processing_count': counts.get('processing', 0),
+        'confirmed_count': counts.get('confirmed', 0),
+        'shipping_count': counts.get('shipping', 0),
+        'delivered_count': counts.get('delivered', 0),
+        'cancelled_count': counts.get('cancelled', 0),
+    }
+    return prepare_admin_order_view(request, orders, 'All', 'ecom/admin_view_orders.html', extra_context=context)
+
 
 def prepare_admin_order_view(request, orders, status, template, extra_context=None):
     # Optimize by prefetching related items and selecting customer relations
@@ -1125,6 +1139,22 @@ def prepare_admin_order_view(request, orders, status, template, extra_context=No
         )
         .order_by('-created_at')
     )
+
+    # Apply server-side search before pagination
+    q = (request.GET.get('q') or '').strip()
+    if q:
+        search_words = q.split()
+        search_query = Q()
+        for word in search_words:
+            search_query |= (
+                Q(order_ref__icontains=word) |
+                Q(address__icontains=word) |
+                Q(customer__user__first_name__icontains=word) |
+                Q(customer__user__last_name__icontains=word) |
+                Q(customer__user__email__icontains=word) |
+                Q(customer__mobile__icontains=word)
+            )
+        orders_qs = orders_qs.filter(search_query)
 
     # Paginate at the queryset level to avoid building huge lists
     page_num = request.GET.get('page', 1)
@@ -1184,7 +1214,7 @@ def prepare_admin_order_view(request, orders, status, template, extra_context=No
     # Replace page object list with our computed dicts so template pagination works
     page_obj.object_list = orders_data
 
-    context = {'orders_data': page_obj, 'paginator': paginator, 'status': status}
+    context = {'orders_data': page_obj, 'paginator': paginator, 'status': status, 'q': q}
     if extra_context:
         context.update(extra_context)
     return render(request, template, context)
@@ -1883,7 +1913,7 @@ def cart_page(request):
 def search_view(request):
     query = request.GET.get('query')
     if query is not None and query != '':
-        products = models.Product.objects.all().filter(name__icontains=query)
+        products = models.Product.objects.filter(name__icontains=query)
     else:
         products = models.Product.objects.all()
 
@@ -2868,7 +2898,10 @@ def my_order_view(request):
         'cancelled_count': cancelled_count,
         'waiting_count': waiting_count,
     }
-
+    # If requested via AJAX from My Profile tabs, return a fragment without base layout
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return render(request, 'ecom/fragments/my_orders_list.html', context)
+    # Otherwise render the full orders page
     return render(request, 'ecom/orders_tabbed.html', context)
 
 @login_required(login_url='customerlogin')

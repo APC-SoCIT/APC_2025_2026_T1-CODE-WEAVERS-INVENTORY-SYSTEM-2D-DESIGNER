@@ -270,6 +270,23 @@
         const originalFetch = window.fetch;
         window.fetch = function(url, options) {
             console.log('Fetch called with URL:', url);
+            // Block cart/pre-order API calls so Add to Cart functionality is disabled globally
+            try {
+                const urlStr = typeof url === 'string' ? url : (url && url.url) || '';
+                if (typeof urlStr === 'string' && (urlStr.includes('/api/add-custom-tshirt-to-cart/') || urlStr.includes('/api/add-custom-order/'))) {
+                    console.warn('Blocked Add to Cart / Pre-order API call:', urlStr);
+                    const body = JSON.stringify({
+                        success: false,
+                        message: 'Add to Cart / Pre-order is disabled on this page.'
+                    });
+                    return Promise.resolve(new Response(body, {
+                        status: 403,
+                        headers: { 'Content-Type': 'application/json' }
+                    }));
+                }
+            } catch (err) {
+                console.warn('Error while intercepting cart/pre-order API:', err);
+            }
             if (typeof url === 'string' && (url.includes('3Dmodels/') || url.includes('.glb'))) {
                 console.log('Intercepting fetch request:', url);
                 // Handle both absolute and relative paths that resolve to current page
@@ -348,6 +365,147 @@
             }
         }
         setTimeout(checkForThreeJS, 1000);
+    </script>
+    
+    <!-- Force-remove Add to Cart / Pre-order UI elements (defensive) -->
+    <script>
+        (function() {
+            // Safer remover: only hide the specific Add-to-Cart/Pre-order panel,
+            // never the entire app/root container.
+            const root = document.getElementById('root');
+
+            function getText(el) {
+                try { return (el.innerText || '').toLowerCase(); } catch (_) { return ''; }
+            }
+
+            function findTargetButtons() {
+                const candidates = Array.from(document.querySelectorAll('button, a, [role="button"]'));
+                return candidates.filter(el => {
+                    const t = getText(el);
+                    return t.includes('add to cart') || t.includes('pre order');
+                });
+            }
+
+            function hidePanelForButton(btn) {
+                let cur = btn;
+                let depth = 0;
+                while (cur && depth < 6 && cur !== document.body && cur !== root) {
+                    const text = getText(cur);
+                    const hasLabels = ['design name','select size','size','quantity','price','pre order','add to cart']
+                        .some(p => text.includes(p));
+                    const inputCount = cur.querySelectorAll('input, select, textarea').length;
+                    const isDialog = cur.getAttribute('role') === 'dialog';
+                    const classList = (cur.classList || new DOMTokenList());
+                    const isCardish = ['card','sheet','sidebar','panel','drawer','dialog','dialog-content','sheet-content']
+                        .some(c => classList.contains(c));
+                    if ((hasLabels && inputCount >= 1) || isDialog || isCardish) {
+                        cur.style.display = 'none';
+                        return true;
+                    }
+                    cur = cur.parentElement;
+                    depth++;
+                }
+                return false;
+            }
+
+            function run() {
+                const btns = findTargetButtons();
+                btns.forEach(hidePanelForButton);
+
+                // Extra pass: hide any leftover text nodes labeled "Add To Cart"
+                // especially those appearing under the AI Color Harmony section.
+                const leafSelector = 'span, p, small, label, h6, h5, h4, h3';
+                const leaves = Array.from(document.querySelectorAll(leafSelector));
+                leaves.forEach(el => {
+                    if (!el || el === root) return;
+                    const t = getText(el);
+                    if (!t || !t.includes('add to cart')) return;
+                    // Only target labels under AI Color Harmony context to avoid hiding broad containers
+                    const ctx = el.closest('[role="dialog"], .sheet, .sidebar, .panel, .card, .drawer') || el.parentElement;
+                    const ctxText = getText(ctx || el.parentElement);
+                    if (!ctxText || !ctxText.includes('ai color harmony')) return;
+                    const rect = el.getBoundingClientRect();
+                    if (rect && (rect.width > 400 || rect.height > 200)) return; // skip large containers
+                    el.style.display = 'none';
+                });
+
+                // New pass: hide compact icon+label rows for "Add to Cart" anywhere
+                const allNodes = Array.from(document.querySelectorAll('*'));
+                allNodes.forEach(el => {
+                    if (!el || el === root) return;
+                    const txt = getText(el);
+                    if (!txt || !txt.includes('add to cart')) return;
+                    let cur = el;
+                    let depth = 0;
+                    while (cur && depth < 6 && cur !== document.body && cur !== root) {
+                        const rect = cur.getBoundingClientRect();
+                        const hasIcon = !!cur.querySelector('svg');
+                        const isCompact = rect && rect.width <= 800 && rect.height <= 240;
+                        const isRowish = cur.matches('.flex, .inline-flex, .items-center, .gap-2, .card-title');
+                        if (hasIcon && isCompact && isRowish) {
+                            cur.style.display = 'none';
+                            break;
+                        }
+                        cur = cur.parentElement;
+                        depth++;
+                    }
+                });
+
+                // Text replacement: "AI Color Harmony" -> "Color Harmony Generator"
+                // and "Generate AI Color Harmony" -> "Generate Color Harmony"
+                function replaceTextNodes(el, from, to) {
+                    if (!el) return;
+                    const nodes = Array.from(el.childNodes || []);
+                    nodes.forEach(n => {
+                        if (n.nodeType === 3 && n.nodeValue) {
+                            n.nodeValue = n.nodeValue.replace(new RegExp(from, 'ig'), to);
+                        }
+                    });
+                }
+
+                const textTargets = Array.from(document.querySelectorAll('button, [role="button"], h1, h2, h3, h4, h5, h6, label, span, p'));
+                textTargets.forEach(el => {
+                    const txt = getText(el);
+                    if (!txt) return;
+                    if (txt.includes('generate ai color harmony')) {
+                        replaceTextNodes(el, 'Generate AI Color Harmony', 'Generate Color Harmony');
+                        replaceTextNodes(el, 'generate ai color harmony', 'Generate Color Harmony');
+                    }
+                    if (txt.includes('ai color harmony')) {
+                        replaceTextNodes(el, 'AI Color Harmony', 'Color Harmony Generator');
+                        replaceTextNodes(el, 'ai color harmony', 'Color Harmony Generator');
+                    }
+                });
+
+                // Robust text-node walker to catch variations and descriptions
+                try {
+                    const patterns = [
+                        { from: /Generate\s*AI\s*Color\s*Harmony/ig, to: 'Generate Color Harmony' },
+                        { from: /AI\s*Color\s*Harmony/ig, to: 'Color Harmony Generator' },
+                        { from: /AI[-\s]*powered/ig, to: '' } // remove "AI-powered" wording
+                    ];
+                    const rootNode = root || document.body;
+                    const walker = document.createTreeWalker(rootNode, NodeFilter.SHOW_TEXT);
+                    let node;
+                    while ((node = walker.nextNode())) {
+                        let val = node.nodeValue || '';
+                        if (!val) continue;
+                        const before = val;
+                        patterns.forEach(p => { val = val.replace(p.from, p.to); });
+                        // Tidy spaces and punctuation after replacement
+                        val = val.replace(/\s{2,}/g, ' ').replace(/\s+\./g, '.');
+                        if (val !== before) {
+                            node.nodeValue = val;
+                        }
+                    }
+                } catch (_) {}
+            }
+
+            const mo = new MutationObserver(run);
+            (root ? mo.observe(root, { childList: true, subtree: true }) : mo.observe(document.documentElement, { childList: true, subtree: true }));
+            document.addEventListener('DOMContentLoaded', run);
+            window.addEventListener('load', run);
+        })();
     </script>
     
     <!-- Bootstrap JavaScript for dropdown functionality -->

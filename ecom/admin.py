@@ -73,6 +73,7 @@ class OrderAdmin(admin.ModelAdmin):
         
         # Editable operational fields
         ('status', 'estimated_delivery_date'),
+        ('tracking_url',),
         ('notes',),
         
         # Cancellation information (read-only)

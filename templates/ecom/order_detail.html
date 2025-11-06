@@ -178,6 +178,14 @@
                             <span class="detail-label">Email:</span>
                             <span class="detail-value">{{ order.email }}</span>
                         </div>
+                        {% if order.tracking_url %}
+                        <div class="detail-row">
+                            <span class="detail-label">Tracking URL:</span>
+                            <span class="detail-value">
+                                <a href="{{ order.tracking_url }}" target="_blank" rel="noopener noreferrer">Open Tracking</a>
+                            </span>
+                        </div>
+                        {% endif %}
                         {% if order.estimated_delivery_date %}
                         <div class="detail-row">
                             <span class="detail-label">Estimated Delivery:</span>

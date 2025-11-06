@@ -2609,6 +2609,15 @@ document.addEventListener("DOMContentLoaded", () => {
   const addToCartForm = document.getElementById('add-to-cart-form')
   const designSummary = document.getElementById('design-summary')
 
+  // Update button labels to reflect Pre-Order flow
+  if (addToCartBtn) {
+    addToCartBtn.textContent = 'Pre Order now!'
+  }
+  const modalSubmitBtnInit = addToCartForm?.querySelector('button[type="submit"]')
+  if (modalSubmitBtnInit) {
+    modalSubmitBtnInit.textContent = 'Pre Order now!'
+  }
+
   // Function to get current design configuration
   function getCurrentDesignConfig() {
     return {
@@ -2750,7 +2759,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // Capture the design image
     const designImage = await captureDesignImage()
     
-    submitBtn.textContent = 'Adding to Cart...'
+    submitBtn.textContent = 'Submitting Pre-Order...'
 
     const orderData = {
       quantity: formData.get('quantity'),
@@ -2758,7 +2767,7 @@ document.addEventListener("DOMContentLoaded", () => {
       additionalInfo: formData.get('additional-info'),
       designConfig: getCurrentDesignConfig(),
       designImage: designImage, // Add the captured image
-      orderType: 'cart'
+      orderType: 'pre-order'
     }
 
     // Debug: Check CSRF token
@@ -2838,19 +2847,19 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       
       if (data.success) {
-        // Show success message briefly then redirect to cart
+        // Show success message briefly then redirect to My Orders
         const successMsg = document.createElement('div')
         successMsg.innerHTML = `
           <div style="position: fixed; top: 20px; right: 20px; background: #4CAF50; color: white; padding: 15px 20px; border-radius: 5px; z-index: 10001; font-size: 16px; box-shadow: 0 4px 8px rgba(0,0,0,0.2);">
-            ✓ Item added to cart successfully! Redirecting...
+            ✓ Pre-order created successfully! Redirecting...
           </div>
         `
         document.body.appendChild(successMsg)
         
-        // Hide modal and redirect to cart after a brief delay
+        // Hide modal and redirect to My Orders after a brief delay
         hideModal()
         setTimeout(() => {
-          window.location.href = '/cart'
+          window.location.href = '/my-order'
         }, 1500)
       } else {
         throw new Error(data.message || 'Failed to add to cart')

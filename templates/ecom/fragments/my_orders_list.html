@@ -3,7 +3,8 @@
   .orders-header { font-size: 1.1rem; font-weight: 700; color: #111827; margin-bottom: 12px; }
   .order-card { border: 1px solid #e5e7eb; border-radius: 10px; margin-bottom: 12px; }
   .order-body { padding: 12px; }
-  .img-sm { width: 64px; height: 64px; object-fit: cover; }
+  .thumbs { display:flex; gap:8px; flex-wrap:wrap; }
+  .img-sm { width: 64px; height: 64px; object-fit: cover; border-radius:6px; border:1px solid #e5e7eb; }
   .label { display:inline-block; padding:4px 10px; border-radius: 20px; font-size: 12px; }
   .label-info { background:#bfdbfe; }
   .label-success { background:#bbf7d0; }
@@ -14,47 +15,50 @@
 </style>
 
 <div>
-  <div class="orders-header">My Orders / Tracking</div>
+  <div class="orders-header">My Orders</div>
 
-  {% for item in orders_with_items %}
-    {% with order=item.order items=item.items %}
+  {% if not orders_with_items %}
+    <div class="alert alert-info">Wala pang orders.</div>
+  {% endif %}
+
+  {% for order_dict in orders_with_items %}
     <div class="order-card">
       <div class="order-body">
         <div style="display:flex; align-items:flex-start; gap:12px;">
-          {% for it in items %}
-          <img src="{% static it.product.product_image.url %}" class="img-sm" alt="{{ it.product.name }}" />
-          {% endfor %}
+          <div class="thumbs">
+            {% for it in order_dict.products %}
+              {% if it.item.product.product_image %}
+                <img src="{{ it.item.product.product_image.url }}" class="img-sm" alt="{{ it.item.product.name }}" />
+              {% endif %}
+            {% endfor %}
+          </div>
           <div style="flex:1;">
             <div><strong>Status:</strong>
-              {% if order.status == 'Pending'%}
-                <span class="label label-info">{{order.status}}</span>
-              {% elif order.status == 'Delivered' %}
-                <span class="label label-success">{{order.status}}</span>
-              {% elif order.status == 'Out for Delivery' %}
-                <span class="label label-default">{{order.status}}</span>
-              {% elif order.status == 'Cancelled' %}
-                <span class="label label-danger">{{order.status}}</span>
-              {% elif order.status == 'Cancellation Requested' %}
+              {% if order_dict.order.status == 'Pending'%}
+                <span class="label label-info">{{ order_dict.order.status }}</span>
+              {% elif order_dict.order.status == 'Delivered' %}
+                <span class="label label-success">{{ order_dict.order.status }}</span>
+              {% elif order_dict.order.status == 'Out for Delivery' %}
+                <span class="label label-default">{{ order_dict.order.status }}</span>
+              {% elif order_dict.order.status == 'Cancelled' %}
+                <span class="label label-danger">{{ order_dict.order.status }}</span>
+              {% elif order_dict.order.status == 'Cancellation Requested' %}
                 <span class="label label-warning">Waiting for approval of Cancellation</span>
               {% else %}
-                <span class="label label-primary">{{order.status}}</span>
+                <span class="label label-primary">{{ order_dict.order.status }}</span>
               {% endif %}
             </div>
-            <div style="margin-top:10px;">
-              <a class="btn btn-primary btn-sm rounded-0" style="text-decoration:none;" href="{% url 'download-invoice' order.id items.0.product.id  %}" target="_blank">
-                <i class="fa fa-download" style="font-size: 12px;height:auto"></i> Download Invoice
-              </a>
-              {% if order.status == 'Pending' %}
-              <button type="button" class="btn btn-danger btn-sm rounded-0" data-toggle="modal" data-target="#cancelModal{{order.id}}">
-                <i class="fa fa-times" style="font-size: 12px;height:auto"></i> Cancel Order
-              </button>
-              {% endif %}
+            <div style="margin-top:12px;">
+              <div><strong>Order ID:</strong> {{ order_dict.order.order_ref|default:order_dict.order.id }}</div>
+              <div><strong>Petsa:</strong> {{ order_dict.order.created_at|date:"M d, Y" }}</div>
+              <div><strong>Items:</strong> {{ order_dict.products|length }}{% if order_dict.custom_items %} + {{ order_dict.custom_items|length }} custom{% endif %}</div>
+              <div><strong>Subtotal:</strong> ₱{{ order_dict.total|floatformat:2 }}</div>
+              <div><strong>Delivery Fee:</strong> ₱{{ order_dict.delivery_fee|floatformat:2 }}</div>
+              <div><strong>Grand Total:</strong> ₱{{ order_dict.grand_total|floatformat:2 }}</div>
             </div>
           </div>
         </div>
       </div>
     </div>
-    {% endwith %}
   {% endfor %}
 </div>
-

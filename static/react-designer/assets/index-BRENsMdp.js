@@ -77931,29 +77931,32 @@ function AddToCart() {
         size: size2,
         color: designState.tshirtColor
       };
-      const response = await fetch("/api/add-custom-tshirt-to-cart/", {
+      const response = await fetch("/api/add-custom-order/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           ...csrfToken && { "X-CSRFToken": csrfToken }
         },
-        body: JSON.stringify(cartData)
+        body: JSON.stringify({
+          ...cartData,
+          orderType: "pre-order"
+        })
       });
       const result = await response.json();
       if (response.ok && result.success) {
         console.log("Cart addition successful, preparing redirect...");
         toast2({
-          title: "Added to Cart!",
-          description: `${designName} has been added to your cart. Redirecting to cart...`
+          title: "Pre-order Created!",
+          description: `${designName} has been submitted as a pre-order. Redirecting to My Orders...`
         });
         setDesignName("");
         setQuantity(1);
         setSize("");
-        console.log("Setting up redirect to cart page...");
+        console.log("Setting up redirect to My Orders page...");
         const performRedirect = () => {
-          console.log("Redirecting to cart page now...");
+          console.log("Redirecting to My Orders page now...");
           if (typeof window !== "undefined" && window.location) {
-            window.location.href = "/cart";
+            window.location.href = "/my-order";
           }
         };
         setTimeout(performRedirect, 1500);
@@ -77968,14 +77971,14 @@ function AddToCart() {
             window.location.href = result.redirect;
           }, 2e3);
         } else {
-          throw new Error(result.message || "Failed to add to cart");
-        }
+          throw new Error(result.message || "Failed to create pre-order");
+      }
       }
     } catch (error2) {
       console.error("Error adding to cart:", error2);
       toast2({
         title: "Error",
-        description: error2.message || "Failed to add item to cart. Please try again.",
+        description: error2.message || "Failed to create pre-order. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -77985,7 +77988,7 @@ function AddToCart() {
   return /* @__PURE__ */ jsxRuntimeExports.jsxs(Card, { className: "w-full", children: [
     /* @__PURE__ */ jsxRuntimeExports.jsx(CardHeader, { children: /* @__PURE__ */ jsxRuntimeExports.jsxs(CardTitle, { className: "flex items-center gap-2", children: [
       /* @__PURE__ */ jsxRuntimeExports.jsx(ShoppingCart, { className: "h-5 w-5" }),
-      "Add to Cart"
+      "Pre Order"
     ] }) }),
     /* @__PURE__ */ jsxRuntimeExports.jsxs(CardContent, { className: "space-y-4", children: [
       /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-2", children: [
@@ -78042,16 +78045,17 @@ function AddToCart() {
           disabled: isLoading,
           children: isLoading ? /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
             /* @__PURE__ */ jsxRuntimeExports.jsx(LoaderCircle, { className: "mr-2 h-4 w-4 animate-spin" }),
-            "Adding to Cart..."
+            "Submitting Pre-Order..."
           ] }) : /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
             /* @__PURE__ */ jsxRuntimeExports.jsx(ShoppingCart, { className: "mr-2 h-4 w-4" }),
-            "Add to Cart"
+            "Pre Order now!"
           ] })
         }
       )
     ] })
   ] });
 }
+AddToCart = function() { return null; };
 function ToolsSidebar({ manualSync }) {
   return /* @__PURE__ */ jsxRuntimeExports.jsxs(Sheet, { children: [
     /* @__PURE__ */ jsxRuntimeExports.jsx(SheetTrigger, { asChild: true, children: /* @__PURE__ */ jsxRuntimeExports.jsx(
@@ -78071,7 +78075,7 @@ function ToolsSidebar({ manualSync }) {
         /* @__PURE__ */ jsxRuntimeExports.jsx(LineToolBar, { manualSync }),
         /* @__PURE__ */ jsxRuntimeExports.jsx(PatternToolBar, { manualSync }),
         /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "mt-4", children: /* @__PURE__ */ jsxRuntimeExports.jsx(AIColorHarmony, {}) }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "mt-4", children: /* @__PURE__ */ jsxRuntimeExports.jsx(AddToCart, {}) })
+        null
       ] }) })
     ] }),
     /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "hidden md:flex flex-col h-full w-[320px] bg-white border-r border-gray-200 shadow-sm", children: /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "w-[320px] h-screen border-r bg-background", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "p-4", children: [
@@ -78082,7 +78086,7 @@ function ToolsSidebar({ manualSync }) {
         /* @__PURE__ */ jsxRuntimeExports.jsx(LineToolBar, { manualSync }),
         /* @__PURE__ */ jsxRuntimeExports.jsx(PatternToolBar, { manualSync }),
         /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "mt-4", children: /* @__PURE__ */ jsxRuntimeExports.jsx(AIColorHarmony, {}) }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "mt-4", children: /* @__PURE__ */ jsxRuntimeExports.jsx(AddToCart, {}) })
+        null
       ] }) })
     ] }) }) })
   ] });
