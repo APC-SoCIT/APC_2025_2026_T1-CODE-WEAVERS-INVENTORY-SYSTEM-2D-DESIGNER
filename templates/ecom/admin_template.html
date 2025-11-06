@@ -5,7 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{% block title %}Admin Panel{% endblock %}</title>
     <link rel="icon" href="{% static 'images/new logo.png' %}">
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Prefer CSS-only Tailwind for faster loads -->
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <!-- Lucide Icons (deferred, initialized on idle) -->
     <script src="https://cdn.jsdelivr.net/npm/lucide@0.454.0/dist/umd/lucide.min.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -136,8 +140,23 @@
     </div>
 
     <script>
-        // Initialize Lucide icons
-        lucide.createIcons();
+        // Initialize Lucide icons without blocking first paint
+        (function(){
+            var initLucide = function(){
+                try {
+                    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+                        window.lucide.createIcons();
+                    }
+                } catch(_){}
+            };
+            if ('requestIdleCallback' in window) {
+                try { requestIdleCallback(initLucide, { timeout: 200 }); } catch(_) { document.addEventListener('DOMContentLoaded', initLucide); }
+            } else if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initLucide);
+            } else {
+                initLucide();
+            }
+        })();
 
         // Sidebar functionality
         const sidebar = document.getElementById('sidebar');

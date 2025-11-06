@@ -181,19 +181,14 @@
                                 <div class="text-sm text-gray-900">{{ customer.mobile }}</div>
                             </td>
                             <td class="px-6 py-4">
-                                <div class="text-sm text-gray-900 max-w-xs truncate">
-                                    {{ customer.street_address }}, {{ customer.barangay|barangay_name }}, {{ customer.citymun|citymun_name }}, {{ customer.province|province_name }}, {{ customer.postal_code }}
+                                <div class="text-sm text-gray-900 max-w-xs truncate" title="{{ order_data.shipping_address }}">
+                                    {{ order_data.shipping_address }}
                                 </div>
                             </td>
                             <td class="px-6 py-4">
-                                <div class="text-sm text-gray-900">{{ items|length }}{% if order_data.custom_order_items %} + {{ order_data.custom_order_items|length }}{% endif %} item{{ items|length|add:order_data.custom_order_items|length|pluralize }}</div>
-                                <div class="text-xs text-gray-500 max-w-xs">
-                                    {% for item in items %}
-                                    {{ item.product.name }} ({{ item.size }}){% if item.quantity > 1 %} ({{ item.quantity }}x){% endif %}{% if not forloop.last or order_data.custom_order_items %}, {% endif %}
-                                    {% endfor %}
-                                    {% for custom_item in order_data.custom_order_items %}
-                                    Custom Jersey - {{ custom_item.custom_item.custom_design.jersey_name }} ({{ custom_item.size }}){% if custom_item.quantity > 1 %} ({{ custom_item.quantity }}x){% endif %}{% if not forloop.last %}, {% endif %}
-                                    {% endfor %}
+                                <div class="text-sm text-gray-900">{{ order_data.items_count }} item{{ order_data.items_count|pluralize }}</div>
+                                <div class="text-xs text-gray-500 max-w-xs truncate" title="{{ order_data.items_summary }}">
+                                    {{ order_data.items_summary }}
                                 </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">

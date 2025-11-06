@@ -748,6 +748,8 @@ def admin_view_users(request):
     from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
     from django.db.models import Count, Q
 
+    q = (request.GET.get('q') or '').strip()
+
     # Limit selected columns and join user to avoid N+1 queries
     customers = (
         models.Customer.objects
@@ -756,7 +758,25 @@ def admin_view_users(request):
             'id', 'mobile', 'street_address', 'barangay', 'citymun', 'province', 'region', 'postal_code',
             'user__id', 'user__first_name', 'user__last_name', 'user__email', 'user__is_active'
         )
+        .defer('profile_pic')
+        .order_by('-id')
     )
+
+    # Server-side search across common fields
+    if q:
+        words = q.split()
+        search_q = Q()
+        for w in words:
+            search_q |= (
+                Q(user__first_name__icontains=w) |
+                Q(user__last_name__icontains=w) |
+                Q(user__email__icontains=w) |
+                Q(mobile__icontains=w) |
+                Q(street_address__icontains=w) |
+                Q(citymun__icontains=w) |
+                Q(province__icontains=w)
+            )
+        customers = customers.filter(search_q)
     # Paginate queryset first to avoid building a huge in-memory list
     page = request.GET.get('page', 1)
     # Allow configurable page size via query param, default to 5
@@ -827,6 +847,7 @@ def admin_view_users(request):
         'page_obj': page_obj,
         'paginator': paginator,
         'page_size': page_size,
+        'q': q,
         'active_count': counts.get('active', 0),
         'pending_count': 0,
         'suspended_count': 0,
@@ -998,7 +1019,13 @@ def admin_view_booking_view(request):
     return redirect('admin-view-processing-orders')
 
 def get_order_status_counts():
+    """Get counts of orders by major status groups with short cache."""
     try:
+        from django.core.cache import cache
+        cached = cache.get('order_status_counts')
+        if cached is not None:
+            return cached
+
         from django.db.models import Count
         rows = models.Orders.objects.values('status').annotate(count=Count('id'))
         result = {
@@ -1021,6 +1048,9 @@ def get_order_status_counts():
                 result['delivered'] += c
             elif s == 'Cancelled':
                 result['cancelled'] += c
+
+        # Cache for 30 seconds to avoid repeated aggregation per request
+        cache.set('order_status_counts', result, 30)
         return result
     except Exception:
         return {
@@ -1122,21 +1152,39 @@ def admin_view_all_orders(request):
 
 def prepare_admin_order_view(request, orders, status, template, extra_context=None):
     # Optimize by prefetching related items and selecting customer relations
-    from django.db.models import Prefetch
+    from django.db.models import Prefetch, Sum, F, Q
+    from django.db.models.functions import Coalesce
+    from django.db.models import DecimalField
     from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+    from decimal import Decimal
 
     # Apply select_related/prefetch and ordering
+    # Annotate per-order totals using database-side computation to avoid Python loops
+    # Use Sum on arithmetic F-expressions and ensure Decimal output types to avoid type errors
+
     orders_qs = (
         orders
         .select_related('customer', 'customer__user')
         .only(
             # Orders fields
-            'id', 'customer_id', 'status', 'order_ref', 'order_date', 'address', 'created_at',
+            'id', 'customer_id', 'status', 'order_ref', 'order_date', 'address', 'created_at', 'delivery_fee',
             # Customer fields used by get_full_address and display
             'customer__id', 'customer__region', 'customer__province', 'customer__citymun', 'customer__barangay',
             'customer__street_address', 'customer__postal_code', 'customer__user_id',
             # User display fields
             'customer__user__id', 'customer__user__first_name', 'customer__user__last_name', 'customer__user__email'
+        )
+        .annotate(
+            items_amount=Coalesce(
+                Sum(F('orderitem__price') * F('orderitem__quantity'), output_field=DecimalField(max_digits=12, decimal_places=2)),
+                Decimal('0.00'),
+                output_field=DecimalField(max_digits=12, decimal_places=2)
+            ),
+            custom_amount=Coalesce(
+                Sum(F('customorderitem__price') * F('customorderitem__quantity'), output_field=DecimalField(max_digits=12, decimal_places=2)),
+                Decimal('0.00'),
+                output_field=DecimalField(max_digits=12, decimal_places=2)
+            ),
         )
         .prefetch_related(
             Prefetch(
@@ -1154,7 +1202,11 @@ def prepare_admin_order_view(request, orders, status, template, extra_context=No
                 'customorderitem_set',
                 queryset=(
                     models.CustomOrderItem.objects
-                    .only('id', 'order_id', 'quantity', 'price', 'size', 'custom_design_id')
+                    .select_related('custom_design')
+                    .only(
+                        'id', 'order_id', 'quantity', 'price', 'size', 'custom_design_id',
+                        'custom_design__id', 'custom_design__design_image'
+                    )
                 )
             ),
         )
@@ -1179,7 +1231,16 @@ def prepare_admin_order_view(request, orders, status, template, extra_context=No
 
     # Paginate at the queryset level to avoid building huge lists
     page_num = request.GET.get('page', 1)
-    paginator = Paginator(orders_qs, 5)
+    # Allow configurable page size via query param (default 5, clamp 1..100)
+    try:
+        page_size = int(request.GET.get('page_size', '5'))
+    except (TypeError, ValueError):
+        page_size = 5
+    if page_size < 1:
+        page_size = 5
+    if page_size > 100:
+        page_size = 100
+    paginator = Paginator(orders_qs, page_size)
     try:
         page_obj = paginator.page(page_num)
     except PageNotAnInteger:
@@ -1190,13 +1251,20 @@ def prepare_admin_order_view(request, orders, status, template, extra_context=No
     # Build orders_data only for the current page's orders
     orders_data = []
     for order in page_obj.object_list:
-        total_price = 0
+        # Use annotated totals to avoid Python-side aggregation
+        try:
+            total_price = (
+                (order.items_amount or Decimal('0.00')) +
+                (order.custom_amount or Decimal('0.00')) +
+                (order.delivery_fee or Decimal('0.00'))
+            )
+        except Exception:
+            total_price = Decimal('0.00')
 
         items = []
         for item in order.orderitem_set.all():
             price = item.price or 0
             qty = item.quantity or 0
-            total_price += price * qty
             items.append({
                 'product': item.product,
                 'quantity': qty,
@@ -1209,7 +1277,6 @@ def prepare_admin_order_view(request, orders, status, template, extra_context=No
         for item in order.customorderitem_set.all():
             price = item.price or 0
             qty = item.quantity or 0
-            total_price += price * qty
             custom_items.append({
                 'custom_item': item,
                 'quantity': qty,
@@ -1219,13 +1286,47 @@ def prepare_admin_order_view(request, orders, status, template, extra_context=No
                 'image_url': None,
             })
 
-        shipping_address = order.address if getattr(order, 'address', None) else (order.customer.get_full_address if getattr(order, 'customer', None) else '')
+        # Build a compact summary string to avoid heavy template loops
+        try:
+            product_labels = [
+                f"{it['product'].name} ({it['size']}) x{it['quantity']}" for it in items
+            ]
+            custom_labels = [
+                f"Custom Jersey ({it['size']}) x{it['quantity']}" for it in custom_items
+            ]
+            labels = product_labels + custom_labels
+            items_count = len(labels)
+            # Show up to first 5 items; truncate long strings
+            summary = ', '.join(labels[:5])
+            if len(summary) > 180:
+                summary = summary[:179] + '…'
+        except Exception:
+            items_count = len(items) + len(custom_items)
+            summary = ''
+
+        # Build a lightweight address string without invoking mapping filters
+        if getattr(order, 'address', None):
+            shipping_address = order.address
+        elif getattr(order, 'customer', None):
+            c = order.customer
+            parts = [
+                c.street_address or '',
+                c.barangay or '',
+                c.citymun or '',
+                c.province or '',
+                str(c.postal_code or '')
+            ]
+            shipping_address = ', '.join([p for p in parts if p])
+        else:
+            shipping_address = ''
         orders_data.append({
             'order': order,
             'customer': order.customer,
             'shipping_address': shipping_address,
             'order_items': items,
             'custom_order_items': custom_items,
+            'items_count': items_count,
+            'items_summary': summary,
             'status': order.status,
             'order_id': order.order_ref,
             'order_date': order.order_date,
@@ -1235,7 +1336,7 @@ def prepare_admin_order_view(request, orders, status, template, extra_context=No
     # Replace page object list with our computed dicts so template pagination works
     page_obj.object_list = orders_data
 
-    context = {'orders_data': page_obj, 'paginator': paginator, 'status': status, 'q': q}
+    context = {'orders_data': page_obj, 'paginator': paginator, 'status': status, 'q': q, 'page_size': page_size}
     if extra_context:
         context.update(extra_context)
     return render(request, template, context)
@@ -4326,9 +4427,37 @@ def admin_transactions_view(request):
     year = request.GET.get('year')
     transaction_type = request.GET.get('type')
     export = request.GET.get('export')
+    q = (request.GET.get('q') or '').strip()
 
-    # Base queryset for completed orders
-    orders = models.Orders.objects.filter(status='Delivered').select_related('customer__user')
+    from django.db.models import Q, Sum, F, DecimalField, Value
+    from django.db.models.functions import Coalesce
+    from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+    from django.db.models import Prefetch
+    from django.db.models import ExpressionWrapper
+    from decimal import Decimal
+
+    # Base queryset for completed orders with related user and prefetch of items/products
+    orders = (
+        models.Orders.objects
+        .filter(status='Delivered')
+        .select_related('customer', 'customer__user')
+        .only(
+            'id', 'order_ref', 'created_at', 'payment_method', 'customer_id',
+            'customer__id', 'customer__user_id',
+            'customer__user__first_name', 'customer__user__last_name'
+        )
+        .prefetch_related(
+            Prefetch(
+                'orderitem_set',
+                queryset=(
+                    models.OrderItem.objects
+                    .select_related('product')
+                    .only('order_id', 'product_id', 'size', 'quantity', 'product__name')
+                )
+            )
+        )
+        .order_by('-created_at')
+    )
 
     # Apply filters
     if month:
@@ -4336,42 +4465,124 @@ def admin_transactions_view(request):
     if year:
         orders = orders.filter(created_at__year=year)
     if transaction_type:
-        # Filter by payment method based on transaction type
         if transaction_type == 'COD':
             orders = orders.filter(payment_method='cod')
         elif transaction_type == 'Credit':
-            orders = orders.filter(payment_method='paypal')  # or other non-COD methods
+            orders = orders.filter(payment_method='paypal')
 
-    # Calculate summary data
-    total_revenue = sum(float(order.get_total_amount()) for order in orders)
+    # Apply server-side search on key fields
+    if q:
+        words = q.split()
+        search_q = Q()
+        for w in words:
+            # Text fields
+            search_q |= (
+                Q(order_ref__icontains=w) |
+                Q(customer__user__first_name__icontains=w) |
+                Q(customer__user__last_name__icontains=w)
+            )
+            # Numeric user id or CUST-prefixed code mapping to user id
+            parsed_id = None
+            if w.upper().startswith('CUST'):
+                digits = ''.join(ch for ch in w if ch.isdigit())
+                if digits.isdigit():
+                    parsed_id = int(digits)
+            elif w.isdigit():
+                parsed_id = int(w)
+            if parsed_id is not None:
+                search_q |= Q(customer__user__id=parsed_id)
+        orders = orders.filter(search_q)
+
+    # Annotate per-order amounts to avoid calling get_total_amount repeatedly
+    price_qty_decimal = DecimalField(max_digits=12, decimal_places=2)
+    orders = orders.annotate(
+        items_amount=Coalesce(
+            Sum(ExpressionWrapper(F('orderitem__price') * F('orderitem__quantity'), output_field=price_qty_decimal)),
+            Value(Decimal('0.00'), output_field=price_qty_decimal),
+            output_field=price_qty_decimal,
+        ),
+        custom_amount=Coalesce(
+            Sum(ExpressionWrapper(F('customorderitem__price') * F('customorderitem__quantity'), output_field=price_qty_decimal)),
+            Value(Decimal('0.00'), output_field=price_qty_decimal),
+            output_field=price_qty_decimal,
+        ),
+    )
+
+    # Compute summary data using database aggregates (items + custom items)
+    # Total revenue across filtered orders
+    # Use ExpressionWrapper to ensure multiplication has a Decimal output_field
+    price_qty_decimal = DecimalField(max_digits=12, decimal_places=2)
+    item_total = models.OrderItem.objects.filter(order__in=orders).aggregate(
+        total=Coalesce(
+            Sum(ExpressionWrapper(F('price') * F('quantity'), output_field=price_qty_decimal)),
+            Value(Decimal('0.00'), output_field=price_qty_decimal),
+            output_field=price_qty_decimal,
+        )
+    )['total']
+    custom_total = models.CustomOrderItem.objects.filter(order__in=orders).aggregate(
+        total=Coalesce(
+            Sum(ExpressionWrapper(F('price') * F('quantity'), output_field=price_qty_decimal)),
+            Value(Decimal('0.00'), output_field=price_qty_decimal),
+            output_field=price_qty_decimal,
+        )
+    )['total']
+    total_revenue = float(item_total or Decimal('0.00')) + float(custom_total or Decimal('0.00'))
+
     current_month = timezone.now().month
     current_year = timezone.now().year
     monthly_orders = orders.filter(created_at__month=current_month, created_at__year=current_year)
-    monthly_revenue = sum(float(order.get_total_amount()) for order in monthly_orders)
+    m_item_total = models.OrderItem.objects.filter(order__in=monthly_orders).aggregate(
+        total=Coalesce(
+            Sum(ExpressionWrapper(F('price') * F('quantity'), output_field=price_qty_decimal)),
+            Value(Decimal('0.00'), output_field=price_qty_decimal),
+            output_field=price_qty_decimal,
+        )
+    )['total']
+    m_custom_total = models.CustomOrderItem.objects.filter(order__in=monthly_orders).aggregate(
+        total=Coalesce(
+            Sum(ExpressionWrapper(F('price') * F('quantity'), output_field=price_qty_decimal)),
+            Value(Decimal('0.00'), output_field=price_qty_decimal),
+            output_field=price_qty_decimal,
+        )
+    )['total']
+    monthly_revenue = float(m_item_total or Decimal('0.00')) + float(m_custom_total or Decimal('0.00'))
+
     total_transactions = orders.count()
     avg_transaction = total_revenue / total_transactions if total_transactions > 0 else 0
 
-    # Prepare transactions data
-    transactions = []
-    for order in orders:
-        customer_name = f"{order.customer.user.first_name} {order.customer.user.last_name}" if order.customer and order.customer.user else 'Unknown'
-        customer_id = order.customer.customer_code if order.customer else 'Unknown'
+    # Paginate orders to avoid building a huge transactions list
+    try:
+        page_size = int(request.GET.get('page_size', '10'))
+    except (TypeError, ValueError):
+        page_size = 10
+    if page_size <= 0:
+        page_size = 10
+    if page_size > 100:
+        page_size = 100
+    page_num = request.GET.get('page', 1)
+    paginator = Paginator(orders, page_size)
+    try:
+        page_obj = paginator.page(page_num)
+    except PageNotAnInteger:
+        page_obj = paginator.page(1)
+    except EmptyPage:
+        page_obj = paginator.page(paginator.num_pages)
 
-        # Get order items and product details
-        order_items = order.orderitem_set.all()
+    # Prepare transactions data for current page only
+    transactions = []
+    for order in page_obj.object_list:
+        customer_name = (
+            f"{order.customer.user.first_name} {order.customer.user.last_name}" if getattr(order.customer, 'user', None) else 'Unknown'
+        )
+        customer_id = getattr(order.customer, 'customer_code', 'Unknown')
+
         product_details = []
-        for item in order_items:
-            product_details.append(f"{item.product.name} (Size: {item.size}, Qty: {item.quantity})")
+        for item in order.orderitem_set.all():
+            product_name = getattr(item.product, 'name', 'Unknown')
+            product_details.append(f"{product_name} (Size: {item.size}, Qty: {item.quantity})")
         products_text = ', '.join(product_details) if product_details else 'No products'
 
-        # Map payment method to display type
-        if order.payment_method == 'cod':
-            payment_type = 'COD'
-        elif order.payment_method == 'paypal':
-            payment_type = 'Credit'
-        else:
-            # Default for any other payment methods (card, etc.)
-            payment_type = 'Credit'
+        payment_type = 'COD' if order.payment_method == 'cod' else 'Credit'
 
         transactions.append({
             'date': order.created_at.strftime('%Y-%m-%d'),
@@ -4380,7 +4591,8 @@ def admin_transactions_view(request):
             'order_id': order.order_ref or f"ORD-{order.id}",
             'type': payment_type,
             'products': products_text,
-            'amount': float(order.get_total_amount()),
+            # Use annotated per-order amounts to avoid extra queries
+            'amount': float((order.items_amount or Decimal('0.00')) + (order.custom_amount or Decimal('0.00'))),
         })
 
     # Handle export
@@ -4410,6 +4622,10 @@ def admin_transactions_view(request):
 
     context = {
         'transactions': transactions,
+        'page_obj': page_obj,
+        'paginator': paginator,
+        'page_size': page_size,
+        'q': q,
         'total_revenue': total_revenue,
         'monthly_revenue': monthly_revenue,
         'total_transactions': total_transactions,

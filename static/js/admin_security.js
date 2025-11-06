@@ -29,23 +29,25 @@ function writeAdminCache(isAdmin) {
     }
 }
 
+// Central admin path list so monitoring can short-circuit on non-admin pages
+const ADMIN_PATHS = [
+    '/admin/',
+    '/admin-dashboard',
+    '/admin-products',
+    '/admin-view-users',
+    '/admin-view-processing-orders',
+    '/admin-view-confirmed-orders',
+    '/admin-view-shipping-orders',
+    '/admin-view-delivered-orders',
+    '/admin-view-booking',
+];
+
 // Check if user is trying to access admin dashboard
 function checkAdminAccess() {
     const currentPath = window.location.pathname;
-    const adminPaths = [
-        '/admin/',
-        '/admin-dashboard',
-        '/admin-products',
-        '/admin-view-users',
-        '/admin-view-processing-orders',
-        '/admin-view-confirmed-orders',
-        '/admin-view-shipping-orders',
-        '/admin-view-delivered-orders',
-        '/admin-view-booking',
-    ];
 
     // Check if current path is an admin path
-    const isAdminPath = adminPaths.some(path => currentPath.startsWith(path));
+    const isAdminPath = ADMIN_PATHS.some(path => currentPath.startsWith(path));
 
     if (!isAdminPath) return;
 
@@ -167,12 +169,18 @@ function monitorAdminAccess() {
     // If server says user is admin, skip all monitoring to cut overhead
     if (window.__is_admin__ === true) return;
     if (__adminMonitorInitialized) return;
+
+    // Only initialize monitoring on admin paths to avoid overhead elsewhere
+    const currentPath = window.location.pathname;
+    const onAdminPath = ADMIN_PATHS.some(path => currentPath.startsWith(path));
+    if (!onAdminPath) return;
+
     __adminMonitorInitialized = true;
 
     // Check on page load
     checkAdminAccess();
 
-    // Monitor for programmatic navigation
+    // Monitor for programmatic navigation within admin area
     const originalPushState = history.pushState;
     const originalReplaceState = history.replaceState;
 

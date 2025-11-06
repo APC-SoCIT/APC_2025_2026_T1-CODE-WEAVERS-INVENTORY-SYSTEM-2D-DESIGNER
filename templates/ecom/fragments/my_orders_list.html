@@ -18,7 +18,7 @@
   <div class="orders-header">My Orders</div>
 
   {% if not orders_with_items %}
-    <div class="alert alert-info">Wala pang orders.</div>
+    <div class="alert alert-info">You have no recent orders. Start shopping now!</div>
   {% endif %}
 
   {% for order_dict in orders_with_items %}
