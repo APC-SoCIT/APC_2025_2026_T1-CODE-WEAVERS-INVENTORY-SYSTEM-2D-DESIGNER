@@ -36,6 +36,50 @@ class Customer(models.Model):
     postal_code = models.PositiveIntegerField()
     mobile = models.CharField(max_length=13, help_text="Enter 10 digits, e.g. '956 837 0169'")
 
+    # Payment preferences and non-sensitive identifiers
+    PREFERRED_PAYMENT_CHOICES = [
+        ('cod', 'Cash on Delivery'),
+        ('paypal', 'PayPal'),
+        ('gcash', 'GCash')
+    ]
+    preferred_payment_method = models.CharField(
+        max_length=10,
+        choices=PREFERRED_PAYMENT_CHOICES,
+        default='cod',
+        help_text='Customer preferred payment method'
+    )
+    # PayPal identity (non-sensitive) and last transaction reference
+    paypal_payer_id = models.CharField(
+        max_length=64,
+        blank=True,
+        null=True,
+        help_text='PayPal Payer ID (non-sensitive)'
+    )
+    paypal_email = models.EmailField(
+        blank=True,
+        null=True,
+        help_text='PayPal email from last successful payment'
+    )
+    last_paypal_txn_id = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        help_text='Last PayPal transaction ID captured'
+    )
+    # GCash reference (via payment gateway) and last transaction reference
+    gcash_reference_id = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        help_text='GCash reference ID from provider (non-sensitive)'
+    )
+    last_gcash_txn_id = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        help_text='Last GCash transaction ID captured'
+    )
+
     @property
     def get_full_address(self):
         # Return formatted address with actual names

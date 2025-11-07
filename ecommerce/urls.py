@@ -123,6 +123,7 @@ urlpatterns = [
     # Dedicated Manage Addresses page
     path('manage-addresses/', views.manage_addresses_view, name='manage_addresses'),
     path('addresses-tab', views.addresses_tab_partial, name='addresses-tab'),
+    # Payment method removed from profile; keep addresses and other tabs
     path('download-invoice/<int:order_id>/', views.download_invoice_view, name='download-invoice'),
     path('customer/confirm-received/<int:order_id>/', views.customer_confirm_received, name='customer-confirm-received'),
     path('add-to-cart/<int:pk>/', views.add_to_cart_view,name='add-to-cart'),
