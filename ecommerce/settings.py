@@ -30,6 +30,8 @@ SECRET_KEY = config('SECRET_KEY', default='#vw(03o=(9kbvg!&2d5i!2$_58x@_-3l4wujp
 DEBUG = config('DEBUG', default=True, cast=bool)
 
 ALLOWED_HOSTS = [
+    'worksteamwear.shop',
+    '147.185.221.223',
     'localhost',
     '127.0.0.1',
     '147.185.221.29',
@@ -339,3 +341,4 @@ CACHES = {
         }
     }
 }
+

@@ -2079,10 +2079,8 @@ def add_to_cart_view(request, pk):
         messages.error(request, f'Sorry, size {size} is not available for this product.')
         return redirect('customer-home')
     
-    # Check if product quantity is sufficient
-    if product.quantity < quantity:
-        messages.error(request, f'Sorry, only {product.quantity} pcs available for {product.name} (Size: {size}).')
-        return redirect('customer-home')
+    # Prepare response depending on request type (AJAX vs normal)
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
     
     # For cart counter, fetching products ids added by customer from cookies
     if 'product_ids' in request.COOKIES:
@@ -2107,20 +2105,46 @@ def add_to_cart_view(request, pk):
         if len(details) == 2:
             existing_quantity = int(details[1])
 
-    new_quantity = existing_quantity + quantity
+    # Compute new quantity while respecting available stock
+    available_stock = int(product.quantity)
+    requested_quantity = max(1, int(quantity))
+    new_quantity = existing_quantity + requested_quantity
+    limited = False
+    # If already at or above available stock, do not add more
+    if existing_quantity >= available_stock:
+        limited = True
+        new_quantity = available_stock
+    # If requested exceeds available, cap to available
+    elif new_quantity > available_stock:
+        limited = True
+        new_quantity = available_stock
 
     # Prepare response depending on request type (AJAX vs normal)
-    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
     if is_ajax:
         from django.http import JsonResponse
+        # Build message depending on whether quantity was limited
+        if limited and new_quantity == existing_quantity:
+            msg = f"Maximum stock reached: {available_stock} pcs available for {product.name} (Size: {size})."
+            added = False
+        else:
+            msg = f"{product.name} (Size: {size}) added to cart successfully!"
+            added = True
         response = JsonResponse({
-            'success': True,
-            'message': f"{product.name} (Size: {size}) added to cart successfully!",
+            'success': True,  # Always true; convey state via 'added' and 'limited'
+            'added': added,
+            'limited': limited,
+            'message': msg,
             'product_id': pk,
             'size': size,
             'quantity': new_quantity,
+            'available_stock': available_stock,
         })
     else:
+        # Non-AJAX: show message using Django messages framework
+        if limited:
+            messages.warning(request, f'Maximum stock reached: {available_stock} pcs available for {product.name} (Size: {size}).')
+        else:
+            messages.success(request, f'{product.name} (Size: {size}) added to cart successfully!')
         response = render(request, 'ecom/index.html', {
             'products': products,
             'product_count_in_cart': product_count_in_cart,
@@ -2226,7 +2250,10 @@ def cart_view(request):
                         details = request.COOKIES[cookie_key].split(':')
                         if len(details) == 2:
                             size = details[0]
-                            quantity = int(details[1])
+                            requested_qty = int(details[1])
+                            # Clamp quantity to available stock
+                            available = int(getattr(p, 'quantity', 0))
+                            quantity = max(0, min(requested_qty, available))
                             total += p.price * quantity
                             products.append({
                                 'product': p,
@@ -2687,6 +2714,12 @@ def payment_success_view(request):
                     if len(details) == 2:
                         size = details[0]
                         quantity = int(details[1])
+                # Clamp quantity to available stock before creating order item
+                available = int(getattr(product, 'quantity', 0))
+                quantity = max(0, min(quantity, available))
+                if quantity <= 0:
+                    # Skip creating order item if no stock
+                    continue
 
                 # Create order item linked to parent order with size
                 models.OrderItem.objects.create(
@@ -2846,18 +2879,21 @@ def place_order(request):
                             size = details[0]
                             quantity = int(details[1])
             
-            # Create order item
-            models.OrderItem.objects.create(
-                order=order,
-                product=product,
-                quantity=quantity,
-                price=product.price,
-                size=size
-            )
-            
-            # Update product inventory
-            product.quantity = max(0, product.quantity - quantity)
-            product.save()
+            # Clamp quantity to available stock and create order item
+            available = int(getattr(product, 'quantity', 0))
+            quantity = max(0, min(quantity, available))
+            if quantity > 0:
+                models.OrderItem.objects.create(
+                    order=order,
+                    product=product,
+                    quantity=quantity,
+                    price=product.price,
+                    size=size
+                )
+                
+                # Update product inventory
+                product.quantity = max(0, product.quantity - quantity)
+                product.save()
             
             # Update inventory item
             try:

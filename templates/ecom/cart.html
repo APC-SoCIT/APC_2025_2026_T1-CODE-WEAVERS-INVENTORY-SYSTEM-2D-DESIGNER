@@ -663,36 +663,7 @@
         </div>
       </div>
       
-      <!-- Saved Addresses List -->
-      {% if saved_addresses %}
-      <div class="saved-addresses-list" style="margin-top: 15px;">
-        <h5 style="color: #666; font-size: 14px; margin-bottom: 10px;">Saved Addresses:</h5>
-        {% for address in saved_addresses %}
-        <div class="saved-address-item" data-default="{% if address.is_default %}true{% else %}false{% endif %}" onclick="selectAddress(event, {{ address.id }}, '{{ address.street_address }}, {{ address.barangay|barangay_name }}, {{ address.citymun|citymun_name }}, {{ address.province|province_name }}, {{ address.region|region_name }}, {{ address.postal_code }}')" style="border: 1px solid #e0e0e0; border-radius: 6px; padding: 8px; margin-bottom: 8px; background-color: {% if address.is_default %}#f8fff8{% else %}#fafafa{% endif %}; cursor: pointer; transition: all 0.2s ease;" onmouseover="this.style.backgroundColor='#e8f4fd'; this.style.borderColor='#007bff';" onmouseout="this.style.backgroundColor='{% if address.is_default %}#f8fff8{% else %}#fafafa{% endif %}'; this.style.borderColor='#e0e0e0';">
-          <div class="address-header" style="display: flex; justify-content: between; align-items: center; margin-bottom: 8px;">
-            <div class="address-info" style="flex: 1;">
-              <div class="address-text" style="font-size: 13px; color: #333;">
-                {{ address.street_address }}, {{ address.barangay|barangay_name }}, {{ address.citymun|citymun_name }}, {{ address.province|province_name }}, {{ address.region|region_name }}, {{ address.postal_code }}
-              </div>
-            </div>
-            <div class="address-actions" style="display: flex; gap: 8px; align-items: center;">
-              {% if address.is_default %}
-                <span class="default-badge" style="background-color: #4CAF50; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px;">Default</span>
-              {% else %}
-                <button class="btn btn-sm btn-outline-success" onclick="setDefaultAddress({{ address.id }})" style="font-size: 11px; padding: 2px 8px;">Set as Default</button>
-                <button class="btn btn-sm btn-outline-danger" onclick="deleteAddress({{ address.id }})" style="font-size: 11px; padding: 2px 8px;">Delete</button>
-              {% endif %}
-            </div>
-          </div>
-        </div>
-        {% endfor %}
-      </div>
-      {% else %}
-      <!-- No saved addresses -->
-      <div style="margin-top: 15px; color: #666; font-style: italic;">
-        No delivery address set
-      </div>
-      {% endif %}
+      <!-- Inline Saved Addresses list removed from cart for cleaner UI -->
       
       <!-- Address Form -->
       <div class="address-form" id="address-form" style="display: none;">
