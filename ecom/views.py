@@ -24,6 +24,8 @@ from django.views.decorators.http import require_http_methods, require_GET
 import requests
 import json
 import base64
+import secrets
+from urllib.parse import urlencode
 from django.core.files.base import ContentFile
 from django.http import HttpResponse
 from django.http import JsonResponse
@@ -2702,6 +2704,32 @@ def payment_success_view(request):
         delivery_fee=delivery_fee
     )
 
+    # Persist customer payment preference and non-sensitive identifiers
+    try:
+        customer.preferred_payment_method = payment_method
+        if payment_method == 'paypal':
+            # Store last successful PayPal transaction id
+            if transaction_id:
+                customer.last_paypal_txn_id = transaction_id
+            # If front-end passes PayPal payer info, capture it (optional)
+            payer_id = request.GET.get('payerId') or request.GET.get('payer_id')
+            payer_email = request.GET.get('payerEmail') or request.GET.get('payer_email')
+            if payer_id:
+                customer.paypal_payer_id = payer_id
+            if payer_email:
+                customer.paypal_email = payer_email
+        elif payment_method == 'gcash':
+            # Store last successful GCash transaction id and optional reference id
+            if transaction_id:
+                customer.last_gcash_txn_id = transaction_id
+            gcash_ref = request.GET.get('referenceId') or request.GET.get('reference_id')
+            if gcash_ref:
+                customer.gcash_reference_id = gcash_ref
+        customer.save()
+    except Exception as e:
+        # Do not block order creation if profile update fails
+        print(f"Warning: Failed to update customer payment info: {e}")
+
     # Create order items linked to the parent order
     for product in (products or []):
         quantity = 1  # Default quantity to 1
@@ -3882,6 +3910,58 @@ def addresses_tab_partial(request):
         'customer': customer,
         'saved_addresses': saved_addresses,
     })
+
+@login_required(login_url='customerlogin')
+@user_passes_test(is_customer)
+def payment_method_tab_partial(request):
+    """Partial for My Profile › Payment Method tab.
+    Lets customers choose a preferred payment method (stored in session).
+    """
+    try:
+        customer = Customer.objects.get(user=request.user)
+    except Customer.DoesNotExist:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'status': 'error', 'message': 'Customer profile not found'}, status=404)
+        messages.error(request, 'Customer profile not found. Please contact support.')
+        return redirect('my-profile')
+
+    # Prefer database-stored preference; fallback to session
+    preferred = getattr(customer, 'preferred_payment_method', None) or request.session.get('preferred_payment_method', 'cod')
+
+    if request.method == 'POST':
+        method = (request.POST.get('method') or '').lower()
+        allowed = {'cod': 'Cash on Delivery', 'paypal': 'PayPal', 'gcash': 'GCash'}
+        if method in allowed:
+            # Update session and persist to customer profile
+            request.session['preferred_payment_method'] = method
+            request.session.modified = True
+            try:
+                customer.preferred_payment_method = method
+                customer.save()
+            except Exception as e:
+                logger.warning(f"Failed to save preferred payment method to profile: {e}")
+
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'status': 'success', 'preferred': method, 'label': allowed[method]})
+            messages.success(request, f"Default payment method set to {allowed[method]}")
+            return redirect('my-profile')
+
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'status': 'error', 'message': 'Invalid payment method'}, status=400)
+        messages.error(request, 'Invalid payment method selected.')
+        return redirect('my-profile')
+
+    # Render fragment for AJAX consumption
+    return render(request, 'ecom/fragments/payment_method_tab.html', {
+        'customer': customer,
+        'preferred': preferred,
+        'paypal_email': getattr(customer, 'paypal_email', None),
+        'paypal_payer_id': getattr(customer, 'paypal_payer_id', None),
+        'last_paypal_txn_id': getattr(customer, 'last_paypal_txn_id', None),
+        'gcash_reference_id': getattr(customer, 'gcash_reference_id', None),
+        'last_gcash_txn_id': getattr(customer, 'last_gcash_txn_id', None),
+    })
+
 
 @login_required
 @user_passes_test(is_customer)

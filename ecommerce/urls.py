@@ -121,6 +121,7 @@ urlpatterns = [
     path('change-password', views.change_password_view, name='change-password'),
     path('change-address', views.change_address_view, name='change-address'),
     path('addresses-tab', views.addresses_tab_partial, name='addresses-tab'),
+    # Payment method removed from profile; keep addresses and other tabs
     path('download-invoice/<int:order_id>/', views.download_invoice_view, name='download-invoice'),
     path('customer/confirm-received/<int:order_id>/', views.customer_confirm_received, name='customer-confirm-received'),
     path('add-to-cart/<int:pk>/', views.add_to_cart_view,name='add-to-cart'),
