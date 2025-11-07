@@ -40,7 +40,7 @@ ALLOWED_HOSTS = [
     '147.185.221.212',
     '147.185.221.20',
     '147.185.221.20:4104',
-    'worksteamwear.shop',
+    'worksteamwear.com',
     'www.worksteamwear.shop',
     '47.129.161.196',
     '*',
