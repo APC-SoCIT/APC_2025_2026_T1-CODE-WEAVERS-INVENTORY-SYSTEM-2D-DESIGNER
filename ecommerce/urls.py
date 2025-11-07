@@ -94,7 +94,9 @@ urlpatterns = [
     path('approve-cancellation/<int:order_id>/', views.approve_cancellation_request, name='approve-cancellation'),
     path('reject-cancellation/<int:order_id>/', views.reject_cancellation_request, name='reject-cancellation'),
     path('admin-view-pre-orders', views.admin_view_pre_orders, name='admin-view-pre-orders'),
-    path('admin/orders/<int:order_id>/detail/', views.admin_order_detail_ajax, name='admin-order-detail-ajax'),
+    # Avoid conflict with Django admin.site at 'admin/'; use 'admin-orders/' prefix
+    path('admin-orders/<int:order_id>/detail/', views.admin_order_detail_ajax, name='admin-order-detail-ajax'),
+    path('admin-orders/<int:order_id>/confirm/', views.admin_confirm_pre_order, name='admin-confirm-pre-order'),
     path('delete-order/<int:pk>', views.delete_order_view,name='delete-order'),
     path('update-order/<int:pk>', views.update_order_view,name='update-order'),
 
@@ -118,6 +120,8 @@ urlpatterns = [
     path('edit-profile', views.edit_profile_view,name='edit-profile'),
     path('change-password', views.change_password_view, name='change-password'),
     path('change-address', views.change_address_view, name='change-address'),
+    # Dedicated Manage Addresses page
+    path('manage-addresses/', views.manage_addresses_view, name='manage_addresses'),
     path('addresses-tab', views.addresses_tab_partial, name='addresses-tab'),
     path('download-invoice/<int:order_id>/', views.download_invoice_view, name='download-invoice'),
     path('customer/confirm-received/<int:order_id>/', views.customer_confirm_received, name='customer-confirm-received'),

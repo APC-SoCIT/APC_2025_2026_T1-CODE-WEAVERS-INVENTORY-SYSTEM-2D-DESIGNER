@@ -1,4 +1,6 @@
 from django.contrib import admin
+from django.contrib.auth.models import User, Group
+from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from .models import Customer, Product, Orders, Feedback, OrderItem, Address, ChatSession, ChatMessage, ChatbotKnowledge, SuperAdmin
 @admin.register(Address)
 class AddressAdmin(admin.ModelAdmin):
@@ -165,3 +167,89 @@ class SuperAdminAdmin(admin.ModelAdmin):
 admin.site.site_header = "WorksTeamWear Administration"
 admin.site.site_title = "WorksTeamWear Admin Portal"
 admin.site.index_title = "Welcome to WorksTeamWear Administration"
+
+# --- Restrict User admin for non-superusers (Managers/Staff) ---
+try:
+    admin.site.unregister(User)
+except Exception:
+    pass
+
+
+class RestrictedUserAdmin(BaseUserAdmin):
+    """
+    Custom User admin:
+    - Managers cannot view/edit SuperAdmin users (is_superuser=True)
+    - Managers can only assign the 'Staff' group to users
+    - Hide superuser-only fields for non-superusers
+    """
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        if request.user.is_superuser:
+            return qs
+        # If Manager (or any non-superuser), hide superuser accounts
+        if request.user.groups.filter(name="Managers").exists():
+            return qs.exclude(is_superuser=True)
+        return qs
+
+    def has_view_permission(self, request, obj=None):
+        allowed = super().has_view_permission(request, obj)
+        if not allowed:
+            return False
+        if obj and obj.is_superuser and not request.user.is_superuser:
+            # Block Managers/Staff from viewing SuperAdmin user details
+            return False
+        return True
+
+    def has_change_permission(self, request, obj=None):
+        allowed = super().has_change_permission(request, obj)
+        if not allowed:
+            return False
+        if obj and obj.is_superuser and not request.user.is_superuser:
+            # Block Managers/Staff from editing SuperAdmin user details
+            return False
+        return True
+
+    def formfield_for_manytomany(self, db_field, request, **kwargs):
+        # Limit group assignment for non-superusers to 'Staff' only
+        if db_field.name == "groups" and not request.user.is_superuser:
+            if request.user.groups.filter(name="Managers").exists():
+                kwargs["queryset"] = Group.objects.filter(name="Staff")
+            else:
+                kwargs["queryset"] = Group.objects.none()
+        return super().formfield_for_manytomany(db_field, request, **kwargs)
+
+    def get_fieldsets(self, request, obj=None):
+        fieldsets = super().get_fieldsets(request, obj)
+        if request.user.is_superuser:
+            return fieldsets
+        # Remove superuser-only fields for Managers/Staff
+        filtered = []
+        for name, opts in fieldsets:
+            opts = dict(opts)
+            fields = opts.get("fields")
+            if fields:
+                opts["fields"] = tuple(
+                    f for f in fields if f not in ("is_superuser", "user_permissions")
+                )
+            filtered.append((name, opts))
+        return tuple(filtered)
+
+    def get_add_fieldsets(self, request):
+        add_fieldsets = super().get_add_fieldsets(request)
+        if request.user.is_superuser:
+            return add_fieldsets
+        # Ensure 'is_superuser' cannot be set during add
+        filtered = []
+        for name, opts in add_fieldsets:
+            opts = dict(opts)
+            fields = opts.get("fields")
+            if fields:
+                opts["fields"] = tuple(
+                    f for f in fields if f not in ("is_superuser", "user_permissions")
+                )
+            filtered.append((name, opts))
+        return tuple(filtered)
+
+
+admin.site.register(User, RestrictedUserAdmin)

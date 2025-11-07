@@ -6,66 +6,109 @@
 <head>
   <meta charset="utf-8">
   <style>
-    body { font-family: Arial, sans-serif; margin: 40px; }
-    .invoice-box { max-width: 800px; margin: auto; border: 1px solid #eee; padding: 30px; }
-    h2 { text-align: center; }
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-    th, td { border: 1px solid #ddd; padding: 8px; }
-    th { background: #f2f2f2; }
-    .right { text-align: right; }
-    .summary-table { margin-top: 30px; }
-    .summary-table td { border: none; }
-    .address-box { margin-top: 20px; padding: 15px; background: #f9f9f9; border-radius: 5px; }
-    .total-row { font-weight: bold; }
+    /* xhtml2pdf-friendly styles (avoid advanced CSS) */
+    body { font-family: Arial, sans-serif; margin: 24px; color: #3b3b3b; }
+    .container { width: 780px; margin: 0 auto; }
+    .header { border-bottom: 2px solid #d6c9bd; padding-bottom: 10px; margin-bottom: 10px; }
+    .title { font-size: 28px; letter-spacing: 2px; color: #6f5b4e; }
+    .grid { width: 100%; }
+    .left, .right { vertical-align: top; }
+    .left { width: 60%; }
+    .right { width: 40%; text-align: right; }
+    .label { font-size: 12px; color: #6f5b4e; }
+    .value { font-size: 13px; }
+    .badge { display: inline-block; border: 1px solid #d6c9bd; border-radius: 50%; width: 64px; height: 64px; text-align: center; line-height: 64px; font-weight: bold; color: #6f5b4e; }
+    .table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+    .table th { background: #efe7df; color: #6f5b4e; padding: 8px; font-size: 12px; border: 1px solid #d6c9bd; }
+    .table td { padding: 8px; border: 1px solid #e5ddd5; font-size: 12px; }
+    .summary { margin-top: 18px; }
+    .summary .box { border: 1px solid #d6c9bd; padding: 8px; }
+    .summary .row { width: 100%; }
+    .summary .label { color: #6f5b4e; }
+    .summary .total { font-weight: bold; }
+    .muted { color: #8a7a6f; font-size: 11px; }
   </style>
 </head>
 <body>
-  <div class="invoice-box">
-    <h2>Order Invoice</h2>
-
-       <strong>Order Date:</strong> {{ order.order_date|date:"F d, Y" }}</p>
-    <div class="address-box">
-      <strong>Customer:</strong> {{ customer.get_full_name }}<br>
-      <strong>Contact:</strong> {{ customer.mobile }}<br>
-      <strong>Address:</strong>
-      {{ order.address }}
+  <div class="container">
+    <!-- Header (table layout with explicit widths for PDF safety) -->
+    <div class="header">
+      <table class="grid" width="100%" cellspacing="0" cellpadding="0" style="table-layout: fixed;">
+        <tr>
+          <td class="left" width="468">
+            <div class="title">INVOICE</div>
+            <div class="value">Billed to {{ customer.get_full_name }}</div>
+            <div class="muted">{{ order.address }}</div>
+            <div class="muted">{{ customer.mobile }}</div>
+            <br/>
+            <div class="muted">Invoice Date: {{ order.created_at|date:"F d, Y" }}</div>
+            <div class="muted">Invoice Number: {{ order.order_ref|default:order.id }}</div>
+          </td>
+          <td class="right" width="312">
+            <div class="badge">WTW</div>
+            <div class="label" style="margin-top:8px;">WorkTeamWear PH</div>
+            <div class="muted">support@workteamwear.ph</div>
+            <div class="muted">+63-000-000-0000</div>
+          </td>
+        </tr>
+      </table>
     </div>
-    <table>
+
+    <!-- Line items (explicit column widths) -->
+    <table class="table" width="100%" cellspacing="0" cellpadding="0" style="table-layout: fixed;">
       <thead>
         <tr>
-          <th>Product</th>
-          <th>Size</th>
-          <th>Quantity</th>
-          <th>Unit Price</th>
-          <th class="right">Total</th>
+          <th width="420">DESCRIPTION</th>
+          <th width="60">NO.</th>
+          <th width="150">PRICE</th>
+          <th width="150">TOTAL</th>
         </tr>
       </thead>
       <tbody>
         {% for p in products %}
         <tr>
-          <td>{{ p.item.product.name }}</td>
-          <td>{{ p.size }}</td>
-          <td class="right">{{ p.quantity }}</td>
-             <td class="right">&#8369;{{ p.unit_price|floatformat:2|intcomma }}</td>
-              <td class="right">&#8369;{{ p.line_total|floatformat:2|intcomma }}</td>
+          <td>{{ p.item.product.name }}{% if p.size %} ({{ p.size }}){% endif %}</td>
+          <td class="right">{{ p.quantity|default_if_none:0 }}</td>
+          <td class="right">&#8369;{{ p.unit_price|default_if_none:0|floatformat:2|intcomma }}</td>
+          <td class="right">&#8369;{{ p.line_total|default_if_none:0|floatformat:2|intcomma }}</td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
-    <table class="summary-table" style="width: 100%;">
+
+    <!-- Summary (two-column table, fixed widths; inner table with fixed widths) -->
+    <table class="summary" width="100%" cellspacing="0" cellpadding="0" style="table-layout: fixed;">
       <tr>
-        <td class="right">VAT (12%):</td>
-        <td class="right">&#8369;{{ vat_amount|floatformat:2|intcomma }}</td>
-      </tr>
-      <tr>
-        <td class="right">Delivery Fee:</td>
-        <td class="right">&#8369;{{ delivery_fee|floatformat:2|intcomma }}</td>
-      </tr>
-      <tr class="total-row">
-        <td class="right">Grand Total:</td>
-                <td class="right">&#8369;{{ grand_total|floatformat:2|intcomma }}</td>
+        <td width="468" valign="top">
+          <div class="box">
+            <div class="label">Payment Information:</div>
+            <div class="muted">WorkTeamWear PH</div>
+            <div class="muted">Order ID: {{ order.order_ref|default:order.id }}</div>
+            <div class="muted">Contact: {{ order.mobile }}</div>
+          </div>
+        </td>
+        <td width="312" valign="top">
+          <div class="box">
+            <table width="100%" cellspacing="0" cellpadding="6" style="table-layout: fixed;">
+              <tr>
+                <td class="label" width="140">SUBTOTAL</td>
+                <td class="right" width="152">&#8369;{{ subtotal|default_if_none:0|floatformat:2|intcomma }}</td>
+              </tr>
+              <tr>
+                <td class="label" width="140">VAT (12%)</td>
+                <td class="right" width="152">&#8369;{{ vat_amount|default_if_none:0|floatformat:2|intcomma }}</td>
+              </tr>
+              <tr>
+                <td class="label total" width="140">TOTAL</td>
+                <td class="right total" width="152">&#8369;{{ grand_total|default_if_none:0|floatformat:2|intcomma }}</td>
+              </tr>
+            </table>
+          </div>
+        </td>
       </tr>
     </table>
+
+    <div class="muted" style="margin-top:12px;">Thank you for your business.</div>
   </div>
 </body>
 </html>

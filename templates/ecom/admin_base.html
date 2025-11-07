@@ -62,10 +62,10 @@
                 <i data-lucide="shopping-cart" class="mr-3 h-5 w-5"></i>
                 Order
             </a>
-            <!-- <a href="{% url 'admin-view-pre-orders' %}" class="nav-item {% if request.resolver_match.url_name == 'admin-view-pre-orders' %}bg-blue-50 text-blue-700{% else %}text-gray-600 hover:bg-gray-50 hover:text-gray-900{% endif %} group flex items-center px-2 py-2 text-sm font-medium rounded-md">
-                        <i data-lucide="clock" class="text-gray-400 mr-3 h-6 w-6"></i>
-                        Pre-Orders
-                    </a> -->
+            <a href="{% url 'admin-view-pre-orders' %}" class="nav-item {% if request.resolver_match.url_name == 'admin-view-pre-orders' %}bg-blue-50 text-blue-700{% else %}text-gray-600 hover:bg-gray-50 hover:text-gray-900{% endif %} group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                <i data-lucide="clock" class="mr-3 h-5 w-5"></i>
+                Pre-Orders
+            </a>
             <a href="{% url 'admin-products' %}" class="nav-item {% if request.resolver_match.url_name == 'admin-products' %}bg-blue-50 text-blue-700{% else %}text-gray-600 hover:bg-gray-50 hover:text-gray-900{% endif %} group flex items-center px-2 py-2 text-sm font-medium rounded-md">
                 <i data-lucide="shirt" class="mr-3 h-5 w-5"></i>
                 Product
@@ -74,10 +74,12 @@
                 <i data-lucide="box" class="mr-3 h-5 w-5"></i>
                 Inventory
             </a>
+            {% if is_superadmin or is_manager %}
             <a href="{% url 'admin-transactions' %}" class="nav-item {% if request.resolver_match.url_name == 'admin-transactions' %}bg-blue-50 text-blue-700{% else %}text-gray-600 hover:bg-gray-50 hover:text-gray-900{% endif %} group flex items-center px-2 py-2 text-sm font-medium rounded-md">
                 <i data-lucide="credit-card" class="mr-3 h-5 w-5"></i>
                 Transaction
             </a>
+            {% endif %}
              <a href="{% url 'admin-reports' %}" class="nav-item {% if request.resolver_match.url_name == 'admin-reports' %}bg-blue-50 text-blue-700{% else %}text-gray-600 hover:bg-gray-50 hover:text-gray-900{% endif %} group flex items-center px-2 py-2 text-sm font-medium rounded-md">
                 <i data-lucide="chart-no-axes-combined" class="mr-3 h-5 w-5"></i>
                 Report
@@ -102,6 +104,18 @@
                     Create Staff Account
                 </a>
             </div>
+            {% else %}
+            {% if is_manager %}
+            <div class="border-t border-gray-200 mt-4 pt-4">
+                <div class="px-2 py-1 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Manager
+                </div>
+                <a href="{% url 'create-staff' %}" class="nav-item {% if request.resolver_match.url_name == 'create-staff' %}bg-blue-50 text-blue-700{% else %}text-gray-600 hover:bg-blue-50 hover:text-blue-700{% endif %} group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                    <i data-lucide="user-plus" class="mr-3 h-5 w-5"></i>
+                    Create Staff Account
+                </a>
+            </div>
+            {% endif %}
             {% endif %}
         </nav>
         

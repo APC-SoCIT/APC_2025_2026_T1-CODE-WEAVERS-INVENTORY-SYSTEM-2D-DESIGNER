@@ -438,7 +438,7 @@
     .checkout .checkout--footer {
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      justify-content: flex-end; /* move Checkout button to the right */
       padding: 10px 10px 10px 20px;
       background-color: #efeff3;
     }
@@ -770,8 +770,6 @@
       <div class="details">
         <span>Your cart subtotal:</span>
         <span id="subtotal">₱ {{ total|floatformat:2|intcomma }}</span>
-        <span>Delivery Fee:</span>
-        <span id="delivery-fee">₱ <span id="delivery-amount">{{ delivery_fee|default:50|intcomma }}</span></span>
         <span>VAT (12%):</span>
         <span id="vat-amount">₱ <span id="vat-value">{{ vat_amount|default_if_none:0|floatformat:2|intcomma }}</span></span>
         <span style="border-top: 1px solid #ddd; padding-top: 5px; margin-top: 5px;">Grand Total:</span>
@@ -836,7 +834,7 @@
       // Global variables for calculations
       let fullSubtotal = parseFloat("{{ total|floatformat:'2'|default:'0.00' }}");
       let subtotal = fullSubtotal; // will be recalculated for selections
-      let deliveryFee = parseFloat("{{ delivery_fee|default:'50' }}");
+      let deliveryFee = 0.0; // delivery fee removed
       let vatRate = 0.12;
 
       function getSelectedProductKeys() {
@@ -894,7 +892,7 @@
           .then(response => response.json())
           .then(data => {
             if (data.status === 'success' || data.success) {
-              // Reload to reflect updated delivery fee and address everywhere
+              // Reload to reflect updated address everywhere
               location.reload();
             } else {
               alert(data.message || 'Error selecting address');
@@ -1229,17 +1227,17 @@
       
       // Calculate totals
       function calculateTotals() {
-        // Use VAT-inclusive calculation (same as backend)
-        let vatAmount = subtotal * 12 / 112;
-        let grandTotal = subtotal + deliveryFee;
+        // VAT-exclusive: add VAT on top of subtotal
+        let vatAmount = subtotal * vatRate;
+        let grandTotal = subtotal + vatAmount;
         
         // Update display
-        const deliveryAmountEl = document.getElementById('delivery-amount');
+        // Delivery fee removed; no delivery amount element
         const vatValueEl = document.getElementById('vat-value');
         const grandTotalValueEl = document.getElementById('grand-total-value');
         const footerTotalEl = document.getElementById('footer-total');
     
-        if (deliveryAmountEl) deliveryAmountEl.textContent = deliveryFee.toLocaleString();
+        // No delivery fee to display
         if (vatValueEl) vatValueEl.textContent = vatAmount.toFixed(2);
         if (grandTotalValueEl) grandTotalValueEl.textContent = grandTotal.toFixed(2);
         if (footerTotalEl) footerTotalEl.textContent = grandTotal.toFixed(2);
@@ -1249,9 +1247,8 @@
     
       // Update delivery fee based on region selection
       function updateDeliveryFee() {
-        const regionSelect = document.getElementById('region-select');
-        const selectedOption = regionSelect.options[regionSelect.selectedIndex];
-        deliveryFee = parseInt(selectedOption.dataset.fee) || 50;
+        // Delivery fee removed system-wide
+        deliveryFee = 0;
         calculateTotals();
       }
     

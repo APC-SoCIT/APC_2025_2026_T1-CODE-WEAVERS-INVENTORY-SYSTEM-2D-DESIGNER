@@ -34,7 +34,7 @@
                     
                     <div class="alert alert-warning">
                         <i class="fas fa-clock me-2"></i>
-                        <strong>Note:</strong> The verification link will expire in 24 hours for security reasons.
+                <strong>Note:</strong> The verification link will expire in 5 minutes for security reasons.
                     </div>
                     
                     <div class="text-center">
@@ -63,6 +63,7 @@
 
 <!-- Real-time verification status check -->
 <script>
+let expiredAlertShown = false;
 function checkVerificationStatus() {
     fetch('{% url "check_verification_status" %}')
         .then(response => response.json())
@@ -85,6 +86,24 @@ function checkVerificationStatus() {
                 setTimeout(() => {
                     window.location.href = '{% url "customerlogin" %}';
                 }, 2000);
+                return; // Already verified
+            }
+
+            // Show error when expired and not yet verified
+            if (!data.is_verified && data.is_expired && !expiredAlertShown) {
+                expiredAlertShown = true;
+                const alertDiv = document.createElement('div');
+                alertDiv.className = 'alert alert-danger alert-dismissible fade show position-fixed';
+                alertDiv.style.top = '20px';
+                alertDiv.style.right = '20px';
+                alertDiv.style.zIndex = '9999';
+                alertDiv.innerHTML = `
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Verification link expired after 10 seconds. Please request a new email.
+                    <a href="{% url 'resend_verification' %}" class="ms-2 btn btn-sm btn-outline-danger">Resend</a>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+                document.body.appendChild(alertDiv);
             }
         })
         .catch(error => {
@@ -92,7 +111,7 @@ function checkVerificationStatus() {
         });
 }
 
-// Check verification status every 5 seconds
-setInterval(checkVerificationStatus, 5000);
+// Check verification status every 1 second for responsiveness
+setInterval(checkVerificationStatus, 1000);
 </script>
 {% endblock %}

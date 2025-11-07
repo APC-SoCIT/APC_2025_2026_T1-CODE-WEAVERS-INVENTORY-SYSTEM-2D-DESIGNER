@@ -74,7 +74,13 @@
                                         </td>
                                         <td>{{ pre_order.item.quantity }}</td>
                                         <td>{{ pre_order.item.size }}</td>
-                                        <td>₱{{ pre_order.total_price|floatformat:2 }}</td>
+                                        <td>
+                                            {% if pre_order.item.pre_order_status == 'pending' %}
+                                                TBD
+                                            {% else %}
+                                                ₱{{ pre_order.total_price|floatformat:2 }}
+                                            {% endif %}
+                                        </td>
                                         <td>
                                             {% if pre_order.item.pre_order_status == 'pending' %}
                                                 <span class="badge badge-warning">Pending</span>
@@ -181,7 +187,13 @@
                             </tr>
                             <tr>
                                 <td><strong>Price:</strong></td>
-                                <td>₱{{ pre_order.total_price|floatformat:2 }}</td>
+                                <td>
+                                    {% if pre_order.item.pre_order_status == 'pending' %}
+                                        TBD
+                                    {% else %}
+                                        ₱{{ pre_order.total_price|floatformat:2 }}
+                                    {% endif %}
+                                </td>
                             </tr>
                             <tr>
                                 <td><strong>Date Ordered:</strong></td>

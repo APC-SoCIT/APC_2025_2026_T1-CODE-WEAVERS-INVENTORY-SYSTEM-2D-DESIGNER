@@ -87,6 +87,10 @@
                        class="order-tab {% if status == 'Delivered' %}active border-b-2 border-blue-500 text-blue-600{% else %}border-b-2 border-transparent text-gray-500 hover:text-gray-700{% endif %} py-2 px-1 text-sm font-medium">
                         Delivered
                     </a>
+                    <a href="{% url 'admin-view-cancellation-requests' %}" 
+                       class="order-tab {% if status == 'Request Cancellation' %}active border-b-2 border-blue-500 text-blue-600{% else %}border-b-2 border-transparent text-gray-500 hover:text-gray-700{% endif %} py-2 px-1 text-sm font-medium">
+                        Request Cancellation
+                    </a>
                     <a href="{% url 'admin-view-cancelled-orders' %}" 
                        class="order-tab {% if status == 'Cancelled' %}active border-b-2 border-blue-500 text-blue-600{% else %}border-b-2 border-transparent text-gray-500 hover:text-gray-700{% endif %} py-2 px-1 text-sm font-medium">
                         Cancelled
@@ -181,19 +185,14 @@
                                 <div class="text-sm text-gray-900">{{ customer.mobile }}</div>
                             </td>
                             <td class="px-6 py-4">
-                                <div class="text-sm text-gray-900 max-w-xs truncate">
-                                    {{ customer.street_address }}, {{ customer.barangay|barangay_name }}, {{ customer.citymun|citymun_name }}, {{ customer.province|province_name }}, {{ customer.postal_code }}
+                                <div class="text-sm text-gray-900 max-w-xs truncate" title="{{ order_data.shipping_address }}">
+                                    {{ order_data.shipping_address }}
                                 </div>
                             </td>
                             <td class="px-6 py-4">
-                                <div class="text-sm text-gray-900">{{ items|length }}{% if order_data.custom_order_items %} + {{ order_data.custom_order_items|length }}{% endif %} item{{ items|length|add:order_data.custom_order_items|length|pluralize }}</div>
-                                <div class="text-xs text-gray-500 max-w-xs">
-                                    {% for item in items %}
-                                    {{ item.product.name }} ({{ item.size }}){% if item.quantity > 1 %} ({{ item.quantity }}x){% endif %}{% if not forloop.last or order_data.custom_order_items %}, {% endif %}
-                                    {% endfor %}
-                                    {% for custom_item in order_data.custom_order_items %}
-                                    Custom Jersey - {{ custom_item.custom_item.custom_design.jersey_name }} ({{ custom_item.size }}){% if custom_item.quantity > 1 %} ({{ custom_item.quantity }}x){% endif %}{% if not forloop.last %}, {% endif %}
-                                    {% endfor %}
+                                <div class="text-sm text-gray-900">{{ order_data.items_count }} item{{ order_data.items_count|pluralize }}</div>
+                                <div class="text-xs text-gray-500 max-w-xs truncate" title="{{ order_data.items_summary }}">
+                                    {{ order_data.items_summary }}
                                 </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
@@ -202,33 +201,52 @@
                                 </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full 
-                                    {% if order.status == 'Processing' %}bg-yellow-100 text-yellow-800
-                                    {% elif order.status == 'Order Confirmed' %}bg-blue-100 text-blue-800
-                                    {% elif order.status == 'Out for Delivery' %}bg-purple-100 text-purple-800
-                                    {% elif order.status == 'Delivered' %}bg-green-100 text-green-800
-                                    {% elif order.status == 'Cancelled' %}bg-red-100 text-red-800
-                                    {% else %}bg-gray-100 text-gray-800{% endif %}">
-                                    {{ order.status }}
-                                </span>
+                                <div class="flex items-center gap-2">
+                                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full 
+                                        {% if order.status == 'Processing' %}bg-yellow-100 text-yellow-800
+                                        {% elif order.status == 'Order Confirmed' %}bg-blue-100 text-blue-800
+                                        {% elif order.status == 'Out for Delivery' %}bg-purple-100 text-purple-800
+                                        {% elif order.status == 'Delivered' %}bg-green-100 text-green-800
+                                        {% elif order.status == 'Cancelled' %}bg-red-100 text-red-800
+                                        {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                        {{ order.status }}
+                                    </span>
+                                    {% if order.cancellation_status == 'requested' %}
+                                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800" title="Pending admin approval">
+                                        Cancellation Request
+                                    </span>
+                                    {% endif %}
+                                </div>
                             </td>
                             {% if status != 'Delivered' and status != 'Cancelled' %}
                             <td class="px-11 py-4 whitespace-nowrap text-right text-sm font-medium">
                                 <div class="flex items-center space-x-2">
-                                    <a href="{% url 'update-order' order.id %}" class="text-green-600 hover:text-green-900" title="Edit Order">
-                                        <i data-lucide="edit" class="h-4 w-4"></i>
-                                    </a>
-                                    {% if order.status == 'Order Confirmed' %}
-                                    <button onclick="initiateAutomatedDelivery('{{ order.id }}')" class="text-blue-600 hover:text-blue-900" title="Start Automated Delivery">
-                                        <i data-lucide="truck" class="h-4 w-4"></i>
-                                    </button>
-                                    {% elif order.status == 'Out for Delivery' %}
-                                    <button onclick="trackDelivery('{{ order.id }}')" class="text-purple-600 hover:text-purple-900" title="Track Delivery">
-                                        <i data-lucide="map-pin" class="h-4 w-4"></i>
-                                    </button>
-                                    <button onclick="markAsDelivered('{{ order.id }}')" class="text-green-600 hover:text-green-900" title="Mark as Delivered">
-                                        <i data-lucide="check-circle" class="h-4 w-4"></i>
-                                    </button>
+                                    {% if status == 'Request Cancellation' and order.cancellation_status == 'requested' %}
+                                        <button onclick="openOrderDetail('{{ order.id }}')" class="text-blue-600 hover:text-blue-900" title="View Details">
+                                            <i data-lucide="eye" class="h-4 w-4"></i>
+                                        </button>
+                                        <button onclick="approveCancellation('{{ order.id }}')" class="text-green-600 hover:text-green-900" title="Approve Cancellation">
+                                            <i data-lucide="check" class="h-4 w-4"></i>
+                                        </button>
+                                        <button onclick="rejectCancellation('{{ order.id }}')" class="text-red-600 hover:text-red-900" title="Reject Cancellation">
+                                            <i data-lucide="x" class="h-4 w-4"></i>
+                                        </button>
+                                    {% else %}
+                                        <a href="{% url 'update-order' order.id %}" class="text-green-600 hover:text-green-900" title="Edit Order">
+                                            <i data-lucide="edit" class="h-4 w-4"></i>
+                                        </a>
+                                        {% if order.status == 'Order Confirmed' %}
+                                        <button onclick="initiateAutomatedDelivery('{{ order.id }}')" class="text-blue-600 hover:text-blue-900" title="Start Automated Delivery">
+                                            <i data-lucide="truck" class="h-4 w-4"></i>
+                                        </button>
+                                        {% elif order.status == 'Out for Delivery' %}
+                                        <button onclick="trackDelivery('{{ order.id }}')" class="text-purple-600 hover:text-purple-900" title="Track Delivery">
+                                            <i data-lucide="map-pin" class="h-4 w-4"></i>
+                                        </button>
+                                        <button onclick="markAsDelivered('{{ order.id }}')" class="text-green-600 hover:text-green-900" title="Mark as Delivered">
+                                            <i data-lucide="check-circle" class="h-4 w-4"></i>
+                                        </button>
+                                        {% endif %}
                                     {% endif %}
                                 </div>
                             </td>
@@ -548,6 +566,61 @@
             .catch(error => {
                 console.error('Error:', error);
                 alert('Error marking order as delivered');
+            });
+        }
+
+        // Cancellation approval/rejection handlers for the Request Cancellation tab
+        function approveCancellation(orderId) {
+            if (!confirm('Approve this cancellation request? This cannot be undone.')) {
+                return;
+            }
+            fetch(`/approve-cancellation/${orderId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'Content-Type': 'application/json',
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alert('Cancellation approved successfully!');
+                    location.reload();
+                } else {
+                    alert(data.message || 'Error approving cancellation');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while approving the cancellation');
+            });
+        }
+
+        function rejectCancellation(orderId) {
+            const reason = prompt('Provide a reason for rejection:');
+            if (!reason || !reason.trim()) {
+                return;
+            }
+            fetch(`/reject-cancellation/${orderId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ 'rejection_reason': reason.trim() })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alert('Cancellation rejected successfully!');
+                    location.reload();
+                } else {
+                    alert(data.message || 'Error rejecting cancellation');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while rejecting the cancellation');
             });
         }
     </script>

@@ -202,13 +202,15 @@ class Orders(models.Model):
         return f"Order {self.order_ref or self.id} - {self.customer.user.username if self.customer else 'No Customer'}"
     
     def get_total_amount(self):
-        """Calculate total amount from all order items including delivery fee"""
+        """Calculate total amount from all order items (excluding delivery fee)."""
         items_total = sum(item.price * item.quantity for item in self.orderitem_set.all())
-        return items_total + self.delivery_fee
+        return items_total
     
     def can_request_cancellation(self):
-        """Check if order can be cancelled by customer"""
-        return (self.status in ['Pending', 'Processing', 'Order Confirmed'] and 
+        """Check if order can be cancelled by customer.
+        Includes 'Out for Delivery' so customers in 'To Receive' can request approval.
+        """
+        return (self.status in ['Pending', 'Processing', 'Order Confirmed', 'Out for Delivery'] and 
                 self.cancellation_status == 'none')
     
     def is_paid_order(self):
@@ -599,8 +601,8 @@ class EmailVerification(models.Model):
         return f"Email verification for {self.user.username} - {'Verified' if self.is_verified else 'Pending'}"
     
     def is_token_expired(self):
-        """Check if verification token has expired (24 hours)"""
-        expiry_time = self.created_at + timedelta(hours=24)
+        """Check if verification token has expired (5 minutes)"""
+        expiry_time = self.created_at + timedelta(minutes=5)
         return timezone.now() > expiry_time
     
     def verify_email(self):

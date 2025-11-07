@@ -18,7 +18,7 @@
   <div class="orders-header">My Orders</div>
 
   {% if not orders_with_items %}
-    <div class="alert alert-info">Wala pang orders.</div>
+    <div class="alert alert-info">You have no recent orders. Start shopping now!</div>
   {% endif %}
 
   {% for order_dict in orders_with_items %}
@@ -53,8 +53,10 @@
               <div><strong>Petsa:</strong> {{ order_dict.order.created_at|date:"M d, Y" }}</div>
               <div><strong>Items:</strong> {{ order_dict.products|length }}{% if order_dict.custom_items %} + {{ order_dict.custom_items|length }} custom{% endif %}</div>
               <div><strong>Subtotal:</strong> ₱{{ order_dict.total|floatformat:2 }}</div>
-              <div><strong>Delivery Fee:</strong> ₱{{ order_dict.delivery_fee|floatformat:2 }}</div>
               <div><strong>Grand Total:</strong> ₱{{ order_dict.grand_total|floatformat:2 }}</div>
+              <div style="margin-top:8px;">
+                <a href="{% url 'download-invoice' order_dict.order.id %}" target="_blank" class="btn btn-outline-primary btn-sm">Download Invoice</a>
+              </div>
             </div>
           </div>
         </div>

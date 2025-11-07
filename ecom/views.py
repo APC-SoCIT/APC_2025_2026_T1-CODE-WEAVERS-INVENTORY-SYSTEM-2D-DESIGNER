@@ -117,6 +117,27 @@ def superadmin_required(view_func):
         return view_func(request, *args, **kwargs)
     return wrapper
 
+def manager_or_superadmin_required(view_func):
+    """
+    Decorator that ensures only Managers or SuperAdmins can access a view.
+    Managers are users in the 'Managers' group. Staff-only users are denied.
+    """
+    def wrapper(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            messages.error(request, 'Please log in to access this page.')
+            return redirect('adminlogin')
+        # Allow SuperAdmin
+        if is_superadmin(request.user):
+            return view_func(request, *args, **kwargs)
+        # Allow Managers group
+        try:
+            if request.user.groups.filter(name="Managers").exists():
+                return view_func(request, *args, **kwargs)
+        except Exception:
+            pass
+        messages.error(request, 'Access denied. Manager or SuperAdmin privileges required.')
+        return redirect('admin-dashboard')
+    return wrapper
 @admin_required
 def user_profile_page(request, user_id):
     import logging
@@ -727,6 +748,8 @@ def admin_view_users(request):
     from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
     from django.db.models import Count, Q
 
+    q = (request.GET.get('q') or '').strip()
+
     # Limit selected columns and join user to avoid N+1 queries
     customers = (
         models.Customer.objects
@@ -735,7 +758,25 @@ def admin_view_users(request):
             'id', 'mobile', 'street_address', 'barangay', 'citymun', 'province', 'region', 'postal_code',
             'user__id', 'user__first_name', 'user__last_name', 'user__email', 'user__is_active'
         )
+        .defer('profile_pic')
+        .order_by('-id')
     )
+
+    # Server-side search across common fields
+    if q:
+        words = q.split()
+        search_q = Q()
+        for w in words:
+            search_q |= (
+                Q(user__first_name__icontains=w) |
+                Q(user__last_name__icontains=w) |
+                Q(user__email__icontains=w) |
+                Q(mobile__icontains=w) |
+                Q(street_address__icontains=w) |
+                Q(citymun__icontains=w) |
+                Q(province__icontains=w)
+            )
+        customers = customers.filter(search_q)
     # Paginate queryset first to avoid building a huge in-memory list
     page = request.GET.get('page', 1)
     # Allow configurable page size via query param, default to 5
@@ -806,6 +847,7 @@ def admin_view_users(request):
         'page_obj': page_obj,
         'paginator': paginator,
         'page_size': page_size,
+        'q': q,
         'active_count': counts.get('active', 0),
         'pending_count': 0,
         'suspended_count': 0,
@@ -977,7 +1019,13 @@ def admin_view_booking_view(request):
     return redirect('admin-view-processing-orders')
 
 def get_order_status_counts():
+    """Get counts of orders by major status groups with short cache."""
     try:
+        from django.core.cache import cache
+        cached = cache.get('order_status_counts')
+        if cached is not None:
+            return cached
+
         from django.db.models import Count
         rows = models.Orders.objects.values('status').annotate(count=Count('id'))
         result = {
@@ -1000,6 +1048,9 @@ def get_order_status_counts():
                 result['delivered'] += c
             elif s == 'Cancelled':
                 result['cancelled'] += c
+
+        # Cache for 30 seconds to avoid repeated aggregation per request
+        cache.set('order_status_counts', result, 30)
         return result
     except Exception:
         return {
@@ -1101,21 +1152,39 @@ def admin_view_all_orders(request):
 
 def prepare_admin_order_view(request, orders, status, template, extra_context=None):
     # Optimize by prefetching related items and selecting customer relations
-    from django.db.models import Prefetch
+    from django.db.models import Prefetch, Sum, F, Q
+    from django.db.models.functions import Coalesce
+    from django.db.models import DecimalField
     from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+    from decimal import Decimal
 
     # Apply select_related/prefetch and ordering
+    # Annotate per-order totals using database-side computation to avoid Python loops
+    # Use Sum on arithmetic F-expressions and ensure Decimal output types to avoid type errors
+
     orders_qs = (
         orders
         .select_related('customer', 'customer__user')
         .only(
             # Orders fields
-            'id', 'customer_id', 'status', 'order_ref', 'order_date', 'address', 'created_at',
+            'id', 'customer_id', 'status', 'order_ref', 'order_date', 'address', 'created_at', 'delivery_fee',
             # Customer fields used by get_full_address and display
             'customer__id', 'customer__region', 'customer__province', 'customer__citymun', 'customer__barangay',
             'customer__street_address', 'customer__postal_code', 'customer__user_id',
             # User display fields
             'customer__user__id', 'customer__user__first_name', 'customer__user__last_name', 'customer__user__email'
+        )
+        .annotate(
+            items_amount=Coalesce(
+                Sum(F('orderitem__price') * F('orderitem__quantity'), output_field=DecimalField(max_digits=12, decimal_places=2)),
+                Decimal('0.00'),
+                output_field=DecimalField(max_digits=12, decimal_places=2)
+            ),
+            custom_amount=Coalesce(
+                Sum(F('customorderitem__price') * F('customorderitem__quantity'), output_field=DecimalField(max_digits=12, decimal_places=2)),
+                Decimal('0.00'),
+                output_field=DecimalField(max_digits=12, decimal_places=2)
+            ),
         )
         .prefetch_related(
             Prefetch(
@@ -1133,7 +1202,11 @@ def prepare_admin_order_view(request, orders, status, template, extra_context=No
                 'customorderitem_set',
                 queryset=(
                     models.CustomOrderItem.objects
-                    .only('id', 'order_id', 'quantity', 'price', 'size', 'custom_design_id')
+                    .select_related('custom_design')
+                    .only(
+                        'id', 'order_id', 'quantity', 'price', 'size', 'custom_design_id',
+                        'custom_design__id', 'custom_design__design_image'
+                    )
                 )
             ),
         )
@@ -1158,7 +1231,16 @@ def prepare_admin_order_view(request, orders, status, template, extra_context=No
 
     # Paginate at the queryset level to avoid building huge lists
     page_num = request.GET.get('page', 1)
-    paginator = Paginator(orders_qs, 5)
+    # Allow configurable page size via query param (default 5, clamp 1..100)
+    try:
+        page_size = int(request.GET.get('page_size', '5'))
+    except (TypeError, ValueError):
+        page_size = 5
+    if page_size < 1:
+        page_size = 5
+    if page_size > 100:
+        page_size = 100
+    paginator = Paginator(orders_qs, page_size)
     try:
         page_obj = paginator.page(page_num)
     except PageNotAnInteger:
@@ -1169,13 +1251,20 @@ def prepare_admin_order_view(request, orders, status, template, extra_context=No
     # Build orders_data only for the current page's orders
     orders_data = []
     for order in page_obj.object_list:
-        total_price = 0
+        # Use annotated totals to avoid Python-side aggregation
+        try:
+            total_price = (
+                (order.items_amount or Decimal('0.00')) +
+                (order.custom_amount or Decimal('0.00')) +
+                (order.delivery_fee or Decimal('0.00'))
+            )
+        except Exception:
+            total_price = Decimal('0.00')
 
         items = []
         for item in order.orderitem_set.all():
             price = item.price or 0
             qty = item.quantity or 0
-            total_price += price * qty
             items.append({
                 'product': item.product,
                 'quantity': qty,
@@ -1188,7 +1277,6 @@ def prepare_admin_order_view(request, orders, status, template, extra_context=No
         for item in order.customorderitem_set.all():
             price = item.price or 0
             qty = item.quantity or 0
-            total_price += price * qty
             custom_items.append({
                 'custom_item': item,
                 'quantity': qty,
@@ -1198,13 +1286,47 @@ def prepare_admin_order_view(request, orders, status, template, extra_context=No
                 'image_url': None,
             })
 
-        shipping_address = order.address if getattr(order, 'address', None) else (order.customer.get_full_address if getattr(order, 'customer', None) else '')
+        # Build a compact summary string to avoid heavy template loops
+        try:
+            product_labels = [
+                f"{it['product'].name} ({it['size']}) x{it['quantity']}" for it in items
+            ]
+            custom_labels = [
+                f"Custom Jersey ({it['size']}) x{it['quantity']}" for it in custom_items
+            ]
+            labels = product_labels + custom_labels
+            items_count = len(labels)
+            # Show up to first 5 items; truncate long strings
+            summary = ', '.join(labels[:5])
+            if len(summary) > 180:
+                summary = summary[:179] + '…'
+        except Exception:
+            items_count = len(items) + len(custom_items)
+            summary = ''
+
+        # Build a lightweight address string without invoking mapping filters
+        if getattr(order, 'address', None):
+            shipping_address = order.address
+        elif getattr(order, 'customer', None):
+            c = order.customer
+            parts = [
+                c.street_address or '',
+                c.barangay or '',
+                c.citymun or '',
+                c.province or '',
+                str(c.postal_code or '')
+            ]
+            shipping_address = ', '.join([p for p in parts if p])
+        else:
+            shipping_address = ''
         orders_data.append({
             'order': order,
             'customer': order.customer,
             'shipping_address': shipping_address,
             'order_items': items,
             'custom_order_items': custom_items,
+            'items_count': items_count,
+            'items_summary': summary,
             'status': order.status,
             'order_id': order.order_ref,
             'order_date': order.order_date,
@@ -1214,7 +1336,7 @@ def prepare_admin_order_view(request, orders, status, template, extra_context=No
     # Replace page object list with our computed dicts so template pagination works
     page_obj.object_list = orders_data
 
-    context = {'orders_data': page_obj, 'paginator': paginator, 'status': status, 'q': q}
+    context = {'orders_data': page_obj, 'paginator': paginator, 'status': status, 'q': q, 'page_size': page_size}
     if extra_context:
         context.update(extra_context)
     return render(request, template, context)
@@ -1254,6 +1376,10 @@ def update_order_view(request,pk):
     orderForm = forms.OrderForm(instance=order)
     
     if request.method == 'POST':
+        # Prevent any state changes on cancelled orders
+        if order.status == 'Cancelled':
+            messages.error(request, 'Cannot update a cancelled order.')
+            return redirect('admin-view-cancelled-orders')
         orderForm = forms.OrderForm(request.POST, instance=order)
         if orderForm.is_valid():
             # Save the form but don't commit yet
@@ -1413,7 +1539,7 @@ def pending_orders_view(request):
         return redirect('customer-home')
 
     orders = models.Orders.objects.filter(customer=customer, status='Pending').order_by('-order_date', '-created_at')
-    print(f"DEBUG: Found {orders.count()} pending orders")
+    print(f"DEBUG: Found {orders.count()} pending orders (pre-filter)")
     
     orders_with_items = []
 
@@ -1437,32 +1563,41 @@ def pending_orders_view(request):
                 'line_total': line_total,
             })
 
-        # Get custom order items
-        custom_order_items = models.CustomOrderItem.objects.filter(order=order)
-        print(f"DEBUG: Found {custom_order_items.count()} custom order items")
+        # Get custom order items and HIDE pending pre-orders until admin confirms
+        custom_order_items_all = models.CustomOrderItem.objects.filter(order=order)
+        print(f"DEBUG: Found {custom_order_items_all.count()} custom order items (pre-filter)")
         
         custom_items = []
-        for item in custom_order_items:
-            print(f"DEBUG: Custom item - ID: {item.id}, Price: {item.price}, Quantity: {item.quantity}, Size: {item.size}")
+        for item in custom_order_items_all:
+            # Skip items that are marked as pre-order and still pending
+            if item.is_pre_order and (item.pre_order_status or 'pending') == 'pending':
+                print(f"DEBUG: Hiding pending pre-order item ID: {item.id}")
+                continue
+            print(f"DEBUG: Visible custom item - ID: {item.id}, Price: {item.price}, Quantity: {item.quantity}, Size: {item.size}")
             # Use VAT-inclusive calculation (same as cart)
             line_total = Decimal(item.price) * item.quantity
             total += line_total
             custom_items.append({
-                'item': item,  # Changed from 'custom_item' to 'item' to match template
+                'item': item,
                 'size': item.size,
                 'quantity': item.quantity,
-                'unit_price': item.price,  # Changed from 'price' to 'unit_price' to match template
+                'unit_price': item.price,
                 'line_total': line_total,
             })
 
         print(f"DEBUG: Order total: {total}")
         
+        # If there are no visible items after filtering, skip this order entirely
+        if not products and not custom_items:
+            print(f"DEBUG: Skipping order {order.id} with only pending pre-order items")
+            continue
+
         # Calculate VAT using same method as cart (VAT-inclusive)
         vat_amount = total * Decimal(12) / Decimal(112)
         net_subtotal = total - vat_amount
-        # Use stored delivery fee from order, default to 50 if not set
-        delivery_fee = order.delivery_fee if order.delivery_fee else Decimal('50.00')
-        grand_total = total + delivery_fee
+        # Delivery fee removed system-wide
+        delivery_fee = Decimal('0.00')
+        grand_total = total
 
         orders_with_items.append({
             'order': order,
@@ -1476,7 +1611,7 @@ def pending_orders_view(request):
             'grand_total': grand_total,
         })
 
-    print(f"DEBUG: Returning {len(orders_with_items)} orders with items")
+    print(f"DEBUG: Returning {len(orders_with_items)} visible pending orders after filtering")
     pending_count = models.Orders.objects.filter(customer=customer, status='Pending').count()
     to_ship_count = models.Orders.objects.filter(customer=customer, status__in=['Processing', 'Order Confirmed']).count()
     to_receive_count = models.Orders.objects.filter(customer=customer, status='Out for Delivery').count()
@@ -1541,9 +1676,9 @@ def to_ship_orders_view(request):
         # Calculate VAT using same method as cart (VAT-inclusive)
         vat_amount = total * Decimal(12) / Decimal(112)
         net_subtotal = total - vat_amount
-        # Use stored delivery fee from order
-        delivery_fee = order.delivery_fee
-        grand_total = total + Decimal(delivery_fee)
+        # Delivery fee removed system-wide
+        delivery_fee = Decimal('0.00')
+        grand_total = total
         
         orders_with_items.append({
             'order': order,
@@ -1616,9 +1751,9 @@ def to_receive_orders_view(request):
         # Calculate VAT using same method as cart (VAT-inclusive)
         vat_amount = total * Decimal(12) / Decimal(112)
         net_subtotal = total - vat_amount
-        # Use stored delivery fee from order
-        delivery_fee = order.delivery_fee
-        grand_total = total + Decimal(delivery_fee)
+        # Delivery fee removed system-wide
+        delivery_fee = Decimal('0.00')
+        grand_total = total
         
         orders_with_items.append({
             'order': order,
@@ -1691,9 +1826,9 @@ def delivered_orders_view(request):
         # Calculate VAT using same method as cart (VAT-inclusive)
         vat_amount = total * Decimal(12) / Decimal(112)
         net_subtotal = total - vat_amount
-        # Use stored delivery fee from order
-        delivery_fee = order.delivery_fee
-        grand_total = total + Decimal(delivery_fee)
+        # Delivery fee removed system-wide
+        delivery_fee = Decimal('0.00')
+        grand_total = total
         
         orders_with_items.append({
             'order': order,
@@ -1766,9 +1901,9 @@ def cancelled_orders_view(request):
         # Calculate VAT using same method as cart (VAT-inclusive)
         vat_amount = total * Decimal(12) / Decimal(112)
         net_subtotal = total - vat_amount
-        # Use stored delivery fee from order
-        delivery_fee = order.delivery_fee
-        grand_total = total + Decimal(delivery_fee)
+        # Delivery fee removed system-wide
+        delivery_fee = Decimal('0.00')
+        grand_total = total
         
         orders_with_items.append({
             'order': order,
@@ -1841,9 +1976,9 @@ def waiting_for_cancellation_view(request):
         # Calculate VAT using same method as cart (VAT-inclusive)
         vat_amount = total * Decimal(12) / Decimal(112)
         net_subtotal = total - vat_amount
-        # Use stored delivery fee from order
-        delivery_fee = order.delivery_fee
-        grand_total = total + Decimal(delivery_fee)
+        # Delivery fee removed system-wide
+        delivery_fee = Decimal('0.00')
+        grand_total = total
         
         orders_with_items.append({
             'order': order,
@@ -2057,7 +2192,8 @@ def cart_view(request):
     # Use dynamic shipping fee lookup
     origin_region = "NCR"
     destination_region = region if region else "NCR"
-    delivery_fee = get_shipping_fee(origin_region, destination_region, weight_kg=0.5)
+    # Delivery fee removed system-wide
+    delivery_fee = Decimal('0.00')
     # ...existing code for products, VAT, etc...
     vat_rate = 12
     vat_multiplier = 1 + (vat_rate / 100)
@@ -2126,9 +2262,9 @@ def cart_view(request):
     # Use VAT-inclusive calculation like orders
     vat_amount = total * 12 / 112
     net_subtotal = total - vat_amount
-    # Convert delivery_fee to Decimal to avoid TypeError with Decimal + float
-    delivery_fee = Decimal(str(delivery_fee))
-    grand_total = total + delivery_fee
+    # Delivery fee removed system-wide
+    delivery_fee = Decimal('0.00')
+    grand_total = total
     
     # Get saved addresses for the current user
     saved_addresses = []
@@ -2228,7 +2364,7 @@ def remove_from_cart_view(request, pk):
     vat_rate = 12
     vat_amount = total * Decimal(vat_rate) / Decimal(112)
     net_subtotal = total - vat_amount
-    grand_total = total + Decimal(delivery_fee)
+    grand_total = total
 
     response = render(request, 'ecom/cart.html', {
         'products': products,
@@ -2790,9 +2926,16 @@ def cancel_order_view(request, order_id):
             messages.error(request, 'Please provide a reason for cancellation.')
             return redirect('my-order')
         
-        # For COD orders, immediately cancel (no payment to refund)
-        if order.payment_method == 'cod':
-            # Restore stock for each item in the order
+        # If order is already out for delivery, always require admin approval
+        if order.status == 'Out for Delivery':
+            success = order.request_cancellation(final_reason, request.user)
+            if success:
+                # Keep status as 'Out for Delivery' to remain under "To Receive"
+                messages.success(request, 'Cancellation request submitted successfully! Your request is now waiting for Super Admin approval. You will be notified once a decision is made.')
+            else:
+                messages.error(request, 'Unable to process cancellation request. Please try again.')
+        elif order.payment_method == 'cod':
+            # Immediate cancel for COD if not yet out for delivery (no payment to refund)
             order_items = models.OrderItem.objects.filter(order=order)
             for item in order_items:
                 product = item.product
@@ -2805,9 +2948,10 @@ def cancel_order_view(request, order_id):
             order.save()
             messages.success(request, 'Order cancelled successfully!')
         else:
-            # For paid orders (PayPal/GCash), request cancellation approval
+            # Paid orders (PayPal/GCash) always require admin approval
             success = order.request_cancellation(final_reason, request.user)
             if success:
+                # Keep original status; admin list will read cancellation_status
                 messages.success(request, 'Cancellation request submitted successfully! Your request is now waiting for Super Admin approval. You will be notified once a decision is made.')
             else:
                 messages.error(request, 'Unable to process cancellation request. Please try again.')
@@ -2832,20 +2976,23 @@ def my_order_view(request):
     except models.Customer.DoesNotExist:
         messages.error(request, 'Customer profile not found. Please contact support.')
         return redirect('customer-home')
-
-    # Build counts for tab badges
-    pending_count = models.Orders.objects.filter(customer=customer, status='Pending').count()
-    to_ship_count = models.Orders.objects.filter(customer=customer, status__in=['Processing', 'Order Confirmed']).count()
-    to_receive_count = models.Orders.objects.filter(customer=customer, status='Out for Delivery').count()
-    delivered_count = models.Orders.objects.filter(customer=customer, status='Delivered').count()
-    cancelled_count = models.Orders.objects.filter(customer=customer, status='Cancelled').count()
-    waiting_count = models.Orders.objects.filter(customer=customer, cancellation_status='requested').count()
-
-    # Gather all orders with detailed items similar to status views
-    orders = models.Orders.objects.filter(customer=customer).order_by('-order_date', '-created_at')
+    # Gather all orders and hide pure pending pre-orders from customer view
+    orders_qs = models.Orders.objects.filter(customer=customer).order_by('-order_date', '-created_at')
     orders_with_items = []
-    for order in orders:
-        order_items = models.OrderItem.objects.filter(order=order)
+    # Status counters derived only from visible orders
+    status_counts = {
+        'Pending': 0,
+        'Processing': 0,
+        'Order Confirmed': 0,
+        'Out for Delivery': 0,
+        'Delivered': 0,
+        'Cancelled': 0,
+    }
+    waiting_count = 0
+
+    for order in orders_qs:
+        # Regular items (always visible)
+        order_items = list(models.OrderItem.objects.filter(order=order))
         products = []
         total = Decimal('0.00')
         for item in order_items:
@@ -2858,9 +3005,21 @@ def my_order_view(request):
                 'line_total': line_total,
             })
 
-        custom_order_items = models.CustomOrderItem.objects.filter(order=order)
+        # Custom items: hide if they are pending pre-orders
+        custom_order_items_all = list(models.CustomOrderItem.objects.filter(order=order))
         custom_items = []
-        for item in custom_order_items:
+        for item in custom_order_items_all:
+            # Show pending pre-orders but do not include in totals
+            if item.is_pre_order and (item.pre_order_status or 'pending') == 'pending':
+                custom_items.append({
+                    'item': item,
+                    'size': item.size,
+                    'quantity': item.quantity,
+                    'unit_price': None,
+                    'line_total': Decimal('0.00'),
+                    'pending_pre_order': True,
+                })
+                continue
             line_total = Decimal(item.price) * item.quantity
             total += line_total
             custom_items.append({
@@ -2871,10 +3030,15 @@ def my_order_view(request):
                 'line_total': line_total,
             })
 
+        # If after filtering there are no visible items, skip this order entirely
+        if not products and not custom_items:
+            continue
+
         vat_amount = total * Decimal(12) / Decimal(112)
         net_subtotal = total - vat_amount
-        delivery_fee = order.delivery_fee if order.delivery_fee else Decimal('50.00')
-        grand_total = total + Decimal(delivery_fee)
+        # Delivery fee removed system-wide
+        delivery_fee = Decimal('0.00')
+        grand_total = total
 
         orders_with_items.append({
             'order': order,
@@ -2888,14 +3052,20 @@ def my_order_view(request):
             'grand_total': grand_total,
         })
 
+        # Increment status counters for visible orders
+        if order.status in status_counts:
+            status_counts[order.status] += 1
+        if order.cancellation_status == 'requested':
+            waiting_count += 1
+
     context = {
         'orders_with_items': orders_with_items,
         'active_tab': 'all',
-        'pending_count': pending_count,
-        'to_ship_count': to_ship_count,
-        'to_receive_count': to_receive_count,
-        'delivered_count': delivered_count,
-        'cancelled_count': cancelled_count,
+        'pending_count': status_counts['Pending'],
+        'to_ship_count': status_counts['Processing'] + status_counts['Order Confirmed'],
+        'to_receive_count': status_counts['Out for Delivery'],
+        'delivered_count': status_counts['Delivered'],
+        'cancelled_count': status_counts['Cancelled'],
         'waiting_count': waiting_count,
     }
     # If requested via AJAX from My Profile tabs, return a fragment without base layout
@@ -2945,11 +3115,8 @@ def download_invoice_view(request, order_id):
     order_items = models.OrderItem.objects.filter(order=order)
     customer = order.customer
 
-    # Use dynamic shipping fee lookup (same as pending_orders_view)
-    region = customer.region if hasattr(customer, 'region') else None
-    origin_region = "NCR"
-    destination_region = region if region else "NCR"
-    delivery_fee = Decimal(str(get_shipping_fee(origin_region, destination_region, weight_kg=0.5)))
+    # Delivery fee removed system-wide
+    delivery_fee = Decimal('0.00')
 
     subtotal = Decimal('0.00')
     products = []
@@ -2966,7 +3133,7 @@ def download_invoice_view(request, order_id):
 
     net_subtotal = subtotal / Decimal('1.12')
     vat_amount = subtotal - net_subtotal
-    grand_total = subtotal + delivery_fee
+    grand_total = subtotal
 
     context = {
         'order': order,
@@ -2980,7 +3147,28 @@ def download_invoice_view(request, order_id):
     }
 
     html = render_to_string('ecom/download_invoice.html', context)
-    # ...PDF generation logic or return HttpResponse(html)...
+
+    # Optional preview-as-HTML mode for design verification
+    preview = request.GET.get('format') == 'html' or request.GET.get('preview') == '1'
+    if preview:
+        return HttpResponse(html)
+
+    # Generate downloadable PDF using xhtml2pdf
+    try:
+        from io import BytesIO
+        from xhtml2pdf import pisa
+        result = BytesIO()
+        pdf = pisa.CreatePDF(src=html, dest=result, encoding='utf-8')
+        if not pdf.err:
+            filename = f"Invoice-{order.order_ref or order.id}.pdf"
+            response = HttpResponse(result.getvalue(), content_type='application/pdf')
+            response['Content-Disposition'] = f'attachment; filename="{filename}"'
+            return response
+    except Exception:
+        # If PDF rendering raises an exception, fall back to HTML preview
+        pass
+
+    # Fallback to HTML if PDF rendering fails
     return HttpResponse(html)
 
 @login_required(login_url='customerlogin')
@@ -4067,6 +4255,9 @@ def track_delivery_status(request, order_id):
     
     try:
         order = get_object_or_404(Orders, id=order_id)
+        # Block tracking for cancelled orders
+        if order.status == 'Cancelled':
+            return JsonResponse({'success': False, 'message': 'Cannot track a cancelled order'})
         
         if order.status not in ['Out for Delivery', 'Delivered']:
             return JsonResponse({
@@ -4119,6 +4310,12 @@ def mark_order_delivered(request, order_id):
     if request.method == 'POST':
         try:
             order = get_object_or_404(Orders, id=order_id)
+            # Guard: no actions allowed on cancelled orders
+            if order.status == 'Cancelled':
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Cannot mark a cancelled order as delivered'
+                })
             
             if order.status not in ['Out for Delivery']:
                 return JsonResponse({
@@ -4295,7 +4492,7 @@ def customer_confirm_received(request, order_id):
             'message': f'An error occurred: {str(e)}'
         })
 
-@admin_required
+@manager_or_superadmin_required
 def admin_transactions_view(request):
     """
     Admin view for transactions page
@@ -4305,9 +4502,37 @@ def admin_transactions_view(request):
     year = request.GET.get('year')
     transaction_type = request.GET.get('type')
     export = request.GET.get('export')
+    q = (request.GET.get('q') or '').strip()
 
-    # Base queryset for completed orders
-    orders = models.Orders.objects.filter(status='Delivered').select_related('customer__user')
+    from django.db.models import Q, Sum, F, DecimalField, Value
+    from django.db.models.functions import Coalesce
+    from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+    from django.db.models import Prefetch
+    from django.db.models import ExpressionWrapper
+    from decimal import Decimal
+
+    # Base queryset for completed orders with related user and prefetch of items/products
+    orders = (
+        models.Orders.objects
+        .filter(status='Delivered')
+        .select_related('customer', 'customer__user')
+        .only(
+            'id', 'order_ref', 'created_at', 'payment_method', 'customer_id',
+            'customer__id', 'customer__user_id',
+            'customer__user__first_name', 'customer__user__last_name'
+        )
+        .prefetch_related(
+            Prefetch(
+                'orderitem_set',
+                queryset=(
+                    models.OrderItem.objects
+                    .select_related('product')
+                    .only('order_id', 'product_id', 'size', 'quantity', 'product__name')
+                )
+            )
+        )
+        .order_by('-created_at')
+    )
 
     # Apply filters
     if month:
@@ -4315,42 +4540,124 @@ def admin_transactions_view(request):
     if year:
         orders = orders.filter(created_at__year=year)
     if transaction_type:
-        # Filter by payment method based on transaction type
         if transaction_type == 'COD':
             orders = orders.filter(payment_method='cod')
         elif transaction_type == 'Credit':
-            orders = orders.filter(payment_method='paypal')  # or other non-COD methods
+            orders = orders.filter(payment_method='paypal')
 
-    # Calculate summary data
-    total_revenue = sum(float(order.get_total_amount()) for order in orders)
+    # Apply server-side search on key fields
+    if q:
+        words = q.split()
+        search_q = Q()
+        for w in words:
+            # Text fields
+            search_q |= (
+                Q(order_ref__icontains=w) |
+                Q(customer__user__first_name__icontains=w) |
+                Q(customer__user__last_name__icontains=w)
+            )
+            # Numeric user id or CUST-prefixed code mapping to user id
+            parsed_id = None
+            if w.upper().startswith('CUST'):
+                digits = ''.join(ch for ch in w if ch.isdigit())
+                if digits.isdigit():
+                    parsed_id = int(digits)
+            elif w.isdigit():
+                parsed_id = int(w)
+            if parsed_id is not None:
+                search_q |= Q(customer__user__id=parsed_id)
+        orders = orders.filter(search_q)
+
+    # Annotate per-order amounts to avoid calling get_total_amount repeatedly
+    price_qty_decimal = DecimalField(max_digits=12, decimal_places=2)
+    orders = orders.annotate(
+        items_amount=Coalesce(
+            Sum(ExpressionWrapper(F('orderitem__price') * F('orderitem__quantity'), output_field=price_qty_decimal)),
+            Value(Decimal('0.00'), output_field=price_qty_decimal),
+            output_field=price_qty_decimal,
+        ),
+        custom_amount=Coalesce(
+            Sum(ExpressionWrapper(F('customorderitem__price') * F('customorderitem__quantity'), output_field=price_qty_decimal)),
+            Value(Decimal('0.00'), output_field=price_qty_decimal),
+            output_field=price_qty_decimal,
+        ),
+    )
+
+    # Compute summary data using database aggregates (items + custom items)
+    # Total revenue across filtered orders
+    # Use ExpressionWrapper to ensure multiplication has a Decimal output_field
+    price_qty_decimal = DecimalField(max_digits=12, decimal_places=2)
+    item_total = models.OrderItem.objects.filter(order__in=orders).aggregate(
+        total=Coalesce(
+            Sum(ExpressionWrapper(F('price') * F('quantity'), output_field=price_qty_decimal)),
+            Value(Decimal('0.00'), output_field=price_qty_decimal),
+            output_field=price_qty_decimal,
+        )
+    )['total']
+    custom_total = models.CustomOrderItem.objects.filter(order__in=orders).aggregate(
+        total=Coalesce(
+            Sum(ExpressionWrapper(F('price') * F('quantity'), output_field=price_qty_decimal)),
+            Value(Decimal('0.00'), output_field=price_qty_decimal),
+            output_field=price_qty_decimal,
+        )
+    )['total']
+    total_revenue = float(item_total or Decimal('0.00')) + float(custom_total or Decimal('0.00'))
+
     current_month = timezone.now().month
     current_year = timezone.now().year
     monthly_orders = orders.filter(created_at__month=current_month, created_at__year=current_year)
-    monthly_revenue = sum(float(order.get_total_amount()) for order in monthly_orders)
+    m_item_total = models.OrderItem.objects.filter(order__in=monthly_orders).aggregate(
+        total=Coalesce(
+            Sum(ExpressionWrapper(F('price') * F('quantity'), output_field=price_qty_decimal)),
+            Value(Decimal('0.00'), output_field=price_qty_decimal),
+            output_field=price_qty_decimal,
+        )
+    )['total']
+    m_custom_total = models.CustomOrderItem.objects.filter(order__in=monthly_orders).aggregate(
+        total=Coalesce(
+            Sum(ExpressionWrapper(F('price') * F('quantity'), output_field=price_qty_decimal)),
+            Value(Decimal('0.00'), output_field=price_qty_decimal),
+            output_field=price_qty_decimal,
+        )
+    )['total']
+    monthly_revenue = float(m_item_total or Decimal('0.00')) + float(m_custom_total or Decimal('0.00'))
+
     total_transactions = orders.count()
     avg_transaction = total_revenue / total_transactions if total_transactions > 0 else 0
 
-    # Prepare transactions data
-    transactions = []
-    for order in orders:
-        customer_name = f"{order.customer.user.first_name} {order.customer.user.last_name}" if order.customer and order.customer.user else 'Unknown'
-        customer_id = order.customer.customer_code if order.customer else 'Unknown'
+    # Paginate orders to avoid building a huge transactions list
+    try:
+        page_size = int(request.GET.get('page_size', '10'))
+    except (TypeError, ValueError):
+        page_size = 10
+    if page_size <= 0:
+        page_size = 10
+    if page_size > 100:
+        page_size = 100
+    page_num = request.GET.get('page', 1)
+    paginator = Paginator(orders, page_size)
+    try:
+        page_obj = paginator.page(page_num)
+    except PageNotAnInteger:
+        page_obj = paginator.page(1)
+    except EmptyPage:
+        page_obj = paginator.page(paginator.num_pages)
 
-        # Get order items and product details
-        order_items = order.orderitem_set.all()
+    # Prepare transactions data for current page only
+    transactions = []
+    for order in page_obj.object_list:
+        customer_name = (
+            f"{order.customer.user.first_name} {order.customer.user.last_name}" if getattr(order.customer, 'user', None) else 'Unknown'
+        )
+        customer_id = getattr(order.customer, 'customer_code', 'Unknown')
+
         product_details = []
-        for item in order_items:
-            product_details.append(f"{item.product.name} (Size: {item.size}, Qty: {item.quantity})")
+        for item in order.orderitem_set.all():
+            product_name = getattr(item.product, 'name', 'Unknown')
+            product_details.append(f"{product_name} (Size: {item.size}, Qty: {item.quantity})")
         products_text = ', '.join(product_details) if product_details else 'No products'
 
-        # Map payment method to display type
-        if order.payment_method == 'cod':
-            payment_type = 'COD'
-        elif order.payment_method == 'paypal':
-            payment_type = 'Credit'
-        else:
-            # Default for any other payment methods (card, etc.)
-            payment_type = 'Credit'
+        payment_type = 'COD' if order.payment_method == 'cod' else 'Credit'
 
         transactions.append({
             'date': order.created_at.strftime('%Y-%m-%d'),
@@ -4359,7 +4666,8 @@ def admin_transactions_view(request):
             'order_id': order.order_ref or f"ORD-{order.id}",
             'type': payment_type,
             'products': products_text,
-            'amount': float(order.get_total_amount()),
+            # Use annotated per-order amounts to avoid extra queries
+            'amount': float((order.items_amount or Decimal('0.00')) + (order.custom_amount or Decimal('0.00'))),
         })
 
     # Handle export
@@ -4389,6 +4697,10 @@ def admin_transactions_view(request):
 
     context = {
         'transactions': transactions,
+        'page_obj': page_obj,
+        'paginator': paginator,
+        'page_size': page_size,
+        'q': q,
         'total_revenue': total_revenue,
         'monthly_revenue': monthly_revenue,
         'total_transactions': total_transactions,
@@ -4603,24 +4915,27 @@ def add_custom_order(request):
             design_data=design_config
         )
         
-        # Save design image if provided
+        # Save design image if provided (guard against blank/invalid base64)
         if 'designImage' in data and data['designImage']:
             try:
-                # Parse base64 image data
-                format, imgstr = data['designImage'].split(';base64,')
-                ext = format.split('/')[-1]
-                
-                # Create a unique filename
-                import uuid
-                filename = f'custom_design_{customer.id}_{uuid.uuid4().hex[:8]}.{ext}'
-                
-                # Decode and save the image
-                from django.core.files.base import ContentFile
-                import base64
-                image_data = ContentFile(base64.b64decode(imgstr), name=filename)
-                custom_design.design_image = image_data
-                custom_design.save()
-                print(f"DEBUG: Design image saved as {filename}")
+                di = data['designImage']
+                if isinstance(di, str) and di.startswith('data:image/') and ';base64,' in di:
+                    format, imgstr = di.split(';base64,', 1)
+                    # Skip empty or very small payloads that indicate blank canvas
+                    if imgstr and len(imgstr.strip()) > 100:
+                        ext = format.split('/')[-1]
+                        import uuid
+                        filename = f'custom_design_{customer.id}_{uuid.uuid4().hex[:8]}.{ext}'
+                        from django.core.files.base import ContentFile
+                        import base64
+                        image_data = ContentFile(base64.b64decode(imgstr), name=filename)
+                        custom_design.design_image = image_data
+                        custom_design.save()
+                        print(f"DEBUG: Design image saved as {filename}")
+                    else:
+                        print("DEBUG: Skipping blank/too-small design image payload")
+                else:
+                    print("DEBUG: designImage not a valid image data URL; skipping save")
             except Exception as e:
                 print(f"DEBUG: Error saving design image: {e}")
                 # Continue without image if there's an error
@@ -4647,7 +4962,8 @@ def add_custom_order(request):
                 custom_design=custom_design,
                 quantity=quantity,
                 size=size,
-                price=base_price,
+                # For pre-orders, do not set a price yet; admin will confirm later
+                price=decimal.Decimal('0.00'),
                 additional_info=additional_info,
                 is_pre_order=True
             )
@@ -4905,6 +5221,64 @@ def admin_order_detail_ajax(request, order_id):
         })
 
 @admin_required
+def admin_confirm_pre_order(request, order_id):
+    """Confirm a pre-order: set total price and mark as confirmed.
+    Expects JSON: { total_price: number }
+    """
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': 'Invalid method'}, status=405)
+    try:
+        data = json.loads(request.body or '{}')
+        total_price = data.get('total_price')
+        if total_price is None:
+            return JsonResponse({'success': False, 'message': 'total_price is required'}, status=400)
+        try:
+            total_price = decimal.Decimal(str(total_price))
+        except Exception:
+            return JsonResponse({'success': False, 'message': 'Invalid total_price'}, status=400)
+
+        order = models.Orders.objects.get(id=order_id)
+        # Guard: no confirmation allowed on cancelled orders
+        if order.status == 'Cancelled':
+            return JsonResponse({'success': False, 'message': 'Cannot confirm a cancelled order'}, status=400)
+        items = list(models.CustomOrderItem.objects.filter(order=order, is_pre_order=True))
+        if not items:
+            return JsonResponse({'success': False, 'message': 'No pre-order items found for this order'}, status=404)
+
+        total_quantity = sum(i.quantity for i in items)
+        if total_quantity <= 0:
+            return JsonResponse({'success': False, 'message': 'Invalid quantity on pre-order items'}, status=400)
+
+        unit_price = (total_price / decimal.Decimal(total_quantity)).quantize(decimal.Decimal('0.01'))
+        for item in items:
+            item.price = unit_price
+            item.pre_order_status = 'confirmed'
+            # Move item out of pre-order bucket for main Orders listing
+            item.is_pre_order = False
+            item.save(update_fields=['price', 'pre_order_status', 'is_pre_order'])
+
+        # Ensure order has a reference ID; generate if missing
+        if not getattr(order, 'order_ref', None):
+            import random, string
+            def _generate_order_ref(length=12):
+                return ''.join(random.choices(string.ascii_uppercase + string.digits, k=length))
+            order.order_ref = _generate_order_ref()
+
+        # Progress order status to 'Order Confirmed' so it appears under Orders
+        order.status = 'Order Confirmed'
+        order.status_updated_at = timezone.now()
+        order.save(update_fields=['order_ref', 'status', 'status_updated_at'])
+
+        return JsonResponse({'success': True, 'message': 'Pre-order confirmed', 'order_id': order.id})
+    except models.Orders.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Order not found'}, status=404)
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'message': 'Invalid JSON payload'}, status=400)
+    except Exception as e:
+        import traceback
+        return JsonResponse({'success': False, 'message': f'Error: {str(e)}', 'trace': traceback.format_exc()}, status=500)
+
+@admin_required
 def admin_report_view(request):
     """
     Admin view for generating sales reports with comprehensive metrics
@@ -5007,9 +5381,19 @@ def build_admin_reports_context(request):
     total_revenue_alt = float(sum(order.get_total_amount() for order in delivered_orders))
     total_orders = models.Orders.objects.filter(time_filter).count()
     total_delivered_orders = models.Orders.objects.filter(status='Delivered').filter(time_filter).count()
-    total_customers = models.Customer.objects.count()
+    # Total Customers should reflect the selected date range based on account creation
+    # Use the linked User's date_joined as the account creation timestamp
+    total_customers = models.Customer.objects.filter(
+        user__date_joined__date__gte=start_date,
+        user__date_joined__date__lte=end_date,
+    ).count()
     avg_order_value = total_revenue / total_delivered_orders if total_delivered_orders > 0 else 0
-    total_items_sold = models.OrderItem.objects.filter(order__status='Delivered').aggregate(total=Sum('quantity'))['total'] or 0
+    # Make Items Sold date-range aware (Delivered orders within selected window)
+    total_items_sold = models.OrderItem.objects.filter(
+        order__status='Delivered',
+        order__created_at__date__gte=start_date,
+        order__created_at__date__lte=end_date,
+    ).aggregate(total=Sum('quantity'))['total'] or 0
     customers_with_orders = models.Customer.objects.filter(orders__isnull=False).distinct().count()
     conversion_rate = (customers_with_orders / total_customers * 100) if total_customers > 0 else 0
     thirty_days_ago = timezone.now() - timedelta(days=30)
@@ -5313,8 +5697,11 @@ def admin_view_pre_orders(request):
         'completed': pre_order_items.filter(pre_order_status='completed').count(),
     }
     
-    # Calculate total revenue
-    total_revenue = sum(item.get_total_price() for item in pre_order_items)
+    # Calculate total revenue (exclude pending and cancelled pre-orders)
+    total_revenue = sum(
+        item.get_total_price() 
+        for item in pre_order_items.exclude(pre_order_status__in=['pending', 'cancelled'])
+    )
     
     # Prepare pre-order data
     pre_orders_data = []
@@ -5434,41 +5821,18 @@ def remove_custom_item_view(request, pk):
 @admin_required
 def admin_view_cancellation_requests(request):
     """
-    Admin view to manage cancellation requests that need approval
+    Admin tab inside Orders page to list cancellation requests needing approval
     """
-    # Get all orders with cancellation requests
-    cancellation_requests = models.Orders.objects.filter(
-        status='Cancellation Requested'
-    ).select_related('customer__user').order_by('-cancellation_requested_at')
-    
-    # Calculate counts
-    total_requests = cancellation_requests.count()
-    paypal_requests = cancellation_requests.filter(payment_method='paypal').count()
-    gcash_requests = cancellation_requests.filter(payment_method='gcash').count()
-    cod_requests = cancellation_requests.filter(payment_method='cod').count()
-    
-    # Prepare request data
-    requests_data = []
-    for order in cancellation_requests:
-        customer_name = f"{order.customer.user.first_name} {order.customer.user.last_name}" if order.customer and order.customer.user else 'Unknown'
-        total_amount = float(order.get_total_amount())
-        
-        requests_data.append({
-            'order': order,
-            'customer_name': customer_name,
-            'total_amount': total_amount,
-            'days_pending': (timezone.now() - order.cancellation_requested_at).days if order.cancellation_requested_at else 0,
-        })
-    
+    orders = models.Orders.objects.filter(cancellation_status='requested')
+    counts = get_order_status_counts()
     context = {
-        'requests_data': requests_data,
-        'total_requests': total_requests,
-        'paypal_requests': paypal_requests,
-        'gcash_requests': gcash_requests,
-        'cod_requests': cod_requests,
+        'processing_count': counts.get('processing', 0),
+        'confirmed_count': counts.get('confirmed', 0),
+        'shipping_count': counts.get('shipping', 0),
+        'delivered_count': counts.get('delivered', 0),
+        'cancelled_count': counts.get('cancelled', 0),
     }
-    
-    return render(request, 'ecom/admin_cancellation_requests.html', context)
+    return prepare_admin_order_view(request, orders, 'Request Cancellation', 'ecom/admin_view_orders.html', extra_context=context)
 
 
 @admin_required
@@ -5484,7 +5848,7 @@ def approve_cancellation_request(request, order_id):
 
     # Process approval and send customer notification
     try:
-        order = models.Orders.objects.get(id=order_id, status='Cancellation Requested')
+        order = models.Orders.objects.get(id=order_id, cancellation_status='requested')
         admin_notes = request.POST.get('admin_notes', '')
 
         # Approve the cancellation
@@ -5652,7 +6016,7 @@ def manage_users_view(request):
     return render(request, 'ecom/manage_users.html', context)
 
 
-@superadmin_required
+@manager_or_superadmin_required
 def create_staff_view(request):
     """
     Create new Staff user
@@ -5804,7 +6168,7 @@ def reject_cancellation_request(request, order_id):
         return redirect('admin-view-cancellation-requests')
     
     try:
-        order = models.Orders.objects.get(id=order_id, status='Cancellation Requested')
+        order = models.Orders.objects.get(id=order_id, cancellation_status='requested')
         
         # Get admin notes from JSON body or POST data
         admin_notes = ''

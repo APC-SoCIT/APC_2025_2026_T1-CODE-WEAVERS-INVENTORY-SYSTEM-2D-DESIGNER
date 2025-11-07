@@ -264,6 +264,13 @@ class AccountSecurityForm(forms.ModelForm):
             raise forms.ValidationError("Unable to use this username. Please choose another.")
         return username
 
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        # Block duplicate emails (case-insensitive) to avoid account conflicts
+        if email and User.objects.filter(email__iexact=email).exists():
+            raise forms.ValidationError("An account with this email already exists.")
+        return email
+
     def clean_password(self):
         password = self.cleaned_data.get('password')
         if password:
