@@ -36,11 +36,10 @@
   <div class="profile-grid">
     <!-- Left sidebar: keep it minimal; exclude specified items -->
     <aside class="sidebar">
-      <div class="sidebar-title">My Account</div>
+      <div class="sidebar-title">My Profile</div>
       <a href="#" class="side-link" data-tab="profile">Profile</a>
       <a href="#" class="side-link" data-tab="addresses">Addresses</a>
-      <a href="#" class="side-link" data-tab="password">Change Password</a>
-      <a href="#" class="side-link" data-tab="orders">My Orders</a>
+      
     </aside>
 
     <!-- Editable profile content -->
@@ -55,7 +54,7 @@
             <div class="alert alert-success" style="margin-bottom:10px;">{{ message }}</div>
           {% endfor %}
         {% endif %}
-        <div id="tab-content">
+        <div id="tab-content" p>
           <div id="profile-pane">
             <form method="post" enctype="multipart/form-data">
               {% csrf_token %}
@@ -108,7 +107,7 @@
         const urls = {
           addresses: '{% url "addresses-tab" %}',
           password: '{% url "change-password" %}',
-          orders: '{% url "my-order" %}'
+          
         };
 
         function setActive(link){
@@ -170,6 +169,7 @@
             loadTab(tab, link);
           });
         });
+        
         // Allow child fragment to trigger reload of addresses tab
         window.addEventListener('reload-addresses-tab', function(){
           const addressesLink = document.querySelector('.side-link[data-tab="addresses"]');

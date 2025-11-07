@@ -3495,12 +3495,12 @@ def save_new_address(request):
             customer = Customer.objects.get(user=request.user)
             address = SavedAddress(
                 customer=customer,
-                region=request.POST.get('region'),
-                province=request.POST.get('province'),
-                citymun=request.POST.get('citymun'),
-                barangay=request.POST.get('barangay'),
-                street_address=request.POST.get('street_address'),
-                postal_code=request.POST.get('postal_code'),
+                region=request.POST.get('region', ''),
+                province=request.POST.get('province', '') or '',
+                citymun=request.POST.get('citymun', ''),
+                barangay=request.POST.get('barangay', ''),
+                street_address=request.POST.get('street_address', ''),
+                postal_code=request.POST.get('postal_code', ''),
                 is_default=not SavedAddress.objects.filter(customer=customer).exists()  # Make first address default
             )
             address.save()

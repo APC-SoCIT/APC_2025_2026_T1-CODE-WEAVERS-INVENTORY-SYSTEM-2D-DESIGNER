@@ -394,6 +394,7 @@ body {
 }
 .icon-button:hover { color: #000; opacity: 0.85; }
 .icon-button .fa { font-size: 20px; line-height: 1; }
+.icon-button svg { width: 26px; height: 26px; }
 .badge-count {
     position: absolute;
     top: -4px;
@@ -550,7 +551,7 @@ body {
                 <ul class="nav-links">
                     <li class="upper-links"><a class="links" href="/customer-home">Home</a></li>
                     <li class="upper-links"><a class="links" href="{% url 'my-order' %}">Orders</a></li>
-                    <li class="upper-links"><a class="links" href="/wishlist">Wishlist</a></li>
+                    <li class="upper-links"><a class="links icon-button" href="/wishlist" aria-label="Wishlist"><i class="fa fa-heart-o" aria-hidden="true"></i></a></li>
                     <li class="upper-links"><a class="links" href="/jersey-designer">3D Designer</a></li>
                     <li class="upper-links"><a class="links" href="/about">About Us</a></li>
                 </ul>
@@ -559,16 +560,24 @@ body {
             <!-- Right Section: Cart, Profile, and Logout -->
             <div class="navbar-right">
                 <ul class="nav-links">
-                    <!-- Profile icon without badge -->
-                    <li class="upper-links">
-                        <a class="links icon-button" href="/my-profile" aria-label="Profile">
+                    <!-- Profile icon with dropdown -->
+                    <li class="upper-links" style="position:relative;">
+                        <a class="links icon-button" href="#" aria-label="Profile" id="nav-profile-toggle">
                             <i class="fa fa-user-o" aria-hidden="true"></i>
                         </a>
+                        <div id="nav-profile-menu" style="display:none; position:absolute; right:0; top:120%; background:#fff; border:1px solid #e5e7eb; border-radius:8px; min-width:180px; box-shadow:0 6px 16px rgba(0,0,0,.08); z-index:1000;">
+                            <a class="links" href="/my-profile" style="display:block; padding:10px 12px; color:#111827; text-decoration:none;">Profile</a>
+                            <a class="links" href="{% url 'change-password' %}" style="display:block; padding:10px 12px; color:#111827; text-decoration:none;">Account</a>
+                        </div>
                     </li>
                     <!-- Cart icon with badge showing cart item count -->
                     <li class="upper-links">
                         <a class="links icon-button" href="/cart" aria-label="Cart">
-                            <i class="fa fa-shopping-cart" aria-hidden="true"></i>
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="9" cy="21" r="1"></circle>
+                                <circle cx="20" cy="21" r="1"></circle>
+                                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61l1.23-7.39H6"></path>
+                            </svg>
                             <span class="badge-count">{{ product_count_in_cart }}</span>
                         </a>
                     </li>
@@ -636,6 +645,18 @@ function selectSuggestion(text) {
     document.getElementById("query").value = text;
     document.getElementById("search-suggestions").style.display = "none";
 }
+
+// Profile icon dropdown toggle
+(function(){
+  const toggle = document.getElementById('nav-profile-toggle');
+  const menu = document.getElementById('nav-profile-menu');
+  if (!toggle || !menu) return;
+  function hide(){ menu.style.display = 'none'; }
+  function show(){ menu.style.display = 'block'; }
+  function toggleMenu(){ menu.style.display = (menu.style.display === 'none' || menu.style.display === '') ? 'block' : 'none'; }
+  toggle.addEventListener('click', function(e){ e.preventDefault(); toggleMenu(); });
+  document.addEventListener('click', function(e){ if (!menu.contains(e.target) && e.target !== toggle) hide(); });
+})();
 
 
 });

@@ -560,7 +560,7 @@
             <input type="checkbox"
                    class="select-product"
                    data-key="product_{{ product.product.id }}_{{ product.size }}"
-                   data-price="{{ product.product.price }}"
+                   data-price="{{ product.product.price }}" 
                    data-qty="{{ product.quantity }}"
                    title="Select this item" />
           </td>
@@ -569,7 +569,7 @@
                 <img src="{% if product.product.product_image %}{{ product.product.product_image.url }}{% else %}/static/images/success.png{% endif %}"
                      alt="Product Image" height="50px" width="50px">
               </td>
-          <td>₱ {{ product.product.price|floatformat:2 }}</td>
+          <td>₱ {{ product.product.price|floatformat:2|intcomma }}</td>
           <td><span class="size-badge">{{ product.size }}</span></td>
           <td><span class="quantity-badge">{{ product.quantity }}</span></td>
           <td>{{ product.product.description }}</td>
@@ -912,15 +912,48 @@
         
         const form = event.target;
         const formData = new FormData(form);
+        // Ensure province exists in submission for NCR (no provinces)
+        const provinceSel = form.querySelector('#province-select');
+        if (provinceSel && provinceSel.disabled) {
+          // When disabled, the field is omitted from FormData; add empty value
+          formData.append('province', '');
+        }
+        // Similarly, guarantee required cascade fields are present
+        ['region', 'citymun', 'barangay', 'street_address', 'postal_code'].forEach(name => {
+          if (!formData.has(name)) {
+            const el = form.querySelector(`[name="${name}"]`);
+            if (el && el.value != null) formData.append(name, el.value);
+          }
+        });
+        // Get CSRF token from cookie for reliability
+        function getCookie(name) {
+          const value = `; ${document.cookie}`;
+          const parts = value.split(`; ${name}=`);
+          if (parts.length === 2) return parts.pop().split(';').shift();
+          return '';
+        }
+        const csrfToken = getCookie('csrftoken') || (document.querySelector('[name=csrfmiddlewaretoken]')?.value || '');
         
         fetch('/save-address/', {
           method: 'POST',
-          body: formData
+          body: formData,
+          headers: {
+            'X-CSRFToken': csrfToken,
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+          },
+          credentials: 'same-origin'
         })
           .then(async response => {
             const ct = response.headers.get('content-type') || '';
             if (!response.ok || !ct.includes('application/json')) {
-              throw new Error('AUTH_REQUIRED');
+              // Try to extract error text for debugging
+              const text = await response.text().catch(() => '');
+              const err = new Error('NON_JSON_RESPONSE');
+              err.status = response.status;
+              err.redirected = response.redirected;
+              err.body = text;
+              throw err;
             }
             return response.json();
           })
@@ -970,8 +1003,14 @@
             }
           })
           .catch(error => {
-            console.warn('Save address unavailable or auth required:', error);
-            alert('Please log in to add a new address.');
+            console.warn('Save address failed:', error);
+            if (error.status === 403) {
+              alert('Security check failed (CSRF). Please refresh the page and try again.');
+            } else if (error.redirected || (error.status === 302 || error.status === 301)) {
+              alert('Your session may have expired. Please log in again.');
+            } else {
+              alert('Unable to save address. Please try again.');
+            }
           });
         
         return false;
