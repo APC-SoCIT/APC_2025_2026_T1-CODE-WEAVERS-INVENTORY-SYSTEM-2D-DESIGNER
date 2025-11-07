@@ -96,8 +96,20 @@
                   <td><span class="text-muted">Custom</span></td>
                   <td>{{ custom.size }}</td>
                   <td>{{ custom.quantity }}</td>
-                  <td>₱{{ custom.unit_price|floatformat:2 }}</td>
-                  <td>₱{{ custom.line_total|floatformat:2 }}</td>
+                  <td>
+                    {% if custom.pending_pre_order %}
+                      Please wait for the staff to confirm your order
+                    {% else %}
+                      ₱{{ custom.unit_price|floatformat:2 }}
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if custom.pending_pre_order %}
+                      —
+                    {% else %}
+                      ₱{{ custom.line_total|floatformat:2 }}
+                    {% endif %}
+                  </td>
                 </tr>
                 {% endfor %}
               </tbody>
@@ -109,9 +121,47 @@
             <div class="mb-3"><strong>Delivery Fee:</strong> ₱{{ order_dict.delivery_fee|floatformat:2 }}</div>
             <div class="mb-3"><strong>Grand Total:</strong> ₱{{ order_dict.grand_total|floatformat:2 }}</div>
             <div class="mt-3">
+              {% if order_dict.order.cancellation_status == 'requested' %}
+                <span class="badge badge-warning" title="Waiting for admin approval">Cancellation Request</span>
+              {% endif %}
               <a href="{% url 'my-order-pk' order_dict.order.id %}" class="btn btn-outline-primary btn-sm">View Details</a>
               {% if order_dict.order.can_request_cancellation %}
-                <a href="{% url 'approve-cancellation' order_dict.order.id %}" class="btn btn-outline-danger btn-sm">Request Cancellation</a>
+                <button type="button" class="btn btn-outline-danger btn-sm" data-toggle="modal" data-target="#cancelModal{{ order_dict.order.id }}">Request Cancellation</button>
+
+                <!-- Cancel Order Modal -->
+                <div class="modal fade" id="cancelModal{{ order_dict.order.id }}" tabindex="-1" role="dialog" aria-labelledby="cancelModalLabel{{ order_dict.order.id }}" aria-hidden="true">
+                  <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                      <div class="modal-header">
+                        <h5 class="modal-title" id="cancelModalLabel{{ order_dict.order.id }}">Cancel Order</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                          <span aria-hidden="true">&times;</span>
+                        </button>
+                      </div>
+                      <form action="{% url 'cancel-order' order_dict.order.id %}" method="POST">
+                        {% csrf_token %}
+                        <div class="modal-body">
+                          <div class="form-group">
+                            <label for="cancelReason{{ order_dict.order.id }}">Please provide a reason for cancellation:</label>
+                            <select class="form-control" id="cancelReason{{ order_dict.order.id }}" name="cancel_reason" required>
+                              <option value="">Select a reason</option>
+                              <option value="Changed my mind">Changed my mind</option>
+                              <option value="Found better price elsewhere">Found better price elsewhere</option>
+                              <option value="Ordered by mistake">Ordered by mistake</option>
+                              <option value="Shipping time too long">Shipping time too long</option>
+                              <option value="Other">Other</option>
+                            </select>
+                            <textarea class="form-control mt-3" id="otherReason{{ order_dict.order.id }}" name="other_reason" placeholder="Please specify your reason" style="display: none;"></textarea>
+                          </div>
+                        </div>
+                        <div class="modal-footer">
+                          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                          <button type="submit" class="btn btn-danger">Confirm Cancellation</button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                </div>
               {% endif %}
             </div>
           </div>
@@ -120,5 +170,21 @@
     </div>
   {% endfor %}
 </div>
+
+<script>
+// Show/hide other reason textarea for cancel modal
+$(document).ready(function() {
+  $('[id^="cancelReason"]').on('change', function() {
+    var orderId = $(this).attr('id').replace('cancelReason', '');
+    var otherReasonTextarea = $('#otherReason' + orderId);
+
+    if ($(this).val() === 'Other') {
+      otherReasonTextarea.show().prop('required', true);
+    } else {
+      otherReasonTextarea.hide().prop('required', false);
+    }
+  });
+});
+</script>
 
 {% endblock content %}

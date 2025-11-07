@@ -2664,82 +2664,123 @@ document.addEventListener("DOMContentLoaded", () => {
     addToCartForm.reset()
   }
 
-  // Function to capture design image for cart submission
+  // Helper: wait until jersey model is loaded
+  async function waitForJersey(maxMs = 3000) {
+    const start = performance.now()
+    while (!jersey) {
+      if (performance.now() - start > maxMs) break
+      await new Promise(r => setTimeout(r, 50))
+    }
+  }
+
+  // Generate a multi-view composite (same as Download 3D View) and return data URL
+  async function generateMultiViewComposite() {
+    if (!camera || !renderer || !scene) {
+      console.error('Three.js components not initialized')
+      return null
+    }
+
+    await waitForJersey()
+
+    const originalPosition = camera.position.clone()
+    const originalRotation = jersey ? jersey.rotation.clone() : new THREE.Euler()
+    const originalControlsEnabled = controls.enabled
+    const originalRendererSize = { width: renderer.domElement.width, height: renderer.domElement.height }
+
+    // Disable interactions during capture
+    controls.enabled = false
+
+    // High-quality render size
+    const renderWidth = 800
+    const renderHeight = 800
+    renderer.setSize(renderWidth, renderHeight, false)
+    camera.aspect = renderWidth / renderHeight
+    camera.updateProjectionMatrix()
+
+    const views = [
+      { name: 'front',  position: [0, 0, 3],   rotation: 0,             label: 'Front View' },
+      { name: 'angle',  position: [2, 0.5, 2.5], rotation: -Math.PI/4,  label: 'Side View' },
+      { name: 'back',   position: [0, 0, 3],   rotation: Math.PI,       label: 'Back View' },
+    ]
+
+    // Final canvas with white background
+    const finalCanvas = document.createElement('canvas')
+    const ctx = finalCanvas.getContext('2d')
+    const padding = 40
+    const labelHeight = 60
+    finalCanvas.width = (renderWidth * views.length) + (padding * (views.length + 1))
+    finalCanvas.height = renderHeight + labelHeight + (padding * 2)
+    ctx.fillStyle = '#ffffff'
+    ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height)
+
+    for (let i = 0; i < views.length; i++) {
+      const v = views[i]
+      camera.position.set(v.position[0], v.position[1], v.position[2])
+      camera.lookAt(0, 0, 0)
+      if (jersey) jersey.rotation.y = v.rotation
+
+      // Visibility per view
+      if (frontNumberMesh) frontNumberMesh.visible = v.name !== 'back'
+      if (backNameMesh) backNameMesh.visible = v.name === 'back'
+      if (backNumberMesh) backNumberMesh.visible = v.name === 'back'
+      if (logoMesh) {
+        logoMesh.visible = (v.name === 'front' || v.name === 'angle') ? (config.logoPlacement === 'front') : (config.logoPlacement === 'back')
+      }
+
+      // Stable renders
+      for (let j = 0; j < 3; j++) renderer.render(scene, camera)
+      await new Promise(r => setTimeout(r, 100))
+
+      const dataUrl = renderer.domElement.toDataURL('image/png', 1.0)
+      const img = new Image()
+      img.crossOrigin = 'anonymous'
+      await new Promise(resolve => { img.onload = resolve; img.src = dataUrl })
+
+      const x = padding + (i * (renderWidth + padding))
+      const y = padding + labelHeight
+      ctx.drawImage(img, x, y, renderWidth, renderHeight)
+      // Label
+      ctx.fillStyle = '#333333'
+      ctx.font = 'bold 24px Arial, sans-serif'
+      ctx.textAlign = 'center'
+      ctx.fillText(v.label, x + (renderWidth / 2), padding + 30)
+      // Border
+      ctx.strokeStyle = '#cccccc'
+      ctx.lineWidth = 2
+      ctx.strokeRect(x, y, renderWidth, renderHeight)
+    }
+
+    // Footer info
+    ctx.fillStyle = '#666666'
+    ctx.font = '16px Arial, sans-serif'
+    ctx.textAlign = 'left'
+    const footerY = finalCanvas.height - 15
+    ctx.fillText(`Jersey Design - Generated on ${new Date().toLocaleDateString()}`, padding, footerY)
+    ctx.textAlign = 'right'
+    const details = []
+    if (config.frontNumber) details.push(`Front #: ${config.frontNumber}`)
+    if (config.backName) details.push(`Name: ${config.backName}`)
+    if (config.backNumber) details.push(`Back #: ${config.backNumber}`)
+    if (details.length > 0) ctx.fillText(details.join(' | '), finalCanvas.width - padding, footerY)
+
+    // Restore renderer and states
+    renderer.setSize(originalRendererSize.width, originalRendererSize.height, false)
+    camera.aspect = originalRendererSize.width / originalRendererSize.height
+    camera.updateProjectionMatrix()
+    camera.position.copy(originalPosition)
+    if (jersey) jersey.rotation.copy(originalRotation)
+    controls.enabled = originalControlsEnabled
+    updateElementsVisibility()
+    renderer.render(scene, camera)
+
+    return finalCanvas.toDataURL('image/png', 0.95)
+  }
+
+  // Function to capture design image for cart submission (now uses multi-view composite)
   async function captureDesignImage() {
     try {
-      // Check if camera and renderer are initialized
-      if (!camera || !renderer || !scene) {
-        console.error('Three.js components not initialized')
-        return null
-      }
-
-      // Store original states
-      const originalPosition = camera.position.clone()
-      const originalRotation = jersey ? jersey.rotation.clone() : new THREE.Euler()
-      const originalControlsEnabled = controls.enabled
-      const originalRendererSize = { width: renderer.domElement.width, height: renderer.domElement.height }
-
-      // Disable controls during capture
-      controls.enabled = false
-      
-      // Set high-quality render size for better image quality
-      const renderWidth = 800
-      const renderHeight = 800
-      renderer.setSize(renderWidth, renderHeight, false)
-      camera.aspect = renderWidth / renderHeight
-      camera.updateProjectionMatrix()
-
-      // Position camera for front view (same as download)
-      camera.position.set(0, 0, 3)
-      camera.lookAt(0, 0, 0)
-
-      // Set jersey to front view
-      if (jersey) {
-        jersey.rotation.y = 0
-      }
-
-      // Update element visibility for front view
-      if (frontNumberMesh) {
-        frontNumberMesh.visible = true
-      }
-      if (backNameMesh) {
-        backNameMesh.visible = false
-      }
-      if (backNumberMesh) {
-        backNumberMesh.visible = false
-      }
-      if (logoMesh) {
-        logoMesh.visible = config.logoPlacement === "front"
-      }
-
-      // Force multiple renders for stability
-      for (let i = 0; i < 3; i++) {
-        renderer.render(scene, camera)
-      }
-
-      // Wait for rendering to complete
-      await new Promise(resolve => setTimeout(resolve, 100))
-
-      // Capture the image
-      const imageData = renderer.domElement.toDataURL("image/png", 1.0)
-
-      // Restore original renderer settings
-      renderer.setSize(originalRendererSize.width, originalRendererSize.height, false)
-      camera.aspect = originalRendererSize.width / originalRendererSize.height
-      camera.updateProjectionMatrix()
-
-      // Restore original states
-      camera.position.copy(originalPosition)
-      if (jersey) jersey.rotation.copy(originalRotation)
-      controls.enabled = originalControlsEnabled
-
-      // Restore element visibility
-      updateElementsVisibility()
-
-      // Final render to restore display
-      renderer.render(scene, camera)
-
-      return imageData
+      const composite = await generateMultiViewComposite()
+      return composite
     } catch (error) {
       console.error('Error capturing design image:', error)
       return null

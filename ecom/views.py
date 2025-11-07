@@ -1376,6 +1376,10 @@ def update_order_view(request,pk):
     orderForm = forms.OrderForm(instance=order)
     
     if request.method == 'POST':
+        # Prevent any state changes on cancelled orders
+        if order.status == 'Cancelled':
+            messages.error(request, 'Cannot update a cancelled order.')
+            return redirect('admin-view-cancelled-orders')
         orderForm = forms.OrderForm(request.POST, instance=order)
         if orderForm.is_valid():
             # Save the form but don't commit yet
@@ -1535,7 +1539,7 @@ def pending_orders_view(request):
         return redirect('customer-home')
 
     orders = models.Orders.objects.filter(customer=customer, status='Pending').order_by('-order_date', '-created_at')
-    print(f"DEBUG: Found {orders.count()} pending orders")
+    print(f"DEBUG: Found {orders.count()} pending orders (pre-filter)")
     
     orders_with_items = []
 
@@ -1559,26 +1563,35 @@ def pending_orders_view(request):
                 'line_total': line_total,
             })
 
-        # Get custom order items
-        custom_order_items = models.CustomOrderItem.objects.filter(order=order)
-        print(f"DEBUG: Found {custom_order_items.count()} custom order items")
+        # Get custom order items and HIDE pending pre-orders until admin confirms
+        custom_order_items_all = models.CustomOrderItem.objects.filter(order=order)
+        print(f"DEBUG: Found {custom_order_items_all.count()} custom order items (pre-filter)")
         
         custom_items = []
-        for item in custom_order_items:
-            print(f"DEBUG: Custom item - ID: {item.id}, Price: {item.price}, Quantity: {item.quantity}, Size: {item.size}")
+        for item in custom_order_items_all:
+            # Skip items that are marked as pre-order and still pending
+            if item.is_pre_order and (item.pre_order_status or 'pending') == 'pending':
+                print(f"DEBUG: Hiding pending pre-order item ID: {item.id}")
+                continue
+            print(f"DEBUG: Visible custom item - ID: {item.id}, Price: {item.price}, Quantity: {item.quantity}, Size: {item.size}")
             # Use VAT-inclusive calculation (same as cart)
             line_total = Decimal(item.price) * item.quantity
             total += line_total
             custom_items.append({
-                'item': item,  # Changed from 'custom_item' to 'item' to match template
+                'item': item,
                 'size': item.size,
                 'quantity': item.quantity,
-                'unit_price': item.price,  # Changed from 'price' to 'unit_price' to match template
+                'unit_price': item.price,
                 'line_total': line_total,
             })
 
         print(f"DEBUG: Order total: {total}")
         
+        # If there are no visible items after filtering, skip this order entirely
+        if not products and not custom_items:
+            print(f"DEBUG: Skipping order {order.id} with only pending pre-order items")
+            continue
+
         # Calculate VAT using same method as cart (VAT-inclusive)
         vat_amount = total * Decimal(12) / Decimal(112)
         net_subtotal = total - vat_amount
@@ -1598,7 +1611,7 @@ def pending_orders_view(request):
             'grand_total': grand_total,
         })
 
-    print(f"DEBUG: Returning {len(orders_with_items)} orders with items")
+    print(f"DEBUG: Returning {len(orders_with_items)} visible pending orders after filtering")
     pending_count = models.Orders.objects.filter(customer=customer, status='Pending').count()
     to_ship_count = models.Orders.objects.filter(customer=customer, status__in=['Processing', 'Order Confirmed']).count()
     to_receive_count = models.Orders.objects.filter(customer=customer, status='Out for Delivery').count()
@@ -2912,9 +2925,16 @@ def cancel_order_view(request, order_id):
             messages.error(request, 'Please provide a reason for cancellation.')
             return redirect('my-order')
         
-        # For COD orders, immediately cancel (no payment to refund)
-        if order.payment_method == 'cod':
-            # Restore stock for each item in the order
+        # If order is already out for delivery, always require admin approval
+        if order.status == 'Out for Delivery':
+            success = order.request_cancellation(final_reason, request.user)
+            if success:
+                # Keep status as 'Out for Delivery' to remain under "To Receive"
+                messages.success(request, 'Cancellation request submitted successfully! Your request is now waiting for Super Admin approval. You will be notified once a decision is made.')
+            else:
+                messages.error(request, 'Unable to process cancellation request. Please try again.')
+        elif order.payment_method == 'cod':
+            # Immediate cancel for COD if not yet out for delivery (no payment to refund)
             order_items = models.OrderItem.objects.filter(order=order)
             for item in order_items:
                 product = item.product
@@ -2927,9 +2947,10 @@ def cancel_order_view(request, order_id):
             order.save()
             messages.success(request, 'Order cancelled successfully!')
         else:
-            # For paid orders (PayPal/GCash), request cancellation approval
+            # Paid orders (PayPal/GCash) always require admin approval
             success = order.request_cancellation(final_reason, request.user)
             if success:
+                # Keep original status; admin list will read cancellation_status
                 messages.success(request, 'Cancellation request submitted successfully! Your request is now waiting for Super Admin approval. You will be notified once a decision is made.')
             else:
                 messages.error(request, 'Unable to process cancellation request. Please try again.')
@@ -2954,20 +2975,23 @@ def my_order_view(request):
     except models.Customer.DoesNotExist:
         messages.error(request, 'Customer profile not found. Please contact support.')
         return redirect('customer-home')
-
-    # Build counts for tab badges
-    pending_count = models.Orders.objects.filter(customer=customer, status='Pending').count()
-    to_ship_count = models.Orders.objects.filter(customer=customer, status__in=['Processing', 'Order Confirmed']).count()
-    to_receive_count = models.Orders.objects.filter(customer=customer, status='Out for Delivery').count()
-    delivered_count = models.Orders.objects.filter(customer=customer, status='Delivered').count()
-    cancelled_count = models.Orders.objects.filter(customer=customer, status='Cancelled').count()
-    waiting_count = models.Orders.objects.filter(customer=customer, cancellation_status='requested').count()
-
-    # Gather all orders with detailed items similar to status views
-    orders = models.Orders.objects.filter(customer=customer).order_by('-order_date', '-created_at')
+    # Gather all orders and hide pure pending pre-orders from customer view
+    orders_qs = models.Orders.objects.filter(customer=customer).order_by('-order_date', '-created_at')
     orders_with_items = []
-    for order in orders:
-        order_items = models.OrderItem.objects.filter(order=order)
+    # Status counters derived only from visible orders
+    status_counts = {
+        'Pending': 0,
+        'Processing': 0,
+        'Order Confirmed': 0,
+        'Out for Delivery': 0,
+        'Delivered': 0,
+        'Cancelled': 0,
+    }
+    waiting_count = 0
+
+    for order in orders_qs:
+        # Regular items (always visible)
+        order_items = list(models.OrderItem.objects.filter(order=order))
         products = []
         total = Decimal('0.00')
         for item in order_items:
@@ -2980,9 +3004,21 @@ def my_order_view(request):
                 'line_total': line_total,
             })
 
-        custom_order_items = models.CustomOrderItem.objects.filter(order=order)
+        # Custom items: hide if they are pending pre-orders
+        custom_order_items_all = list(models.CustomOrderItem.objects.filter(order=order))
         custom_items = []
-        for item in custom_order_items:
+        for item in custom_order_items_all:
+            # Show pending pre-orders but do not include in totals
+            if item.is_pre_order and (item.pre_order_status or 'pending') == 'pending':
+                custom_items.append({
+                    'item': item,
+                    'size': item.size,
+                    'quantity': item.quantity,
+                    'unit_price': None,
+                    'line_total': Decimal('0.00'),
+                    'pending_pre_order': True,
+                })
+                continue
             line_total = Decimal(item.price) * item.quantity
             total += line_total
             custom_items.append({
@@ -2992,6 +3028,10 @@ def my_order_view(request):
                 'unit_price': item.price,
                 'line_total': line_total,
             })
+
+        # If after filtering there are no visible items, skip this order entirely
+        if not products and not custom_items:
+            continue
 
         vat_amount = total * Decimal(12) / Decimal(112)
         net_subtotal = total - vat_amount
@@ -3010,14 +3050,20 @@ def my_order_view(request):
             'grand_total': grand_total,
         })
 
+        # Increment status counters for visible orders
+        if order.status in status_counts:
+            status_counts[order.status] += 1
+        if order.cancellation_status == 'requested':
+            waiting_count += 1
+
     context = {
         'orders_with_items': orders_with_items,
         'active_tab': 'all',
-        'pending_count': pending_count,
-        'to_ship_count': to_ship_count,
-        'to_receive_count': to_receive_count,
-        'delivered_count': delivered_count,
-        'cancelled_count': cancelled_count,
+        'pending_count': status_counts['Pending'],
+        'to_ship_count': status_counts['Processing'] + status_counts['Order Confirmed'],
+        'to_receive_count': status_counts['Out for Delivery'],
+        'delivered_count': status_counts['Delivered'],
+        'cancelled_count': status_counts['Cancelled'],
         'waiting_count': waiting_count,
     }
     # If requested via AJAX from My Profile tabs, return a fragment without base layout
@@ -4189,6 +4235,9 @@ def track_delivery_status(request, order_id):
     
     try:
         order = get_object_or_404(Orders, id=order_id)
+        # Block tracking for cancelled orders
+        if order.status == 'Cancelled':
+            return JsonResponse({'success': False, 'message': 'Cannot track a cancelled order'})
         
         if order.status not in ['Out for Delivery', 'Delivered']:
             return JsonResponse({
@@ -4241,6 +4290,12 @@ def mark_order_delivered(request, order_id):
     if request.method == 'POST':
         try:
             order = get_object_or_404(Orders, id=order_id)
+            # Guard: no actions allowed on cancelled orders
+            if order.status == 'Cancelled':
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Cannot mark a cancelled order as delivered'
+                })
             
             if order.status not in ['Out for Delivery']:
                 return JsonResponse({
@@ -4840,24 +4895,27 @@ def add_custom_order(request):
             design_data=design_config
         )
         
-        # Save design image if provided
+        # Save design image if provided (guard against blank/invalid base64)
         if 'designImage' in data and data['designImage']:
             try:
-                # Parse base64 image data
-                format, imgstr = data['designImage'].split(';base64,')
-                ext = format.split('/')[-1]
-                
-                # Create a unique filename
-                import uuid
-                filename = f'custom_design_{customer.id}_{uuid.uuid4().hex[:8]}.{ext}'
-                
-                # Decode and save the image
-                from django.core.files.base import ContentFile
-                import base64
-                image_data = ContentFile(base64.b64decode(imgstr), name=filename)
-                custom_design.design_image = image_data
-                custom_design.save()
-                print(f"DEBUG: Design image saved as {filename}")
+                di = data['designImage']
+                if isinstance(di, str) and di.startswith('data:image/') and ';base64,' in di:
+                    format, imgstr = di.split(';base64,', 1)
+                    # Skip empty or very small payloads that indicate blank canvas
+                    if imgstr and len(imgstr.strip()) > 100:
+                        ext = format.split('/')[-1]
+                        import uuid
+                        filename = f'custom_design_{customer.id}_{uuid.uuid4().hex[:8]}.{ext}'
+                        from django.core.files.base import ContentFile
+                        import base64
+                        image_data = ContentFile(base64.b64decode(imgstr), name=filename)
+                        custom_design.design_image = image_data
+                        custom_design.save()
+                        print(f"DEBUG: Design image saved as {filename}")
+                    else:
+                        print("DEBUG: Skipping blank/too-small design image payload")
+                else:
+                    print("DEBUG: designImage not a valid image data URL; skipping save")
             except Exception as e:
                 print(f"DEBUG: Error saving design image: {e}")
                 # Continue without image if there's an error
@@ -4884,7 +4942,8 @@ def add_custom_order(request):
                 custom_design=custom_design,
                 quantity=quantity,
                 size=size,
-                price=base_price,
+                # For pre-orders, do not set a price yet; admin will confirm later
+                price=decimal.Decimal('0.00'),
                 additional_info=additional_info,
                 is_pre_order=True
             )
@@ -5140,6 +5199,64 @@ def admin_order_detail_ajax(request, order_id):
             'success': False,
             'error': str(e)
         })
+
+@admin_required
+def admin_confirm_pre_order(request, order_id):
+    """Confirm a pre-order: set total price and mark as confirmed.
+    Expects JSON: { total_price: number }
+    """
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': 'Invalid method'}, status=405)
+    try:
+        data = json.loads(request.body or '{}')
+        total_price = data.get('total_price')
+        if total_price is None:
+            return JsonResponse({'success': False, 'message': 'total_price is required'}, status=400)
+        try:
+            total_price = decimal.Decimal(str(total_price))
+        except Exception:
+            return JsonResponse({'success': False, 'message': 'Invalid total_price'}, status=400)
+
+        order = models.Orders.objects.get(id=order_id)
+        # Guard: no confirmation allowed on cancelled orders
+        if order.status == 'Cancelled':
+            return JsonResponse({'success': False, 'message': 'Cannot confirm a cancelled order'}, status=400)
+        items = list(models.CustomOrderItem.objects.filter(order=order, is_pre_order=True))
+        if not items:
+            return JsonResponse({'success': False, 'message': 'No pre-order items found for this order'}, status=404)
+
+        total_quantity = sum(i.quantity for i in items)
+        if total_quantity <= 0:
+            return JsonResponse({'success': False, 'message': 'Invalid quantity on pre-order items'}, status=400)
+
+        unit_price = (total_price / decimal.Decimal(total_quantity)).quantize(decimal.Decimal('0.01'))
+        for item in items:
+            item.price = unit_price
+            item.pre_order_status = 'confirmed'
+            # Move item out of pre-order bucket for main Orders listing
+            item.is_pre_order = False
+            item.save(update_fields=['price', 'pre_order_status', 'is_pre_order'])
+
+        # Ensure order has a reference ID; generate if missing
+        if not getattr(order, 'order_ref', None):
+            import random, string
+            def _generate_order_ref(length=12):
+                return ''.join(random.choices(string.ascii_uppercase + string.digits, k=length))
+            order.order_ref = _generate_order_ref()
+
+        # Progress order status to 'Order Confirmed' so it appears under Orders
+        order.status = 'Order Confirmed'
+        order.status_updated_at = timezone.now()
+        order.save(update_fields=['order_ref', 'status', 'status_updated_at'])
+
+        return JsonResponse({'success': True, 'message': 'Pre-order confirmed', 'order_id': order.id})
+    except models.Orders.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Order not found'}, status=404)
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'message': 'Invalid JSON payload'}, status=400)
+    except Exception as e:
+        import traceback
+        return JsonResponse({'success': False, 'message': f'Error: {str(e)}', 'trace': traceback.format_exc()}, status=500)
 
 @admin_required
 def admin_report_view(request):
@@ -5560,8 +5677,11 @@ def admin_view_pre_orders(request):
         'completed': pre_order_items.filter(pre_order_status='completed').count(),
     }
     
-    # Calculate total revenue
-    total_revenue = sum(item.get_total_price() for item in pre_order_items)
+    # Calculate total revenue (exclude pending and cancelled pre-orders)
+    total_revenue = sum(
+        item.get_total_price() 
+        for item in pre_order_items.exclude(pre_order_status__in=['pending', 'cancelled'])
+    )
     
     # Prepare pre-order data
     pre_orders_data = []
@@ -5681,41 +5801,18 @@ def remove_custom_item_view(request, pk):
 @admin_required
 def admin_view_cancellation_requests(request):
     """
-    Admin view to manage cancellation requests that need approval
+    Admin tab inside Orders page to list cancellation requests needing approval
     """
-    # Get all orders with cancellation requests
-    cancellation_requests = models.Orders.objects.filter(
-        status='Cancellation Requested'
-    ).select_related('customer__user').order_by('-cancellation_requested_at')
-    
-    # Calculate counts
-    total_requests = cancellation_requests.count()
-    paypal_requests = cancellation_requests.filter(payment_method='paypal').count()
-    gcash_requests = cancellation_requests.filter(payment_method='gcash').count()
-    cod_requests = cancellation_requests.filter(payment_method='cod').count()
-    
-    # Prepare request data
-    requests_data = []
-    for order in cancellation_requests:
-        customer_name = f"{order.customer.user.first_name} {order.customer.user.last_name}" if order.customer and order.customer.user else 'Unknown'
-        total_amount = float(order.get_total_amount())
-        
-        requests_data.append({
-            'order': order,
-            'customer_name': customer_name,
-            'total_amount': total_amount,
-            'days_pending': (timezone.now() - order.cancellation_requested_at).days if order.cancellation_requested_at else 0,
-        })
-    
+    orders = models.Orders.objects.filter(cancellation_status='requested')
+    counts = get_order_status_counts()
     context = {
-        'requests_data': requests_data,
-        'total_requests': total_requests,
-        'paypal_requests': paypal_requests,
-        'gcash_requests': gcash_requests,
-        'cod_requests': cod_requests,
+        'processing_count': counts.get('processing', 0),
+        'confirmed_count': counts.get('confirmed', 0),
+        'shipping_count': counts.get('shipping', 0),
+        'delivered_count': counts.get('delivered', 0),
+        'cancelled_count': counts.get('cancelled', 0),
     }
-    
-    return render(request, 'ecom/admin_cancellation_requests.html', context)
+    return prepare_admin_order_view(request, orders, 'Request Cancellation', 'ecom/admin_view_orders.html', extra_context=context)
 
 
 @admin_required
@@ -5731,7 +5828,7 @@ def approve_cancellation_request(request, order_id):
 
     # Process approval and send customer notification
     try:
-        order = models.Orders.objects.get(id=order_id, status='Cancellation Requested')
+        order = models.Orders.objects.get(id=order_id, cancellation_status='requested')
         admin_notes = request.POST.get('admin_notes', '')
 
         # Approve the cancellation
@@ -6051,7 +6148,7 @@ def reject_cancellation_request(request, order_id):
         return redirect('admin-view-cancellation-requests')
     
     try:
-        order = models.Orders.objects.get(id=order_id, status='Cancellation Requested')
+        order = models.Orders.objects.get(id=order_id, cancellation_status='requested')
         
         # Get admin notes from JSON body or POST data
         admin_notes = ''

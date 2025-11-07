@@ -245,6 +245,34 @@
         </div>
 
         <!-- React App Container -->
+        <!-- Pre-Order Quick Bar -->
+        <div class="border-b bg-white" style="padding: 12px 20px;">
+            <div class="container" style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                <div style="font-weight:600;">Pre-Order this custom design</div>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <label for="preorder-size" style="margin-right:4px;">Size</label>
+                    <select id="preorder-size" class="form-select form-select-sm" style="min-width:100px;">
+                        <option value="XS">XS</option>
+                        <option value="S">S</option>
+                        <option value="M" selected>M</option>
+                        <option value="L">L</option>
+                        <option value="XL">XL</option>
+                    </select>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <label for="preorder-qty" style="margin-right:4px;">Qty</label>
+                    <input id="preorder-qty" type="number" min="1" max="99" value="1" class="form-control form-control-sm" style="width:90px;">
+                </div>
+                <div style="flex:1; min-width:220px;">
+                    <input id="preorder-notes" type="text" class="form-control form-control-sm" placeholder="Notes (team name, special instructions)">
+                </div>
+                <button id="preorder-submit" class="btn btn-primary btn-sm" type="button">
+                    <i class="fa fa-paper-plane"></i> Pre-Order
+                </button>
+                <div id="preorder-status" style="margin-left:auto; font-size:13px; min-height:20px;"></div>
+            </div>
+        </div>
+
         <div id="root" class="flex-1"></div>
     </div>
 
@@ -270,14 +298,14 @@
         const originalFetch = window.fetch;
         window.fetch = function(url, options) {
             console.log('Fetch called with URL:', url);
-            // Block cart/pre-order API calls so Add to Cart functionality is disabled globally
+            // Block Add to Cart API calls only; allow Pre-Order API
             try {
                 const urlStr = typeof url === 'string' ? url : (url && url.url) || '';
-                if (typeof urlStr === 'string' && (urlStr.includes('/api/add-custom-tshirt-to-cart/') || urlStr.includes('/api/add-custom-order/'))) {
-                    console.warn('Blocked Add to Cart / Pre-order API call:', urlStr);
+                if (typeof urlStr === 'string' && urlStr.includes('/api/add-custom-tshirt-to-cart/')) {
+                    console.warn('Blocked Add to Cart API call:', urlStr);
                     const body = JSON.stringify({
                         success: false,
-                        message: 'Add to Cart / Pre-order is disabled on this page.'
+                        message: 'Add to Cart is disabled on this page.'
                     });
                     return Promise.resolve(new Response(body, {
                         status: 403,
@@ -285,7 +313,7 @@
                     }));
                 }
             } catch (err) {
-                console.warn('Error while intercepting cart/pre-order API:', err);
+                console.warn('Error while intercepting cart API:', err);
             }
             if (typeof url === 'string' && (url.includes('3Dmodels/') || url.includes('.glb'))) {
                 console.log('Intercepting fetch request:', url);
@@ -507,7 +535,106 @@
             window.addEventListener('load', run);
         })();
     </script>
-    
+
+    <!-- Pre-Order submission wiring -->
+    <script>
+        (function() {
+            function showStatus(msg, type) {
+                const el = document.getElementById('preorder-status');
+                el.style.color = type === 'error' ? '#dc3545' : '#198754';
+                el.textContent = msg;
+                setTimeout(() => { el.textContent = ''; }, 5000);
+            }
+
+            async function captureDesignImage() {
+                try {
+                    const canvas = document.querySelector('#root canvas') || document.querySelector('canvas');
+                    if (!canvas) return null;
+
+                    // Wait for a couple of frames to ensure React/Three finished rendering
+                    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+                    // Try PNG first
+                    let png = null;
+                    try { png = canvas.toDataURL('image/png'); } catch (_) { png = null; }
+
+                    // Heuristic: if PNG is suspiciously small, try JPEG fallback
+                    const isTiny = (data) => !data || data.length < 5000; // ~5KB threshold for blank/partial frames
+                    let best = png;
+
+                    if (isTiny(png)) {
+                        let jpeg = null;
+                        try { jpeg = canvas.toDataURL('image/jpeg', 0.95); } catch (_) { jpeg = null; }
+                        best = (jpeg && jpeg.length > (png ? png.length : 0)) ? jpeg : png;
+                    }
+
+                    // If still tiny, wait briefly and retry once
+                    if (isTiny(best)) {
+                        await new Promise(r => setTimeout(r, 200));
+                        try {
+                            const retryPng = canvas.toDataURL('image/png');
+                            const retryJpeg = canvas.toDataURL('image/jpeg', 0.95);
+                            best = (retryJpeg && retryJpeg.length > (retryPng ? retryPng.length : 0)) ? retryJpeg : retryPng;
+                        } catch (_) {}
+                    }
+
+                    return best || png || null;
+                } catch (e) {
+                    console.warn('Canvas capture failed:', e);
+                    return null;
+                }
+            }
+
+            async function submitPreOrder() {
+                const size = document.getElementById('preorder-size').value;
+                const qtyEl = document.getElementById('preorder-qty');
+                const quantity = Math.max(1, Math.min(99, parseInt(qtyEl.value || '1', 10)));
+                const notes = document.getElementById('preorder-notes').value || '';
+
+                showStatus('Submitting pre-order…', 'ok');
+
+                const designImage = await captureDesignImage();
+                const payload = {
+                    quantity: quantity,
+                    size: size,
+                    additionalInfo: notes,
+                    designConfig: {
+                        source: 'react-3d-designer',
+                        capturedAt: new Date().toISOString()
+                    },
+                    designImage: designImage,
+                    orderType: 'pre-order'
+                };
+
+                try {
+                    const resp = await fetch('/api/add-custom-order/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': (window.DJANGO_CONFIG && window.DJANGO_CONFIG.csrfToken) || '{{ csrf_token }}'
+                        },
+                        body: JSON.stringify(payload)
+                    });
+                    const data = await resp.json();
+                    if (data && data.success) {
+                        showStatus('Pre-order created! Redirecting to Track Orders…', 'ok');
+                        setTimeout(() => { window.location.href = '/my-order'; }, 1000);
+                    } else {
+                        showStatus((data && data.message) || 'Failed to create pre-order.', 'error');
+                    }
+                } catch (err) {
+                    console.error('Pre-order error:', err);
+                    showStatus('Network error while submitting.', 'error');
+                }
+            }
+
+            document.addEventListener('DOMContentLoaded', function() {
+                const btn = document.getElementById('preorder-submit');
+                if (btn) btn.addEventListener('click', submitPreOrder);
+            });
+        })();
+    </script>
+
     <!-- Bootstrap JavaScript for dropdown functionality -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     

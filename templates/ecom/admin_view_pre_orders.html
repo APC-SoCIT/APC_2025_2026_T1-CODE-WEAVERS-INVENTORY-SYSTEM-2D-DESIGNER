@@ -123,7 +123,11 @@
                         <div class="text-xs text-gray-500">Size: {{ pre_order.item.size }}</div>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        ₱{{ pre_order.total_price|floatformat:2 }}
+                        {% if pre_order.item.pre_order_status == 'pending' %}
+                            TBD
+                        {% else %}
+                            ₱{{ pre_order.total_price|floatformat:2 }}
+                        {% endif %}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {{ pre_order.item.created_at|date:"M d, Y" }}
@@ -141,13 +145,13 @@
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
                         <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                            {% if pre_order.pre_order_status == 'pending' %}bg-yellow-100 text-yellow-800
-                            {% elif pre_order.pre_order_status == 'confirmed' %}bg-blue-100 text-blue-800
-                            {% elif pre_order.pre_order_status == 'in_production' %}bg-purple-100 text-purple-800
-                            {% elif pre_order.pre_order_status == 'completed' %}bg-green-100 text-green-800
-                            {% elif pre_order.pre_order_status == 'cancelled' %}bg-red-100 text-red-800
+                            {% if pre_order.item.pre_order_status == 'pending' %}bg-yellow-100 text-yellow-800
+                            {% elif pre_order.item.pre_order_status == 'confirmed' %}bg-blue-100 text-blue-800
+                            {% elif pre_order.item.pre_order_status == 'in_production' %}bg-purple-100 text-purple-800
+                            {% elif pre_order.item.pre_order_status == 'completed' %}bg-green-100 text-green-800
+                            {% elif pre_order.item.pre_order_status == 'cancelled' %}bg-red-100 text-red-800
                             {% else %}bg-gray-100 text-gray-800{% endif %}">
-                            {{ pre_order.get_pre_order_status_display|default:"Pending" }}
+                            {{ pre_order.item.get_pre_order_status_display|default:"Pending" }}
                         </span>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -155,10 +159,12 @@
                                 class="text-indigo-600 hover:text-indigo-900 mr-3">
                             View Details
                         </button>
+                        {% if pre_order.item.pre_order_status == 'pending' and pre_order.order.status != 'Cancelled' %}
                         <button onclick="confirmPreOrder({{ pre_order.order.id }})" 
                                 class="text-green-600 hover:text-green-900">
                             Confirm
                         </button>
+                        {% endif %}
                     </td>
                 </tr>
                 {% endfor %}
@@ -228,7 +234,12 @@ function viewPreOrderDetails(orderId) {
     modal.classList.remove('hidden');
     
     // Fetch order details
-    fetch(`/admin/orders/${orderId}/detail/`)
+    fetch(`/admin-orders/${orderId}/detail/`, {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+        }
+    })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
@@ -249,10 +260,52 @@ function closePreOrderModal() {
 }
 
 function confirmPreOrder(orderId) {
-    if (confirm('Are you sure you want to confirm this pre-order?')) {
-        // Here you would implement the confirm pre-order functionality
-        alert('Pre-order confirmation functionality will be implemented');
+    const proceed = confirm('Are you sure you want to confirm this pre-order?');
+    if (!proceed) return;
+
+    const totalStr = prompt('Enter total price for this pre-order (₱):');
+    if (totalStr === null) return; // cancelled
+    const total = parseFloat(totalStr);
+    if (isNaN(total) || total <= 0) {
+        alert('Please enter a valid positive amount.');
+        return;
     }
+
+    function getCSRFToken() {
+        const name = 'csrftoken=';
+        const decodedCookie = decodeURIComponent(document.cookie);
+        const ca = decodedCookie.split(';');
+        for (let c of ca) {
+            c = c.trim();
+            if (c.indexOf(name) === 0) return c.substring(name.length, c.length);
+        }
+        return null;
+    }
+
+    const csrfToken = getCSRFToken();
+    fetch(`/admin-orders/${orderId}/confirm/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken || '',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({ total_price: total })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            alert('Pre-order confirmed successfully. Redirecting to Orders…');
+            // Redirect to main Orders page to review the confirmed order
+            window.location.href = '/admin-view-booking';
+        } else {
+            alert('Failed to confirm: ' + (data.message || 'Unknown error'));
+        }
+    })
+    .catch(err => {
+        console.error('Confirm error:', err);
+        alert('An error occurred while confirming the pre-order.');
+    });
 }
 
 // Close modal when clicking outside

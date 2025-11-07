@@ -207,8 +207,10 @@ class Orders(models.Model):
         return items_total + self.delivery_fee
     
     def can_request_cancellation(self):
-        """Check if order can be cancelled by customer"""
-        return (self.status in ['Pending', 'Processing', 'Order Confirmed'] and 
+        """Check if order can be cancelled by customer.
+        Includes 'Out for Delivery' so customers in 'To Receive' can request approval.
+        """
+        return (self.status in ['Pending', 'Processing', 'Order Confirmed', 'Out for Delivery'] and 
                 self.cancellation_status == 'none')
     
     def is_paid_order(self):
