@@ -480,7 +480,7 @@
         <div class="filter-section">
             <select id="dateRange" onchange="updateDateRange()">
                 <option value="week">This Week</option>
-                <option value="month" selected>This Month</option>
+                <option value="month">This Month</option>
                 <option value="quarter">This Quarter</option>
                 <option value="year">This Year</option>
             </select>
@@ -1402,6 +1402,15 @@
             
             // Check if custom date range is active
             const urlParams = new URLSearchParams(window.location.search);
+
+            // Initialize the date range dropdown to reflect the current selection
+            const dateRangeElement = document.getElementById('dateRange');
+            if (dateRangeElement) {
+                const allowed = ['week','month','quarter','year'];
+                const current = urlParams.get('date_range');
+                dateRangeElement.value = allowed.includes(current) ? current : 'month';
+            }
+
             if (urlParams.get('date_range') === 'custom') {
                 // Show the custom date range inputs
                 document.getElementById('customDateRange').style.display = 'flex';

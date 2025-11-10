@@ -56,32 +56,34 @@
         {% endif %}
         <div id="tab-content" p>
           <div id="profile-pane">
-            <form method="post" enctype="multipart/form-data">
+            <form method="post" enctype="multipart/form-data" id="profile-form">
               {% csrf_token %}
               <div class="form-grid">
                 <div>
                   <div class="form-group">
                     <span class="input-icon"><i class="fa fa-user"></i></span>
-                    {% render_field userForm.username class="form-control" placeholder="Username" %}
+                    {% render_field userForm.username class="form-control" placeholder="Username" disabled="disabled" data-editable="1" %}
                   </div>
                   <div class="form-group">
                     <span class="input-icon"><i class="fa fa-id-card"></i></span>
-                    {% render_field userForm.first_name class="form-control" placeholder="First Name" %}
+                    {% render_field userForm.first_name class="form-control" placeholder="First Name" disabled="disabled" data-editable="1" %}
                   </div>
                   <div class="form-group">
                     <span class="input-icon"><i class="fa fa-id-card"></i></span>
-                    {% render_field userForm.last_name class="form-control" placeholder="Last Name" %}
+                    {% render_field userForm.last_name class="form-control" placeholder="Last Name" disabled="disabled" data-editable="1" %}
                   </div>
                   <div class="form-group">
                     <span class="input-icon"><i class="fa fa-envelope"></i></span>
-                    {% render_field userForm.email class="form-control" placeholder="Email" %}
+                    {% render_field userForm.email class="form-control" placeholder="Email" disabled="disabled" data-editable="1" %}
                   </div>
                   <div class="form-group">
                     <span class="input-icon"><i class="fa fa-phone"></i></span>
-                    {% render_field customerForm.mobile class="form-control" id="mobile_number" placeholder="956 837 0169" maxlength="13" minlength="13" pattern="^\d{3} \d{3} \d{4}$" oninput="autoFormatPHMobile(this)" %}
+                    {% render_field customerForm.mobile class="form-control" id="mobile_number" placeholder="956 837 0169" maxlength="13" minlength="13" pattern="^\d{3} \d{3} \d{4}$" oninput="autoFormatPHMobile(this)" disabled="disabled" data-editable="1" %}
                   </div>
                   <div class="actions">
-                    <button type="submit" class="btn-primary">Save</button>
+                    <button type="button" id="edit-details-btn" class="btn-primary">Edit Details</button>
+                    <button type="submit" id="save-details-btn" class="btn-primary" style="display:none;">Save</button>
+                    <button type="button" id="cancel-edit-btn" class="btn-secondary" style="display:none;">Cancel</button>
                   </div>
                 </div>
                 
@@ -123,6 +125,10 @@
           currentTab = tab; currentLink = linkEl;
           if (tab === 'profile') {
             tabContent.innerHTML = profileHTML;
+            // Re-bind edit-mode events after injecting the profile pane
+            if (typeof setupProfileEdit === 'function') {
+              try { setupProfileEdit(); } catch (e) { console.error('setupProfileEdit error:', e); }
+            }
             return;
           }
           const url = urls[tab];
@@ -176,9 +182,43 @@
           const linkEl = addressesLink || currentLink || document.querySelector('.side-link[data-tab="profile"]');
           loadTab('addresses', linkEl);
         });
+        function setupProfileEdit(){
+          const form = document.querySelector('#profile-form');
+          if (!form) return;
+          const editBtn = form.querySelector('#edit-details-btn');
+          const saveBtn = form.querySelector('#save-details-btn');
+          const cancelBtn = form.querySelector('#cancel-edit-btn');
+          const editableFields = form.querySelectorAll('[data-editable]');
+
+          function setEditing(on){
+            editableFields.forEach(el => {
+              if (on) {
+                el.removeAttribute('disabled');
+              } else {
+                el.setAttribute('disabled', 'disabled');
+              }
+            });
+            editBtn.style.display = on ? 'none' : '';
+            saveBtn.style.display = on ? '' : 'none';
+            cancelBtn.style.display = on ? '' : 'none';
+          }
+
+          // Initial: not editing
+          setEditing(false);
+
+          editBtn && editBtn.addEventListener('click', () => setEditing(true));
+          cancelBtn && cancelBtn.addEventListener('click', () => {
+            // Restore original values
+            try { form.reset(); } catch (e) {}
+            setEditing(false);
+          });
+        }
+
         // Default active tab: profile
         const defaultLink = document.querySelector('.side-link[data-tab="profile"]');
         if (defaultLink) setActive(defaultLink);
+        // Bind edit-mode on initial load
+        setupProfileEdit();
         </script>
         <style>
           /* Scoped scaling for My Profile page */
