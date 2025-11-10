@@ -484,6 +484,7 @@
                 <option value="quarter">This Quarter</option>
                 <option value="year">This Year</option>
             </select>
+            <span id="activeRangeBadge" class="range-badge" style="display:none; margin-left:10px; background:#EEF2FF; color:#1E40AF; border:1px solid #c7d2fe; border-radius:9999px; padding:6px 10px; font-weight:600;">Active: This Month</span>
             <button class="btn" onclick="toggleCustomDateRange()" id="customRangeBtn">
                 Custom Range
             </button>
@@ -1138,6 +1139,9 @@
                     if (chart) chart.resize();
                 });
             }, 100);
+
+            // Keep the active range highlight visible
+            updateActiveRangeBadge();
         }
 
         // Customer Selection and Transaction Functionality
@@ -1308,6 +1312,7 @@
             if (dateRangeElement) {
                 const range = dateRangeElement.value;
                 console.log('Date range changed to:', range);
+                try { localStorage.setItem('admin_date_range', range); } catch(e) {}
                 
                 // Redirect with the selected date range
                 const currentUrl = new URL(window.location);
@@ -1316,6 +1321,18 @@
                 currentUrl.searchParams.delete('end_date');
                 window.location.href = currentUrl.toString();
             }
+        }
+
+        // Badge showing active date range
+        function updateActiveRangeBadge() {
+            const badge = document.getElementById('activeRangeBadge');
+            if (!badge) return;
+            const urlParams = new URLSearchParams(window.location.search);
+            const range = urlParams.get('date_range');
+            const labels = { week: 'This Week', month: 'This Month', quarter: 'This Quarter', year: 'This Year', custom: 'Custom Range' };
+            const label = labels[range] || 'This Month';
+            badge.textContent = `Active: ${label}`;
+            badge.style.display = 'inline-block';
         }
         
         // Toggle custom date range display
@@ -1387,6 +1404,13 @@
             
             // Display the selected date range
             displaySelectedDateRange(startDate, endDate);
+
+            // Persist selection across views
+            try {
+                localStorage.setItem('admin_date_range', 'custom');
+                localStorage.setItem('admin_start_date', startDate);
+                localStorage.setItem('admin_end_date', endDate);
+            } catch(e) {}
             
             // Redirect to the same page with date parameters
             const currentUrl = new URL(window.location);
@@ -1408,7 +1432,23 @@
             if (dateRangeElement) {
                 const allowed = ['week','month','quarter','year'];
                 const current = urlParams.get('date_range');
-                dateRangeElement.value = allowed.includes(current) ? current : 'month';
+                if (allowed.includes(current)) {
+                    dateRangeElement.value = current;
+                } else {
+                    // Try to restore from localStorage; default to month
+                    let stored = null;
+                    try { stored = localStorage.getItem('admin_date_range'); } catch(e) {}
+                    dateRangeElement.value = allowed.includes(stored) ? stored : 'month';
+                    // If URL lacks date_range but we have a stored value, navigate to apply filter
+                    const currentUrl = new URL(window.location);
+                    if (!currentUrl.searchParams.get('date_range') && allowed.includes(dateRangeElement.value)) {
+                        currentUrl.searchParams.set('date_range', dateRangeElement.value);
+                        window.location.replace(currentUrl.toString());
+                        return; // Stop further init; page will reload
+                    }
+                }
+                // Update badge
+                updateActiveRangeBadge();
             }
 
             if (urlParams.get('date_range') === 'custom') {
@@ -1421,6 +1461,8 @@
                 if (startDate && endDate) {
                     displaySelectedDateRange(startDate, endDate);
                 }
+                // Show badge for custom range
+                updateActiveRangeBadge();
             }
         });
     </script>
