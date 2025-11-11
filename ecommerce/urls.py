@@ -116,6 +116,7 @@ urlpatterns = [
     path('orders/waiting-for-cancellation/', views.waiting_for_cancellation_view, name='waiting-for-cancellation'),
     # Checkout and payment for existing Pending orders (To Pay workflow)
     path('orders/checkout/<int:order_id>/', views.order_checkout, name='order_checkout'),
+    path('orders/set-payment-intent/<int:order_id>/', views.order_set_payment_intent, name='order_set_payment_intent'),
     path('orders/pay-with-gcash/<int:order_id>/', views.create_gcash_order_payment, name='order_pay_with_gcash'),
     path('orders/pay-with-cod/<int:order_id>/', views.order_pay_with_cod, name='order_pay_with_cod'),
     path('orders/payment-success/', views.order_payment_success, name='order_payment_success'),

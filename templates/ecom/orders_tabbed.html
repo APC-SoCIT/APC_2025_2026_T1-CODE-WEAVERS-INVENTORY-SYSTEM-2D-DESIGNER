@@ -117,8 +117,19 @@
           </div>
           <div class="col-md-4">
             <div class="mb-3"><strong>Subtotal:</strong> ₱{{ order_dict.total|floatformat:2 }}</div>
-            <div class="mb-3"><strong>VAT (12% of VAT-inclusive):</strong> ₱{{ order_dict.vat_amount|floatformat:2 }}</div>
+            <div class="mb-3"><strong>VAT (12%):</strong> ₱{{ order_dict.vat_amount|floatformat:2 }}</div>
             <div class="mb-3"><strong>Grand Total:</strong> ₱{{ order_dict.grand_total|floatformat:2 }}</div>
+            <!-- Display only the payment method used for this order -->
+            {% with pm=order_dict.order.payment_method txn=order_dict.order.transaction_id %}
+              {% if pm == 'cod' and txn %}
+                <div class="mb-2"><strong>Payment Method:</strong> GCash</div>
+              {% else %}
+                <div class="mb-2"><strong>Payment Method:</strong> {{ order_dict.order.get_payment_method_display|default:"—" }}</div>
+              {% endif %}
+            {% endwith %}
+            {% if order_dict.order.transaction_id %}
+              <div class="text-muted" style="font-size: 0.9rem;">Transaction ID: {{ order_dict.order.transaction_id }}</div>
+            {% endif %}
             <div class="mt-3">
               {% if order_dict.order.cancellation_status == 'requested' %}
                 <span class="badge badge-warning" title="Waiting for admin approval">Cancellation Request</span>

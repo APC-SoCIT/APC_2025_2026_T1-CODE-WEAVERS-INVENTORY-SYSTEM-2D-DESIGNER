@@ -86,7 +86,7 @@
           <span class="method-icon"></span>
           <span>PayPal</span>
         </div>
-        <div class="method-btn" id="gcashMethod" onclick="window.location.href='{% url 'order_pay_with_gcash' order.id %}'">
+        <div class="method-btn" id="gcashMethod" onclick="window.location.href='{% url 'order_set_payment_intent' order.id %}?method=gcash&next={% url 'order_pay_with_gcash' order.id %}'">
           <span class="method-icon"></span>
           <span>GCash</span>
         </div>

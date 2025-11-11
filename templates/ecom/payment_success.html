@@ -45,6 +45,17 @@ a{
    <img src="{% static 'images/success.png' %}" class="center" alt="Payment Success" />
   <h2>Payment Successful !</h2>
   <p>We are delighted to inform you that we received your payments.</p>
+  <div style="margin-top:12px; font-size: 0.95rem; color:#555;">
+    {% if payment_method %}
+      <div><strong>Payment Method:</strong> {{ payment_method|title }}</div>
+    {% endif %}
+    {% if order_ref %}
+      <div><strong>Reference Number:</strong> {{ order_ref }}</div>
+    {% endif %}
+    {% if transaction_id %}
+      <div class="text-muted">Transaction ID: {{ transaction_id }}</div>
+    {% endif %}
+  </div>
   <br>
   <br>
   <a style="text-decoration:none;" href="/my-order" class="btn btn-success btn-lg">View Orders/Track Orders</a>

@@ -740,11 +740,11 @@
       <label class="title">Checkout</label>
       <div class="details">
         <span>Your cart subtotal:</span>
-        <span id="subtotal">₱ {{ total|floatformat:2|intcomma }}</span>
+        <span id="subtotal">₱ {{ net_subtotal|default_if_none:0|floatformat:2|intcomma }}</span>
         <span>VAT (12%):</span>
         <span id="vat-amount">₱ <span id="vat-value">{{ vat_amount|default_if_none:0|floatformat:2|intcomma }}</span></span>
         <span style="border-top: 1px solid #ddd; padding-top: 5px; margin-top: 5px;">Grand Total:</span>
-        <strong id="grand-total">₱ <span id="grand-total-value">{{ grand_total|default_if_none:total|floatformat:2|intcomma }}</span></strong>
+        <strong id="grand-total">₱ <span id="grand-total-value">{{ grand_total|default_if_none:0|floatformat:2|intcomma }}</span></strong>
       </div>
       <div class="checkout--footer">
         <button class="pay-btn" id="openModalBtn"> 
@@ -805,8 +805,12 @@
       // Global variables for calculations
       let fullSubtotal = parseFloat("{{ total|floatformat:'2'|default:'0.00' }}");
       let subtotal = fullSubtotal; // will be recalculated for selections
-      let deliveryFee = 0.0; // delivery fee removed
+      let deliveryFee = 0.0; // baseline delivery fee (0 for now)
       let vatRate = 0.12;
+      let currentPaymentMethod = 'cod'; // default method; switch in UI
+
+      // Initialize totals on page load
+      calculateTotals();
 
       function getSelectedProductKeys() {
         const boxes = Array.from(document.querySelectorAll('.select-product:checked'));
@@ -1198,21 +1202,22 @@
       
       // Calculate totals
       function calculateTotals() {
-        // VAT-exclusive: add VAT on top of subtotal
+        // Subtotal is the total of selected products/custom items
+        // VAT is 12% of Subtotal; Grand Total = Subtotal + VAT
         let vatAmount = subtotal * vatRate;
         let grandTotal = subtotal + vatAmount;
-        
+
         // Update display
-        // Delivery fee removed; no delivery amount element
+        const subtotalEl = document.getElementById('subtotal');
         const vatValueEl = document.getElementById('vat-value');
         const grandTotalValueEl = document.getElementById('grand-total-value');
         const footerTotalEl = document.getElementById('footer-total');
-    
-        // No delivery fee to display
+
+        if (subtotalEl) subtotalEl.textContent = `₱ ${subtotal.toFixed(2)}`;
         if (vatValueEl) vatValueEl.textContent = vatAmount.toFixed(2);
         if (grandTotalValueEl) grandTotalValueEl.textContent = grandTotal.toFixed(2);
         if (footerTotalEl) footerTotalEl.textContent = grandTotal.toFixed(2);
-        
+
         return grandTotal;
       }
     
@@ -1308,7 +1313,8 @@
           const method = button.dataset.method;
           paymentButtons.forEach(btn => btn.style.background = 'white');
           button.style.background = '#f0f0f0';
-    
+          currentPaymentMethod = method;
+
           if (method === 'paypal') {
             paypalContainer.style.display = 'block';
             gcashContainer.style.display = 'none';
@@ -1322,6 +1328,9 @@
             gcashContainer.style.display = 'block';
             codForm.style.display = 'none';
           }
+          // Recalc totals when switching methods
+          subtotal = calculateSelectedSubtotal();
+          calculateTotals();
         });
       });
     
@@ -1338,6 +1347,12 @@
     
       // GCash Button Click Handler
       document.getElementById('gcash-pay-button').addEventListener('click', () => {
+        // Ensure selections are persisted
+        if (!hasSelection()) {
+          alert('Please select items to checkout.');
+          return;
+        }
+        setSelectionCookies();
         window.location.href = '/pay-with-gcash/';
       });
     
@@ -1406,6 +1421,29 @@
     
         // Update address display
         updateAddressDisplay();
+
+        // Auto-select when there is only one selectable item in the cart
+        try {
+          const itemCheckboxes = Array.from(document.querySelectorAll('.select-product, .select-custom-item'));
+          if (itemCheckboxes.length === 1) {
+            const onlyBox = itemCheckboxes[0];
+            onlyBox.checked = true;
+            // Hide the select all master toggle since it's redundant
+            const masterToggle = document.getElementById('selectAllItems');
+            if (masterToggle) {
+              masterToggle.checked = true;
+              masterToggle.style.visibility = 'hidden';
+            }
+            // Optionally hide the single checkbox cell to reduce friction
+            const td = onlyBox.closest('td');
+            if (td) td.style.visibility = 'hidden';
+            // Recompute totals using the selected single item
+            subtotal = calculateSelectedSubtotal();
+            calculateTotals();
+          }
+        } catch (err) {
+          console.warn('Single-item auto-select failed (non-blocking):', err);
+        }
       });
     </script>
     <!-- Payment Success Message (if applicable) -->

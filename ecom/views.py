@@ -1602,11 +1602,11 @@ def pending_orders_view(request):
             continue
 
         # Calculate VAT using same method as cart (VAT-inclusive)
-        vat_amount = total * Decimal(12) / Decimal(112)
-        net_subtotal = total - vat_amount
-        # Delivery fee removed system-wide
+        # Subtotal is total of products; VAT is 12% of subtotal; Grand Total = Subtotal + VAT
+        vat_amount = total * Decimal('0.12')
+        net_subtotal = total
         delivery_fee = Decimal('0.00')
-        grand_total = total
+        grand_total = total + vat_amount
 
         orders_with_items.append({
             'order': order,
@@ -1683,12 +1683,11 @@ def to_ship_orders_view(request):
                 'line_total': line_total,
             })
         
-        # Calculate VAT using same method as cart (VAT-inclusive)
-        vat_amount = total * Decimal(12) / Decimal(112)
-        net_subtotal = total - vat_amount
-        # Delivery fee removed system-wide
+        # Subtotal is total of products; VAT is 12%; Grand Total = Subtotal + VAT
+        vat_amount = total * Decimal('0.12')
+        net_subtotal = total
         delivery_fee = Decimal('0.00')
-        grand_total = total
+        grand_total = total + vat_amount
         
         orders_with_items.append({
             'order': order,
@@ -1758,12 +1757,11 @@ def to_receive_orders_view(request):
                 'line_total': line_total,
             })
         
-        # Calculate VAT using same method as cart (VAT-inclusive)
-        vat_amount = total * Decimal(12) / Decimal(112)
-        net_subtotal = total - vat_amount
-        # Delivery fee removed system-wide
+        # Subtotal is total of products; VAT is 12%; Grand Total = Subtotal + VAT
+        vat_amount = total * Decimal('0.12')
+        net_subtotal = total
         delivery_fee = Decimal('0.00')
-        grand_total = total
+        grand_total = total + vat_amount
         
         orders_with_items.append({
             'order': order,
@@ -1833,12 +1831,11 @@ def delivered_orders_view(request):
                 'line_total': line_total,
             })
         
-        # Calculate VAT using same method as cart (VAT-inclusive)
-        vat_amount = total * Decimal(12) / Decimal(112)
-        net_subtotal = total - vat_amount
-        # Delivery fee removed system-wide
+        # Subtotal is total of products; VAT is 12%; Grand Total = Subtotal + VAT
+        vat_amount = total * Decimal('0.12')
+        net_subtotal = total
         delivery_fee = Decimal('0.00')
-        grand_total = total
+        grand_total = total + vat_amount
         
         orders_with_items.append({
             'order': order,
@@ -1908,12 +1905,12 @@ def cancelled_orders_view(request):
                 'line_total': line_total,
             })
         
-        # Calculate VAT using same method as cart (VAT-inclusive)
-        vat_amount = total * Decimal(12) / Decimal(112)
-        net_subtotal = total - vat_amount
+        # Subtotal is total of products; VAT is 12%; Grand Total = Subtotal + VAT
+        vat_amount = total * Decimal('0.12')
+        net_subtotal = total
         # Delivery fee removed system-wide
         delivery_fee = Decimal('0.00')
-        grand_total = total
+        grand_total = total + vat_amount
         
         orders_with_items.append({
             'order': order,
@@ -1983,12 +1980,12 @@ def waiting_for_cancellation_view(request):
                 'line_total': line_total,
             })
         
-        # Calculate VAT using same method as cart (VAT-inclusive)
-        vat_amount = total * Decimal(12) / Decimal(112)
-        net_subtotal = total - vat_amount
+        # Subtotal is total of products; VAT is 12%; Grand Total = Subtotal + VAT
+        vat_amount = total * Decimal('0.12')
+        net_subtotal = total
         # Delivery fee removed system-wide
         delivery_fee = Decimal('0.00')
-        grand_total = total
+        grand_total = total + vat_amount
         
         orders_with_items.append({
             'order': order,
@@ -2296,12 +2293,13 @@ def cart_view(request):
                     'total': item_total
                 })
     
-    # Use VAT-inclusive calculation like orders
-    vat_amount = total * 12 / 112
-    net_subtotal = total - vat_amount
+    # Subtotal is total of products; VAT is 12%; Grand Total = Subtotal + VAT
+    vat_rate = 12
+    vat_amount = total * Decimal('0.12')
+    net_subtotal = total
     # Delivery fee removed system-wide
     delivery_fee = Decimal('0.00')
-    grand_total = total
+    grand_total = total + vat_amount
     
     # Get saved addresses for the current user
     saved_addresses = []
@@ -2397,11 +2395,11 @@ def remove_from_cart_view(request, pk):
     destination_region = region if region else "NCR"
     delivery_fee = get_shipping_fee(origin_region, destination_region, weight_kg=0.5)
 
-    # Calculate VAT using same method as orders (VAT-inclusive)
+    # Subtotal is total of products; VAT is 12% of subtotal; Grand Total = Subtotal + VAT
     vat_rate = 12
-    vat_amount = total * Decimal(vat_rate) / Decimal(112)
-    net_subtotal = total - vat_amount
-    grand_total = total
+    vat_amount = total * Decimal('0.12')
+    net_subtotal = total
+    grand_total = total + vat_amount
 
     response = render(request, 'ecom/cart.html', {
         'products': products,
@@ -2799,8 +2797,13 @@ def payment_success_view(request):
     except Exception as e:
         print(f"Warning: Failed to move custom items: {e}")
 
-    # Clear cookies after order placement
-    response = render(request, 'ecom/payment_success.html')
+    # Clear cookies after order placement and show reference number + method
+    context = {
+        'order_ref': parent_order.order_ref,
+        'payment_method': payment_method,
+        'transaction_id': transaction_id,
+    }
+    response = render(request, 'ecom/payment_success.html', context)
     response.delete_cookie('product_ids')
     response.delete_cookie('selected_product_keys')
     response.delete_cookie('selected_custom_item_ids')
@@ -3097,11 +3100,12 @@ def my_order_view(request):
         if not products and not custom_items:
             continue
 
-        vat_amount = total * Decimal(12) / Decimal(112)
-        net_subtotal = total - vat_amount
+        # Subtotal is total of products; VAT is 12%; Grand Total = Subtotal + VAT
+        vat_amount = total * Decimal('0.12')
+        net_subtotal = total
         # Delivery fee removed system-wide
         delivery_fee = Decimal('0.00')
-        grand_total = total
+        grand_total = total + vat_amount
 
         orders_with_items.append({
             'order': order,
@@ -3143,7 +3147,34 @@ def my_order_view_pk(request, pk):
     customer = models.Customer.objects.get(user_id=request.user.id)
     order = get_object_or_404(models.Orders, id=pk, customer=customer)
     order_items = order.orderitem_set.all()
-    return render(request, 'ecom/order_detail.html', {'order': order, 'order_items': order_items})
+
+    # Include any non-preorder custom items in totals
+    try:
+        custom_items = models.CustomOrderItem.objects.filter(order=order, is_pre_order=False)
+    except Exception:
+        custom_items = []
+
+    # Compute totals (delivery fee removed system-wide; VAT 12%)
+    from decimal import Decimal
+    total_inclusive = Decimal('0.00')
+    for oi in order_items:
+        total_inclusive += Decimal(oi.price) * oi.quantity
+    for ci in custom_items:
+        total_inclusive += Decimal(ci.price) * ci.quantity
+
+    # Subtotal equals total of product/custom line totals
+    net_subtotal = total_inclusive
+    vat_amount = (net_subtotal * Decimal('0.12')) if net_subtotal else Decimal('0.00')
+    grand_total = net_subtotal + vat_amount
+
+    context = {
+        'order': order,
+        'order_items': order_items,
+        'subtotal': net_subtotal,
+        'vat_amount': vat_amount,
+        'grand_total': grand_total,
+    }
+    return render(request, 'ecom/order_detail.html', context)
 
 def my_view(request):
     facebook_url = reverse('facebook')
@@ -3194,9 +3225,9 @@ def download_invoice_view(request, order_id):
             'line_total': line_total,
         })
 
-    net_subtotal = subtotal / Decimal('1.12')
-    vat_amount = subtotal - net_subtotal
-    grand_total = subtotal
+    net_subtotal = subtotal
+    vat_amount = subtotal * Decimal('0.12')
+    grand_total = subtotal + vat_amount
 
     context = {
         'order': order,
@@ -3520,25 +3551,24 @@ def create_gcash_payment(request):
         except models.Customer.DoesNotExist:
             region = None
 
-    # Calculate delivery fee using same logic as cart
+    # For GCash checkout from cart, remove delivery fee
     origin_region = "NCR"
     destination_region = region if region else "NCR"
-    delivery_fee = get_shipping_fee(origin_region, destination_region, weight_kg=0.5)
-    delivery_fee_cents = int(round(delivery_fee * 100))
+    delivery_fee = Decimal('0.00')
+    delivery_fee_cents = 0
 
-    # Calculate VAT (12% included in subtotal, same as cart logic)
+    # Add VAT (12%) on top of product subtotal for GCash
     subtotal_php = Decimal(subtotal_amount) / Decimal('100')  # Convert cents back to PHP as Decimal
-    vat_amount = subtotal_php * Decimal('0.12') / Decimal('1.12')  # VAT-inclusive calculation
-    vat_amount_cents = int(round(float(vat_amount) * 100))
+    vat_add_cents = int(round(float(subtotal_php * Decimal('0.12')) * 100))
 
-    # Calculate grand total (subtotal + delivery fee, VAT already included in subtotal)
-    total_amount = subtotal_amount + delivery_fee_cents
+    # Calculate grand total (subtotal + VAT add-on; no delivery fee for GCash)
+    total_amount = subtotal_amount + vat_add_cents
 
-    # Add delivery fee as a line item
+    # Add VAT as a separate line item
     product_details.append({
         "currency": "PHP",
-        "amount": delivery_fee_cents,
-        "name": "Delivery Fee",
+        "amount": vat_add_cents,
+        "name": "VAT (12%)",
         "quantity": 1
     })
 
@@ -4146,8 +4176,9 @@ def order_checkout(request, order_id):
     for ci in custom_items:
         total += Decimal(ci.price) * ci.quantity
 
-    vat_amount = total * Decimal(12) / Decimal(112)
-    grand_total = total
+    # Subtotal is total of products; VAT is 12%; Grand Total = Subtotal + VAT
+    vat_amount = total * Decimal('0.12')
+    grand_total = total + vat_amount
 
     # Prevent showing a zero-peso checkout page
     if grand_total <= 0:
@@ -4165,6 +4196,30 @@ def order_checkout(request, order_id):
         'grand_total': grand_total,
         'paypal_client_id': paypal_client_id,
     })
+
+@require_GET
+@login_required(login_url='customerlogin')
+@user_passes_test(is_customer)
+def order_set_payment_intent(request, order_id):
+    """Set the intended payment method for a Pending order before redirecting to provider."""
+    method = request.GET.get('method')
+    if method not in ('gcash', 'paypal', 'cod'):
+        return HttpResponseBadRequest('Invalid payment method')
+    try:
+        order = models.Orders.objects.get(id=order_id, customer__user=request.user)
+    except models.Orders.DoesNotExist:
+        return HttpResponseBadRequest('Order not found')
+    if order.status != 'Pending':
+        return HttpResponseBadRequest('Order not eligible for payment update')
+
+    # Update only the intended method, do not change status here
+    order.payment_method = method
+    order.save(update_fields=['payment_method'])
+
+    next_url = request.GET.get('next')
+    if next_url:
+        return redirect(next_url)
+    return JsonResponse({'ok': True, 'order_id': order.id, 'payment_method': order.payment_method})
 
 @login_required(login_url='customerlogin')
 @user_passes_test(is_customer)
@@ -4194,7 +4249,9 @@ def create_gcash_order_payment(request, order_id):
         total += Decimal(item.price) * item.quantity
     for ci in custom_items:
         total += Decimal(ci.price) * ci.quantity
-    grand_total = total
+    # Subtotal is total of products; VAT is 12%; Grand Total = Subtotal + VAT
+    vat_amount = total * Decimal('0.12')
+    grand_total = total + vat_amount
 
     url = "https://api.paymongo.com/v1/checkout_sessions"
     headers = {
@@ -4211,15 +4268,27 @@ def create_gcash_order_payment(request, order_id):
     billing_email = (customer.user.email if customer else request.user.email)
     billing_phone = (str(customer.mobile) if customer and getattr(customer, 'mobile', None) else '')
 
-    amount_cents = int(round(float(grand_total) * 100))
-    if amount_cents <= 0:
+    # For GCash, charge subtotal + 12% VAT; exclude delivery fee
+    grand_total_float = float(grand_total)
+    amount_cents_subtotal = int(round(grand_total_float * 100))
+    vat_cents = int(round(grand_total_float * 0.12 * 100))
+    total_cents = amount_cents_subtotal + vat_cents
+    if total_cents <= 0:
         return JsonResponse({"error": "No payable amount yet"}, status=400)
-    line_items = [{
-        "currency": "PHP",
-        "amount": amount_cents,
-        "name": f"Order Payment (Order: {order.order_ref or order.id})",
-        "quantity": 1
-    }]
+    line_items = [
+        {
+            "currency": "PHP",
+            "amount": amount_cents_subtotal,
+            "name": f"Order Items Subtotal (Order: {order.order_ref or order.id})",
+            "quantity": 1
+        },
+        {
+            "currency": "PHP",
+            "amount": vat_cents,
+            "name": "VAT (12%)",
+            "quantity": 1
+        }
+    ]
 
     success_url = f"http://127.0.0.1:8000/orders/payment-success/?order_id={order.id}&method=gcash"
     cancel_url = f"http://127.0.0.1:8000/orders/payment-cancel/?order_id={order.id}"
@@ -4291,6 +4360,14 @@ def order_payment_success(request):
 def order_payment_cancel(request):
     order_id = request.GET.get('order_id')
     if order_id:
+        try:
+            order = models.Orders.objects.get(id=order_id, customer__user=request.user)
+            # If still pending, revert payment method back to COD for clarity
+            if order.status == 'Pending' and order.payment_method in ('gcash', 'paypal'):
+                order.payment_method = 'cod'
+                order.save(update_fields=['payment_method'])
+        except models.Orders.DoesNotExist:
+            pass
         messages.warning(request, 'Payment was canceled. You can try again from your orders page.')
         return redirect('pending-orders')
     return HttpResponse("❌ Payment canceled.")
