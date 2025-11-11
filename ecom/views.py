@@ -5813,24 +5813,63 @@ def build_admin_reports_context(request):
     current_date = timezone.now()
     monthly_sales_data = []
     monthly_labels = []
-    cursor_year = start_date.year
-    cursor_month = start_date.month
-    end_year = end_date.year
-    end_month = end_date.month
-    while (cursor_year < end_year) or (cursor_year == end_year and cursor_month <= end_month):
-        monthly_orders = models.Orders.objects.filter(
-            status='Delivered',
-            created_at__year=cursor_year,
-            created_at__month=cursor_month,
-        ).filter(time_filter)
-        monthly_total = sum(order.get_total_amount() for order in monthly_orders)
-        monthly_sales_data.append(float(monthly_total))
-        month_name = calendar.month_abbr[cursor_month]
-        monthly_labels.append(month_name)
-        cursor_month += 1
-        if cursor_month > 12:
-            cursor_month = 1
-            cursor_year += 1
+
+    # Sales Trend granularity depends on date_range
+    if date_range == 'week':
+        # Per-day labels for 7-day window
+        day = start_date
+        while day <= end_date:
+            day_orders = models.Orders.objects.filter(
+                status='Delivered',
+                created_at__date=day,
+            )
+            total = sum(order.get_total_amount() for order in day_orders)
+            monthly_sales_data.append(float(total))
+            # Use short weekday name (Mon, Tue, ...)
+            monthly_labels.append(calendar.day_abbr[day.weekday()])
+            day += timedelta(days=1)
+    elif date_range == 'month':
+        # Per-week labels within the month
+        week_totals = {}
+        day = start_date
+        while day <= end_date:
+            week_index = ((day.day - 1) // 7) + 1
+            day_orders = models.Orders.objects.filter(
+                status='Delivered',
+                created_at__date=day,
+            )
+            day_total = sum(order.get_total_amount() for order in day_orders)
+            week_totals[week_index] = float(week_totals.get(week_index, 0)) + float(day_total)
+            day += timedelta(days=1)
+        # Build labels Week 1..N in order
+        for w in sorted(week_totals.keys()):
+            monthly_labels.append(f"Week {w}")
+            monthly_sales_data.append(float(week_totals[w]))
+        # Ensure at least 4 weeks shown even if no data in latter weeks
+        if not week_totals:
+            monthly_labels = ["Week 1", "Week 2", "Week 3", "Week 4"]
+            monthly_sales_data = [0, 0, 0, 0]
+    else:
+        # Default: per-month labels across the selected window
+        cursor_year = start_date.year
+        cursor_month = start_date.month
+        end_year = end_date.year
+        end_month = end_date.month
+        while (cursor_year < end_year) or (cursor_year == end_year and cursor_month <= end_month):
+            monthly_orders = models.Orders.objects.filter(
+                status='Delivered',
+                created_at__year=cursor_year,
+                created_at__month=cursor_month,
+            )
+            monthly_orders = monthly_orders.filter(time_filter)
+            monthly_total = sum(order.get_total_amount() for order in monthly_orders)
+            monthly_sales_data.append(float(monthly_total))
+            month_name = calendar.month_abbr[cursor_month]
+            monthly_labels.append(month_name)
+            cursor_month += 1
+            if cursor_month > 12:
+                cursor_month = 1
+                cursor_year += 1
 
     product_revenue_qs = models.OrderItem.objects.filter(
         order__status='Delivered',
