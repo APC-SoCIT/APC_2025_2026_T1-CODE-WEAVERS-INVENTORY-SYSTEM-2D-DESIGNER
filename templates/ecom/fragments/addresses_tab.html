@@ -170,11 +170,12 @@
     if (!originalValues) { setSubmitEnabled(false); return; }
     const current = snapshotValues();
     const changed = Object.keys(originalValues).some(k => (originalValues[k]||'') !== (current[k]||''));
-    // For add mode, also require essential fields to be non-empty
-    const essentialsFilled = current.region && current.province && current.citymun && current.barangay && current.postal && current.street;
+    // Consider NCR where province may be disabled; treat it as filled
+    const provinceDisabled = document.getElementById('provinceSel').disabled;
+    const essentialsFilled = !!current.region && (provinceDisabled || !!current.province) && !!current.citymun && !!current.barangay && !!current.postal && !!current.street;
     const mode = document.getElementById('formMode').value;
     if (mode === 'add') setSubmitEnabled(essentialsFilled);
-    else setSubmitEnabled(changed);
+    else setSubmitEnabled(changed || essentialsFilled);
   }
 
   function openModal(mode, payload) {
@@ -394,9 +395,12 @@
     }
     let found = opts.find(o => candidates.some(c => valuesMatch(o.value, c)));
     if (!found && targetName) {
-      found = opts.find(
-        o => (o.textContent || '').trim().toLowerCase() === String(targetName || '').trim().toLowerCase()
-      );
+      const norm = (s) => String(s || '').toLowerCase().replace(/\(.*?\)/g, '').replace(/\s+/g, ' ').trim();
+      const targetNorm = norm(targetName);
+      found = opts.find(o => {
+        const txt = norm(o.textContent || '');
+        return txt === targetNorm || txt.includes(targetNorm) || targetNorm.includes(txt);
+      });
     }
     if (found) {
       selectEl.value = found.value;
