@@ -20,12 +20,10 @@
                                 <img src="{% static 'images/default-product.jpg' %}" class="card-img-top" alt="{{ item.product.name }}" style="height: 250px; object-fit: cover;">
                             {% endif %}
                             
-                            <!-- Remove from wishlist button -->
-                            <button class="btn btn-sm btn-danger position-absolute top-0 end-0 m-2 remove-wishlist-btn" 
-                                    data-product-id="{{ item.product.id }}" 
-                                    title="Remove from wishlist">
-                                <i class="fas fa-times"></i>
-                            </button>
+                            <!-- Wishlist toggle (unheart removes) -->
+                            <div class="product-wishlist" onclick="toggleWishlist(this, event, '{{ item.product.id }}')" style="color:#ff6b6b;">
+                                <i class="fa fa-heart" id="wishlist-icon-{{ item.product.id }}"></i>
+                            </div>
                         </div>
                         
                         <div class="card-body d-flex flex-column">
@@ -70,61 +68,258 @@
     box-shadow: 0 4px 15px rgba(0,0,0,0.1);
 }
 
-.remove-wishlist-btn {
-    opacity: 0.8;
-    transition: opacity 0.2s;
+/* Heart icon style (mirrors product grid) */
+.product-wishlist {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: white;
+  color: #555;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 2;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  transition: all 0.3s ease;
 }
+.product-wishlist:hover { color: #ff6b6b; transform: scale(1.1); }
 
-.remove-wishlist-btn:hover {
-    opacity: 1;
-}
+/* Quick-view modal styles (trimmed) */
+.product-detail-modal { position: fixed; top:0; left:0; width:100%; height:100%; background-color: rgba(0,0,0,0.5); z-index: 1000; display:flex; align-items:center; justify-content:center; opacity:0; visibility:hidden; transition: all 0.3s ease; }
+.product-detail-modal.active { opacity:1; visibility:visible; }
+.product-detail-content { background-color:white; border-radius:8px; width:90%; max-width:1000px; max-height:90vh; overflow-y:auto; position:relative; transform: translateY(30px); transition: all 0.3s ease; display:flex; flex-direction:column; }
+.product-detail-modal.active .product-detail-content { transform: translateY(0); }
+.product-detail-close { position:absolute; top:15px; right:15px; width:30px; height:30px; background-color:#f5f5f5; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:10; transition: all 0.2s; }
+.product-detail-close:hover{ background-color:#e5e5e5; }
+.product-detail-body{ display:flex; flex-direction:row; }
+.product-detail-image{ width:50%; background-color:#f8f8f8; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+.product-detail-image img{ width:100%; height:100%; object-fit:cover; }
+.product-detail-info{ width:50%; padding:30px; }
+.product-detail-title{ font-size:24px; font-weight:600; margin-bottom:10px; color:#333; }
+.product-detail-price{ font-size:24px; font-weight:700; margin-bottom:20px; color:#333; }
+.product-detail-description{ font-size:14px; color:#666; margin-bottom:25px; line-height:1.6; }
+.option-title{ font-size:16px; font-weight:600; margin-bottom:10px; color:#333; }
+.size-option-group{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:5px; }
+.size-option-btn{ min-width:45px; height:45px; display:flex; align-items:center; justify-content:center; border:1px solid #ddd; background-color:white; border-radius:4px; cursor:pointer; font-size:14px; transition: all 0.2s ease; position:relative; }
+.size-option-btn:hover{ border-color:#333; }
+.size-option-btn.selected{ background-color:#333; color:white; border-color:#333; }
+.size-option-btn[disabled]{ cursor:not-allowed; opacity:0.6; pointer-events:none; }
+.size-option-btn[disabled]::before, .size-option-btn[disabled]::after{ content:''; position:absolute; left:50%; top:50%; width:70%; height:2px; background-color:#999; transform-origin:center; }
+.size-option-btn[disabled]::before{ transform: translate(-50%, -50%) rotate(45deg); }
+.size-option-btn[disabled]::after{ transform: translate(-50%, -50%) rotate(-45deg); }
+.option-message{ font-size:12px; color:#999; margin-top:5px; }
+.quantity-control{ display:flex; align-items:center; margin-bottom:25px; }
+.quantity-label{ font-size:16px; font-weight:600; margin-bottom:10px; color:#333; }
+.quantity-input-group{ display:flex; align-items:center; border:1px solid #ddd; border-radius:4px; overflow:hidden; }
+.quantity-btn{ width:40px; height:40px; background-color:#f5f5f5; border:none; color:#333; font-size:16px; cursor:pointer; transition: all 0.2s; display:flex; align-items:center; justify-content:center; }
+.quantity-input{ width:60px; height:40px; text-align:center; border:none; border-left:1px solid #ddd; border-right:1px solid #ddd; font-size:14px; }
+.add-to-cart-button{ width:100%; height:50px; background-color:#4CAF50; color:white; border:none; border-radius:4px; font-size:16px; font-weight:600; cursor:pointer; transition: all 0.3s ease; display:flex; align-items:center; justify-content:center; margin-bottom:20px; }
+.add-to-cart-button i{ margin-right:8px; }
 </style>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Remove from wishlist functionality
-    document.querySelectorAll('.remove-wishlist-btn').forEach(button => {
-        button.addEventListener('click', function(e) {
-            e.preventDefault();
-            
-            const productId = this.dataset.productId;
-            const wishlistItem = this.closest('.wishlist-item');
-            
-            if (confirm('Are you sure you want to remove this item from your wishlist?')) {
-                fetch(`/remove-from-wishlist/${productId}/`, {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                        'Content-Type': 'application/json',
-                    },
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        // Animate removal
-                        wishlistItem.style.transition = 'opacity 0.3s ease-out';
-                        wishlistItem.style.opacity = '0';
-                        
-                        setTimeout(() => {
-                            wishlistItem.remove();
-                            
-                            // Check if wishlist is now empty
-                            const remainingItems = document.querySelectorAll('.wishlist-item');
-                            if (remainingItems.length === 0) {
-                                location.reload(); // Reload to show empty state
-                            }
-                        }, 300);
-                    } else {
-                        alert(data.message || 'Failed to remove item from wishlist');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('An error occurred while removing the item');
-                });
-            }
-        });
+// Build product data for quick view
+var productStockData = {
+  {% for item in wishlist_items %}
+    "{{ item.product.id }}": {{ item.product.get_size_stock_json|safe }},
+  {% endfor %}
+};
+var productInfoData = {
+  {% for item in wishlist_items %}
+    "{{ item.product.id }}": {
+      id: "{{ item.product.id }}",
+      name: "{{ item.product.name|escapejs }}",
+      price: "{{ item.product.price }}",
+      description: "{{ item.product.description|escapejs }}",
+      image: "{% if item.product.product_image %}{{ item.product.product_image.url }}{% endif %}"
+    },
+  {% endfor %}
+};
+var sizeOrder = ['XS', 'S', 'M', 'L', 'XL'];
+
+function openProductDetail(productId) {
+  var product = productInfoData[productId];
+  var stock = productStockData[productId];
+  var modal = document.getElementById('productDetailModal');
+  var content = document.getElementById('productDetailContent');
+  var firstAvailableSize = null;
+  var sizeButtons = '';
+  sizeOrder.forEach(function(size) {
+    var stockCount = stock && stock[size] ? stock[size] : 0;
+    var disabled = stockCount < 1 ? 'disabled' : '';
+    if (!firstAvailableSize && stockCount > 0) firstAvailableSize = size;
+    sizeButtons += `<button type="button" class="size-option-btn" data-size="${size}" ${disabled} title="${stockCount < 1 ? 'Out of stock' : stockCount + ' in stock'}">${size}</button>`;
+  });
+  var html = `
+    <span class="product-detail-close" onclick="closeProductDetail()"><i class="fa fa-times"></i></span>
+    <div class="product-detail-body">
+      <div class="product-detail-image">
+        <img src="${product.image}" alt="${product.name}">
+      </div>
+      <div class="product-detail-info">
+        <div class="product-detail-title">${product.name}</div>
+        <div class="product-detail-price">₱${product.price}</div>
+        <div class="product-detail-description">${product.description}</div>
+        <div class="product-detail-options">
+          <div class="option-title">Select Size</div>
+          <div class="size-option-group" id="modalSizeOptions">
+            ${sizeButtons}
+          </div>
+          <div class="option-message" id="modalStockMessage"></div>
+        </div>
+        <div class="quantity-control">
+          <span class="quantity-label">Quantity</span>
+          <div class="quantity-input-group">
+            <button class="quantity-btn" id="modalQtyMinus">-</button>
+            <input type="number" class="quantity-input" id="modalQtyInput" value="1" min="1">
+            <button class="quantity-btn" id="modalQtyPlus">+</button>
+          </div>
+        </div>
+        <button class="add-to-cart-button" id="modalAddToCartBtn"><i class="fa fa-shopping-cart"></i> Add to Cart</button>
+      </div>
+    </div>
+  `;
+  content.innerHTML = html;
+  modal.classList.add('active');
+
+  // Modal state
+  var selectedSize = firstAvailableSize;
+  var maxQty = selectedSize && stock ? stock[selectedSize] : 0;
+  var qtyInput = document.getElementById('modalQtyInput');
+  var addToCartBtn = document.getElementById('modalAddToCartBtn');
+  var stockMsg = document.getElementById('modalStockMessage');
+  var sizeBtns = document.querySelectorAll('#modalSizeOptions .size-option-btn');
+
+  // Highlight first available size
+  sizeBtns.forEach(function(btn) {
+    if (btn.getAttribute('data-size') === selectedSize) btn.classList.add('selected');
+    btn.addEventListener('click', function() {
+      if (btn.hasAttribute('disabled')) return;
+      sizeBtns.forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      selectedSize = btn.getAttribute('data-size');
+      maxQty = stock[selectedSize];
+      qtyInput.value = 1;
+      updateStockMsg();
+      updateAddToCartBtn();
     });
+  });
+
+  // Quantity controls
+  document.getElementById('modalQtyMinus').onclick = function() {
+    var v = parseInt(qtyInput.value);
+    if (v > 1) qtyInput.value = v - 1;
+    updateAddToCartBtn();
+  };
+  document.getElementById('modalQtyPlus').onclick = function() {
+    var v = parseInt(qtyInput.value);
+    if (v < maxQty) qtyInput.value = v + 1;
+    updateAddToCartBtn();
+  };
+  qtyInput.oninput = function() {
+    var v = parseInt(qtyInput.value);
+    if (isNaN(v) || v < 1) qtyInput.value = 1;
+    else if (v > maxQty) qtyInput.value = maxQty;
+    updateAddToCartBtn();
+  };
+
+  function updateAddToCartBtn() {
+    if (!selectedSize || maxQty < 1) {
+      addToCartBtn.disabled = true;
+      addToCartBtn.innerHTML = '<i class="fa fa-shopping-cart"></i> Out of Stock';
+    } else if (parseInt(qtyInput.value) > maxQty) {
+      addToCartBtn.disabled = true;
+      addToCartBtn.innerHTML = '<i class="fa fa-shopping-cart"></i> Not enough stock';
+    } else {
+      addToCartBtn.disabled = false;
+      addToCartBtn.innerHTML = '<i class="fa fa-shopping-cart"></i> Add to Cart';
+    }
+  }
+  function updateStockMsg() {
+    if (!selectedSize) {
+      stockMsg.textContent = 'Please select a size.';
+    } else if (maxQty < 1) {
+      stockMsg.textContent = 'Selected size is out of stock.';
+    } else {
+      stockMsg.textContent = 'Stock: ' + maxQty + ' for size ' + selectedSize;
+    }
+  }
+  updateStockMsg();
+  updateAddToCartBtn();
+
+  // Add to cart click
+  addToCartBtn.onclick = function() {
+    if (addToCartBtn.disabled) return;
+    // Basic post to add to cart (reuses existing add-to-cart URL via form or API if present)
+    alert('Add to cart from quick view is not wired to backend here. Use product page or cart add; can be extended to POST.');
+  };
+}
+
+function closeProductDetail() {
+  document.getElementById('productDetailModal').classList.remove('active');
+  document.getElementById('productDetailContent').innerHTML = '';
+}
+
+// Toggle wishlist (unheart to remove)
+function toggleWishlist(element, event, productId) {
+  event.stopPropagation();
+  const icon = document.getElementById('wishlist-icon-' + productId);
+  const isInWishlist = icon.classList.contains('fa-heart');
+  const url = isInWishlist ? `/remove-from-wishlist/${productId}/` : `/add-to-wishlist/${productId}/`;
+  fetch(url, {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value,
+      'Content-Type': 'application/json'
+    }
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      if (isInWishlist) {
+        // Switch to outline and remove card
+        icon.classList.remove('fa-heart');
+        icon.classList.add('fa-heart-o');
+        const card = element.closest('.wishlist-item');
+        card.style.transition = 'opacity 0.3s ease-out';
+        card.style.opacity = '0';
+        setTimeout(() => {
+          card.remove();
+          if (!document.querySelector('.wishlist-item')) location.reload();
+        }, 300);
+      } else {
+        // Added (rare from wishlist page), just fill heart
+        icon.classList.remove('fa-heart-o');
+        icon.classList.add('fa-heart');
+        element.style.color = '#ff6b6b';
+      }
+    } else {
+      alert(data.message || 'Failed to update wishlist');
+    }
+  })
+  .catch(() => alert('Network error updating wishlist'));
+}
+
+// Quick view from wishlist card
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.wishlist-item').forEach(card => {
+    card.addEventListener('click', function(e) {
+      if (e.target.closest('.product-wishlist') || e.target.tagName === 'A' || e.target.tagName === 'BUTTON') return;
+      const productId = this.dataset.productId;
+      openProductDetail(productId);
+    });
+  });
 });
 </script>
+
+<!-- Quick View Modal -->
+<div class="product-detail-modal" id="productDetailModal">
+  <div class="product-detail-content" id="productDetailContent"></div>
+  <!-- Content injected by JS -->
+  
+</div>
 {% endblock %}

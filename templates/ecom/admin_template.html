@@ -8,7 +8,10 @@
     <!-- Prefer CSS-only Tailwind for faster loads -->
     <link rel="preconnect" href="https://cdn.jsdelivr.net">
     <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+<!-- Performance: preload Tailwind CSS to avoid render-blocking -->
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" as="style" onload="this.rel='stylesheet'">
+<noscript><link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet"></noscript>
     <!-- Lucide Icons (deferred, initialized on idle) -->
     <script src="https://cdn.jsdelivr.net/npm/lucide@0.454.0/dist/umd/lucide.min.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
