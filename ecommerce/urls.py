@@ -114,6 +114,12 @@ urlpatterns = [
     path('orders/delivered/', views.delivered_orders_view, name='delivered-orders'),
     path('orders/cancelled/', views.cancelled_orders_view, name='cancelled-orders'),
     path('orders/waiting-for-cancellation/', views.waiting_for_cancellation_view, name='waiting-for-cancellation'),
+    # Checkout and payment for existing Pending orders (To Pay workflow)
+    path('orders/checkout/<int:order_id>/', views.order_checkout, name='order_checkout'),
+    path('orders/pay-with-gcash/<int:order_id>/', views.create_gcash_order_payment, name='order_pay_with_gcash'),
+    path('orders/pay-with-cod/<int:order_id>/', views.order_pay_with_cod, name='order_pay_with_cod'),
+    path('orders/payment-success/', views.order_payment_success, name='order_payment_success'),
+    path('orders/payment-cancel/', views.order_payment_cancel, name='order_payment_cancel'),
     path('my-order', views.my_order_view, name='my-order'),
     path('my-order/<int:pk>', views.my_order_view_pk, name='my-order-pk'),
     path('my-profile', views.my_profile_view,name='my-profile'),
@@ -166,6 +172,11 @@ urlpatterns = [
     path('get-saved-addresses/', views.get_saved_addresses, name='get-saved-addresses'),
     path('set-default-address/<int:address_id>/', views.set_default_address, name='set-default-address'),
     path('delete-address/<int:address_id>/', views.delete_address, name='delete-address'),
+    # Pre-order deposit checkout/payment routes
+    path('preorder/checkout/<int:order_id>/', views.preorder_checkout, name='preorder_checkout'),
+    path('preorder/pay-with-gcash/<int:order_id>/', views.create_gcash_preorder_payment, name='preorder_pay_with_gcash'),
+    path('preorder/payment-success/', views.preorder_payment_success, name='preorder_payment_success'),
+    path('preorder/payment-cancel/', views.preorder_payment_cancel, name='preorder_payment_cancel'),
     path('update-saved-address/<int:address_id>/', views.update_saved_address, name='update-saved-address'),
     
     # Wishlist functionality

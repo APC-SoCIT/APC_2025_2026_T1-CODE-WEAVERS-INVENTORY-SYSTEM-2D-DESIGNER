@@ -1,0 +1,161 @@
+{% extends 'ecom/customer_base.html' %}
+{% load static %}
+{% load humanize %}
+{% block content %}
+
+<style>
+  .checkout-container { max-width: 980px; margin: 24px auto; background:#fff; border:1px solid #ddd; border-radius:8px; }
+  .checkout-header { padding:16px 20px; border-bottom:1px solid #eee; display:flex; justify-content:space-between; align-items:center; }
+  .checkout-body { padding:20px; }
+  .summary { background:#f8f9fa; border:1px solid #eee; border-radius:6px; padding:14px; }
+  .method-row { display:flex; gap:16px; margin-top:10px; }
+  .method-btn { display:flex; align-items:center; gap:10px; background:#fff; border:1px solid #ddd; border-radius:6px; padding:10px 14px; cursor:pointer; }
+  .method-btn:hover { border-color:#999; }
+  .paypal-container { margin-top:12px; }
+  #paymentModal { position:fixed; inset:0; background:rgba(0,0,0,.35); display:none; align-items:center; justify-content:center; z-index:1050; }
+  #paymentModal .modal-content { width:520px; background:#fff; border-radius:8px; box-shadow:0 10px 24px rgba(0,0,0,.15); }
+  #paymentModal .modal-header { padding:12px 16px; border-bottom:1px solid #eee; display:flex; justify-content:space-between; align-items:center; }
+  #paymentModal .modal-body { padding:16px; }
+</style>
+
+<div class="checkout-container">
+  <div class="checkout-header">
+    <div>
+      <strong>Checkout — Order {{ order.order_ref|default:order.id }}</strong>
+      <span class="text-muted ml-2">Status: {{ order.status }}</span>
+    </div>
+    <a href="{% url 'my-order' %}" class="btn btn-outline-secondary btn-sm">Back to Orders</a>
+  </div>
+  <div class="checkout-body">
+    <div class="row">
+      <div class="col-md-8">
+        <table class="table table-bordered">
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Size</th>
+              <th>Quantity</th>
+              <th>Unit Price</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in order_items %}
+            <tr>
+              <td>{{ item.product.name }}</td>
+              <td>{{ item.size }}</td>
+              <td>{{ item.quantity }}</td>
+              <td>₱{{ item.price|floatformat:2 }}</td>
+            </tr>
+            {% endfor %}
+            {% for ci in custom_items %}
+            <tr>
+              <td>{{ ci.product_name|default:"Custom Jersey" }}</td>
+              <td>{{ ci.size }}</td>
+              <td>{{ ci.quantity }}</td>
+              <td>₱{{ ci.price|floatformat:2 }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="col-md-4">
+        <div class="summary">
+          <div class="mb-2"><strong>Subtotal:</strong> ₱{{ total|floatformat:2 }}</div>
+          <div class="mb-2"><strong>VAT (12% of VAT-inclusive):</strong> ₱{{ vat_amount|floatformat:2 }}</div>
+          <div class="mb-3"><strong>Grand Total:</strong> ₱{{ grand_total|floatformat:2 }}</div>
+          <button id="openCheckout" class="btn btn-primary btn-block">Pay Now</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Payment Method Modal -->
+<div id="paymentModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h5 class="modal-title">Select Payment Method</h5>
+      <button id="closeModal" class="btn btn-sm btn-outline-secondary">Close</button>
+    </div>
+    <div class="modal-body">
+      <div class="method-row">
+        <div class="method-btn" id="paypalMethod">
+          <span class="method-icon"></span>
+          <span>PayPal</span>
+        </div>
+        <div class="method-btn" id="gcashMethod" onclick="window.location.href='{% url 'order_pay_with_gcash' order.id %}'">
+          <span class="method-icon"></span>
+          <span>GCash</span>
+        </div>
+        <div class="method-btn" id="codMethod">
+          <span class="method-icon"></span>
+          <span>Cash On Delivery</span>
+        </div>
+      </div>
+
+      <!-- PayPal Smart Buttons container (hidden until selected) -->
+      <div id="paypalArea" class="paypal-container" style="display:none;">
+        <div id="paypal-buttons"></div>
+        <p class="note">Pay securely via PayPal. Amount: ₱{{ grand_total }}</p>
+      </div>
+
+      <!-- COD confirmation area (hidden until selected) -->
+      <div id="codArea" class="paypal-container" style="display:none;">
+        <form id="codForm" method="POST" action="{% url 'order_pay_with_cod' order.id %}">
+          {% csrf_token %}
+          <p class="note">You’ll pay with Cash On Delivery upon receipt. Click confirm to continue.</p>
+          <button type="submit" class="btn btn-warning btn-block">Confirm Cash On Delivery</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const modal = document.getElementById('paymentModal');
+  const openBtn = document.getElementById('openCheckout');
+  const closeBtn = document.getElementById('closeModal');
+  const paypalBtn = document.getElementById('paypalMethod');
+  const paypalArea = document.getElementById('paypalArea');
+  const codBtn = document.getElementById('codMethod');
+  const codArea = document.getElementById('codArea');
+
+  openBtn.addEventListener('click', () => { modal.style.display = 'flex'; });
+  closeBtn.addEventListener('click', () => { modal.style.display = 'none'; });
+  paypalBtn.addEventListener('click', () => { paypalArea.style.display = 'block'; });
+  codBtn.addEventListener('click', () => { codArea.style.display = 'block'; });
+</script>
+
+{% if paypal_client_id %}
+<script src="https://www.paypal.com/sdk/js?client-id={{ paypal_client_id }}&currency=PHP"></script>
+<script>
+  if (window.paypal) {
+    paypal.Buttons({
+      style: { layout: 'vertical', color: 'blue', shape: 'rect', label: 'paypal' },
+      createOrder: function(data, actions) {
+        return actions.order.create({
+          purchase_units: [{
+            amount: { currency_code: 'PHP', value: '{{ grand_total }}' },
+            description: 'Order Payment (Order {{ order.order_ref|default:order.id }})'
+          }]
+        });
+      },
+      onApprove: function(data, actions) {
+        return actions.order.capture().then(function(details) {
+          try {
+            const captureId = details?.purchase_units?.[0]?.payments?.captures?.[0]?.id;
+            const paymentId = captureId || details?.id || data?.orderID || '';
+            const redirectUrl = `/orders/payment-success/?order_id={{ order.id }}&method=paypal&paymentId=${encodeURIComponent(paymentId)}`;
+            window.location.href = redirectUrl;
+          } catch (e) {
+            const fallbackUrl = `/orders/payment-success/?order_id={{ order.id }}&method=paypal`;
+            window.location.href = fallbackUrl;
+          }
+        });
+      }
+    }).render('#paypal-buttons');
+  }
+</script>
+{% endif %}
+
+{% endblock content %}

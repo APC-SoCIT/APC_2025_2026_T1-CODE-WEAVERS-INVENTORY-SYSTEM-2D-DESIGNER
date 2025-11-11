@@ -1548,6 +1548,13 @@ def pending_orders_view(request):
     for order in orders:
         print(f"DEBUG: Processing order ID: {order.id}")
         
+        # Detect any pending pre-order items at the order level
+        has_pending_preorder = models.CustomOrderItem.objects.filter(
+            order=order,
+            is_pre_order=True,
+            pre_order_status='pending'
+        ).exists()
+
         # Get regular order items
         order_items = models.OrderItem.objects.filter(order=order)
         print(f"DEBUG: Found {order_items.count()} regular order items")
@@ -1611,6 +1618,7 @@ def pending_orders_view(request):
             'vat_amount': vat_amount,
             'delivery_fee': delivery_fee,
             'grand_total': grand_total,
+            'has_pending_preorder': has_pending_preorder,
         })
 
     print(f"DEBUG: Returning {len(orders_with_items)} visible pending orders after filtering")
@@ -3571,6 +3579,56 @@ def create_gcash_payment(request):
     except KeyError:
         return JsonResponse({"error": "Payment creation failed", "details": data}, status=400)
 
+###############################################
+# Pre-order deposit checkout/payment (GCash)  #
+###############################################
+
+# Fixed deposit per custom item (can be adjusted later)
+from decimal import Decimal as _Decimal
+PREORDER_DEPOSIT_PER_ITEM = _Decimal('200.00')
+
+@login_required
+@user_passes_test(is_customer)
+def preorder_checkout(request, order_id):
+    """Deprecated: Pre-order deposit flow removed. Redirect to the new To Pay checkout."""
+    try:
+        order = models.Orders.objects.get(id=order_id, customer__user=request.user)
+    except models.Orders.DoesNotExist:
+        messages.error(request, 'Order not found.')
+        return redirect('customer-home')
+
+    if order.status == 'Pending':
+        messages.info(request, 'Ang pre-order deposit ay tinanggal. Paki-continue ang bayad sa bagong checkout.')
+        return redirect('order_checkout', order_id=order.id)
+    messages.info(request, 'Ang pre-order deposit ay tinanggal. Babalik ka sa Orders.')
+    return redirect('my-order')
+
+@login_required
+@user_passes_test(is_customer)
+def create_gcash_preorder_payment(request, order_id):
+    """Deprecated: Pre-order deposit flow removed. Redirect to the new To Pay checkout."""
+    try:
+        order = models.Orders.objects.get(id=order_id, customer__user=request.user)
+    except models.Orders.DoesNotExist:
+        return redirect('customer-home')
+    messages.info(request, 'Ang pre-order deposit ay tinanggal. Paki-continue ang bayad sa bagong checkout.')
+    return redirect('order_checkout', order_id=order.id)
+
+@require_GET
+@login_required
+@user_passes_test(is_customer)
+def preorder_payment_success(request):
+    """Deprecated: Pre-order deposit flow removed."""
+    messages.info(request, 'Ang pre-order deposit ay tinanggal. Walang aksyon na kailangan. Babalik ka sa Orders.')
+    return redirect('my-order')
+
+@require_GET
+@login_required
+@user_passes_test(is_customer)
+def preorder_payment_cancel(request):
+    messages.info(request, 'Ang pre-order deposit ay tinanggal. Walang aksyon na kailangan.')
+    return redirect('my-order')
+
 from django.views.decorators.http import require_GET
 from django.core.serializers.json import DjangoJSONEncoder
 import datetime
@@ -4057,6 +4115,244 @@ def api_welcome(request):
         'timestamp': timezone.now().isoformat(),
         'version': '1.0'
     })
+
+
+# Order checkout/payment for Pending orders (To Pay workflow)
+from decimal import Decimal
+from django.conf import settings as django_settings
+
+@login_required(login_url='customerlogin')
+@user_passes_test(is_customer)
+def order_checkout(request, order_id):
+    """Show full payment checkout for an existing Pending order (To Pay)."""
+    try:
+        order = models.Orders.objects.get(id=order_id, customer__user=request.user)
+    except models.Orders.DoesNotExist:
+        messages.error(request, 'Order not found.')
+        return redirect('my-order')
+
+    # Only allow checkout for Pending orders
+    if order.status != 'Pending':
+        messages.warning(request, 'This order is not eligible for payment at this stage.')
+        return redirect('my-order-pk', pk=order.id)
+
+    # Block checkout if any pre-order items are still pending confirmation
+    has_pending_preorder = models.CustomOrderItem.objects.filter(
+        order=order,
+        is_pre_order=True,
+        pre_order_status='pending'
+    ).exists()
+    if has_pending_preorder:
+        messages.warning(request, 'This order includes a pre-order awaiting staff confirmation. Payment will be enabled once confirmed.')
+        return redirect('pending-orders')
+
+    order_items = models.OrderItem.objects.filter(order=order)
+    custom_items = models.CustomOrderItem.objects.filter(order=order, is_pre_order=False)
+
+    total = Decimal('0.00')
+    for item in order_items:
+        total += Decimal(item.price) * item.quantity
+    for ci in custom_items:
+        total += Decimal(ci.price) * ci.quantity
+
+    vat_amount = total * Decimal(12) / Decimal(112)
+    grand_total = total
+
+    # Prevent showing a zero-peso checkout page
+    if grand_total <= 0:
+        messages.warning(request, 'No payable items found yet. Please wait for confirmation.')
+        return redirect('pending-orders')
+
+    paypal_client_id = getattr(django_settings, 'PAYPAL_CLIENT_ID', '')
+
+    return render(request, 'ecom/order_checkout.html', {
+        'order': order,
+        'order_items': order_items,
+        'custom_items': custom_items,
+        'total': total,
+        'vat_amount': vat_amount,
+        'grand_total': grand_total,
+        'paypal_client_id': paypal_client_id,
+    })
+
+@login_required(login_url='customerlogin')
+@user_passes_test(is_customer)
+def create_gcash_order_payment(request, order_id):
+    """Initiate a PayMongo checkout session for full order payment (GCash)."""
+    try:
+        order = models.Orders.objects.get(id=order_id, customer__user=request.user)
+    except models.Orders.DoesNotExist:
+        return JsonResponse({"error": "Order not found"}, status=404)
+
+    if order.status != 'Pending':
+        return JsonResponse({"error": "Order is not eligible for payment"}, status=400)
+
+    # Block payment if any pre-order items are still pending confirmation
+    has_pending_preorder = models.CustomOrderItem.objects.filter(
+        order=order,
+        is_pre_order=True,
+        pre_order_status='pending'
+    ).exists()
+    if has_pending_preorder:
+        return JsonResponse({"error": "Pre-order awaiting confirmation"}, status=400)
+
+    order_items = models.OrderItem.objects.filter(order=order)
+    custom_items = models.CustomOrderItem.objects.filter(order=order, is_pre_order=False)
+    total = Decimal('0.00')
+    for item in order_items:
+        total += Decimal(item.price) * item.quantity
+    for ci in custom_items:
+        total += Decimal(ci.price) * ci.quantity
+    grand_total = total
+
+    url = "https://api.paymongo.com/v1/checkout_sessions"
+    headers = {
+        "Authorization": f"Basic {PAYMONGO_SECRET_KEY}",
+        "Content-Type": "application/json"
+    }
+
+    try:
+        customer = models.Customer.objects.get(user=request.user)
+    except models.Customer.DoesNotExist:
+        customer = None
+
+    billing_name = (customer.user.get_full_name() if customer and customer.user.get_full_name() else request.user.username)
+    billing_email = (customer.user.email if customer else request.user.email)
+    billing_phone = (str(customer.mobile) if customer and getattr(customer, 'mobile', None) else '')
+
+    amount_cents = int(round(float(grand_total) * 100))
+    if amount_cents <= 0:
+        return JsonResponse({"error": "No payable amount yet"}, status=400)
+    line_items = [{
+        "currency": "PHP",
+        "amount": amount_cents,
+        "name": f"Order Payment (Order: {order.order_ref or order.id})",
+        "quantity": 1
+    }]
+
+    success_url = f"http://127.0.0.1:8000/orders/payment-success/?order_id={order.id}&method=gcash"
+    cancel_url = f"http://127.0.0.1:8000/orders/payment-cancel/?order_id={order.id}"
+
+    payload = {
+        "data": {
+            "attributes": {
+                "billing": {
+                    "name": billing_name,
+                    "email": billing_email,
+                    "phone": billing_phone
+                },
+                "send_email_receipt": False,
+                "show_line_items": True,
+                "line_items": line_items,
+                "payment_method_types": ["gcash"],
+                "description": f"GCash Order Payment {order.order_ref or order.id}",
+                "success_url": success_url,
+                "cancel_url": cancel_url
+            }
+        }
+    }
+
+    response = requests.post(url, headers=headers, json=payload, auth=(PAYMONGO_SECRET_KEY, ''))
+    data = response.json()
+    try:
+        checkout_url = data['data']['attributes']['checkout_url']
+        return redirect(checkout_url)
+    except KeyError:
+        return JsonResponse({"error": "Payment creation failed", "details": data}, status=400)
+
+@require_GET
+@login_required
+@user_passes_test(is_customer)
+def order_payment_success(request):
+    """Handle successful payment for a Pending order; move to To Ship."""
+    order_id = request.GET.get('order_id')
+    method = request.GET.get('method', 'gcash')
+    if not order_id:
+        messages.error(request, 'Missing order reference for payment success.')
+        return redirect('customer-home')
+    try:
+        order = models.Orders.objects.get(id=order_id, customer__user=request.user)
+    except models.Orders.DoesNotExist:
+        messages.error(request, 'Order not found.')
+        return redirect('customer-home')
+
+    txn_id = (
+        request.GET.get('paymentId')
+        or request.GET.get('transactionId')
+        or request.GET.get('transaction_id')
+        or request.GET.get('id')
+    )
+    order.payment_method = method
+    if txn_id:
+        order.transaction_id = txn_id
+    order.status = 'Order Confirmed'
+    order.status_updated_at = timezone.now()
+    order.save(update_fields=['payment_method', 'transaction_id', 'status', 'status_updated_at'])
+
+    models.CustomOrderItem.objects.filter(order=order, pre_order_status='confirmed').update(pre_order_status='in_production')
+
+    messages.success(request, 'Payment successful! Your order is now being prepared for shipping.')
+    return redirect('to-ship-orders')
+
+@require_GET
+@login_required
+@user_passes_test(is_customer)
+def order_payment_cancel(request):
+    order_id = request.GET.get('order_id')
+    if order_id:
+        messages.warning(request, 'Payment was canceled. You can try again from your orders page.')
+        return redirect('pending-orders')
+    return HttpResponse("❌ Payment canceled.")
+
+
+@require_POST
+@login_required
+@user_passes_test(is_customer)
+def order_pay_with_cod(request, order_id):
+    """Confirm Cash On Delivery for a Pending order and move to To Ship."""
+    try:
+        order = models.Orders.objects.get(id=order_id, customer__user=request.user)
+    except models.Orders.DoesNotExist:
+        messages.error(request, 'Order not found.')
+        return redirect('my-order')
+
+    if order.status != 'Pending':
+        messages.warning(request, 'This order is not eligible for COD at this stage.')
+        return redirect('my-order-pk', pk=order.id)
+
+    # Block COD selection if any pre-order items are still pending confirmation
+    has_pending_preorder = models.CustomOrderItem.objects.filter(
+        order=order,
+        is_pre_order=True,
+        pre_order_status='pending'
+    ).exists()
+    if has_pending_preorder:
+        messages.warning(request, 'This order includes a pre-order awaiting staff confirmation. COD will be enabled once confirmed.')
+        return redirect('pending-orders')
+
+    # Compute payable amount (should be > 0)
+    order_items = models.OrderItem.objects.filter(order=order)
+    custom_items = models.CustomOrderItem.objects.filter(order=order, is_pre_order=False)
+    total = Decimal('0.00')
+    for item in order_items:
+        total += Decimal(item.price) * item.quantity
+    for ci in custom_items:
+        total += Decimal(ci.price) * ci.quantity
+    if total <= 0:
+        messages.warning(request, 'No payable items found yet. Please wait for confirmation.')
+        return redirect('pending-orders')
+
+    # Confirm COD and move to Order Confirmed
+    order.payment_method = 'cod'
+    order.status = 'Order Confirmed'
+    order.status_updated_at = timezone.now()
+    order.save(update_fields=['payment_method', 'status', 'status_updated_at'])
+
+    # Progress confirmed pre-order items (if any were already confirmed)
+    models.CustomOrderItem.objects.filter(order=order, pre_order_status='confirmed').update(pre_order_status='in_production')
+
+    messages.success(request, 'Cash On Delivery selected. Your order is now being prepared for shipping.')
+    return redirect('to-ship-orders')
 
 
 # Automated Delivery System Views
@@ -5089,7 +5385,8 @@ def add_custom_order(request):
                 'success': True, 
                 'message': 'Pre-order created successfully!',
                 'order_id': order.id,
-                'order_ref': order.order_ref
+                'order_ref': order.order_ref,
+                'redirect': f"/preorder/checkout/{order.id}/"
             })
             
         else:  # Add to cart
@@ -5380,8 +5677,9 @@ def admin_confirm_pre_order(request, order_id):
                 return ''.join(random.choices(string.ascii_uppercase + string.digits, k=length))
             order.order_ref = _generate_order_ref()
 
-        # Progress order status to 'Order Confirmed' so it appears under Orders
-        order.status = 'Order Confirmed'
+        # Keep the order in 'Pending' so the customer sees it under "To Pay"
+        # The order will move to 'Order Confirmed' after successful payment.
+        order.status = 'Pending'
         order.status_updated_at = timezone.now()
         order.save(update_fields=['order_ref', 'status', 'status_updated_at'])
 

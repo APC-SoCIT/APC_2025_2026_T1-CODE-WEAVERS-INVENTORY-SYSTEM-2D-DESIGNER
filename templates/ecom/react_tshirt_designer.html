@@ -648,8 +648,14 @@
                     });
                     const data = await resp.json();
                     if (data && data.success) {
-                        showStatus('Pre-order created! Redirecting to Track Orders…', 'ok');
-                        setTimeout(() => { window.location.href = '/my-order'; }, 1000);
+                        // If backend provided a checkout redirect, prioritize deposit flow
+                        if (data.redirect) {
+                            showStatus('Pre-order created! Redirecting to deposit checkout…', 'ok');
+                            setTimeout(() => { window.location.href = data.redirect; }, 600);
+                        } else {
+                            showStatus('Pre-order created! Redirecting to Track Orders…', 'ok');
+                            setTimeout(() => { window.location.href = '/my-order'; }, 1000);
+                        }
                     } else {
                         showStatus((data && data.message) || 'Failed to create pre-order.', 'error');
                     }

@@ -504,11 +504,11 @@
         {% if request.resolver_match.url_name != 'admin-dashboard' %}
         <div class="tabs">
             <div class="tab-list">
-                <button class="tab-button active" onclick="switchTab('sales')">Sales</button>
-                <button class="tab-button" onclick="switchTab('products')">Products</button>
-                <button class="tab-button" onclick="switchTab('customers')">Customers</button>
-                <button class="tab-button" onclick="switchTab('orders')">Orders</button>
-                <button class="tab-button" onclick="switchTab('financial')">Financial</button>
+                <button class="tab-button active" data-tab="sales" onclick="switchTab('sales')">Sales</button>
+                <button class="tab-button" data-tab="products" onclick="switchTab('products')">Products</button>
+                <button class="tab-button" data-tab="customers" onclick="switchTab('customers')">Customers</button>
+                <button class="tab-button" data-tab="orders" onclick="switchTab('orders')">Orders</button>
+                <button class="tab-button" data-tab="financial" onclick="switchTab('financial')">Financial</button>
             </div>
 
             <!-- Sales Tab -->
@@ -1128,10 +1128,14 @@
                 selectedTab.classList.add('active');
             }
 
-            // Add active class to clicked button
-            if (event && event.target) {
-                event.target.classList.add('active');
+            // Add active class to corresponding button
+            const targetButton = document.querySelector(`.tab-button[data-tab="${tabName}"]`);
+            if (targetButton) {
+                targetButton.classList.add('active');
             }
+
+            // Persist active tab
+            try { localStorage.setItem('admin_active_tab', tabName); } catch(e) {}
 
             // Re-render charts to fix sizing issues
             setTimeout(() => {
@@ -1317,6 +1321,12 @@
                 // Redirect with the selected date range
                 const currentUrl = new URL(window.location);
                 currentUrl.searchParams.set('date_range', range);
+                // Preserve current tab across reloads
+                let activeTab = currentUrl.searchParams.get('tab');
+                if (!activeTab) {
+                    try { activeTab = localStorage.getItem('admin_active_tab'); } catch(e) {}
+                }
+                currentUrl.searchParams.set('tab', activeTab || 'sales');
                 currentUrl.searchParams.delete('start_date');
                 currentUrl.searchParams.delete('end_date');
                 window.location.href = currentUrl.toString();
@@ -1404,7 +1414,7 @@
             
             // Display the selected date range
             displaySelectedDateRange(startDate, endDate);
-
+            
             // Persist selection across views
             try {
                 localStorage.setItem('admin_date_range', 'custom');
@@ -1417,6 +1427,12 @@
             currentUrl.searchParams.set('start_date', startDate);
             currentUrl.searchParams.set('end_date', endDate);
             currentUrl.searchParams.set('date_range', 'custom');
+            // Preserve current tab across reloads
+            let activeTab = currentUrl.searchParams.get('tab');
+            if (!activeTab) {
+                try { activeTab = localStorage.getItem('admin_active_tab'); } catch(e) {}
+            }
+            currentUrl.searchParams.set('tab', activeTab || 'sales');
             window.location.href = currentUrl.toString();
         }
 
