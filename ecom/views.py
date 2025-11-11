@@ -1645,9 +1645,18 @@ def pending_orders_view(request):
         
         custom_items = []
         for item in custom_order_items_all:
-            # Skip items that are marked as pre-order and still pending
+            # Show pending pre-orders but DO NOT include in totals
             if item.is_pre_order and (item.pre_order_status or 'pending') == 'pending':
-                print(f"DEBUG: Hiding pending pre-order item ID: {item.id}")
+                print(f"DEBUG: Showing pending pre-order placeholder for item ID: {item.id}")
+                custom_items.append({
+                    'item': item,
+                    'size': item.size,
+                    'quantity': item.quantity,
+                    'unit_price': None,
+                    'line_total': Decimal('0.00'),
+                    'pending_pre_order': True,
+                })
+                # Do not add to total
                 continue
             print(f"DEBUG: Visible custom item - ID: {item.id}, Price: {item.price}, Quantity: {item.quantity}, Size: {item.size}")
             # Use VAT-inclusive calculation (same as cart)
@@ -1663,9 +1672,9 @@ def pending_orders_view(request):
 
         print(f"DEBUG: Order total: {total}")
         
-        # If there are no visible items after filtering, skip this order entirely
+        # If there are no items at all (should be rare), skip this order entirely
         if not products and not custom_items:
-            print(f"DEBUG: Skipping order {order.id} with only pending pre-order items")
+            print(f"DEBUG: Skipping order {order.id} with no items to display")
             continue
 
         # Calculate VAT using same method as cart (VAT-inclusive)
@@ -5509,7 +5518,9 @@ def add_custom_order(request):
                 address=customer.get_full_address,
                 mobile=customer.mobile,
                 status='Pending',
-                payment_method='cod'
+                # Do not set a payment method yet for pre-orders
+                # to avoid showing COD by default before customer chooses.
+                payment_method=''
             )
             print(f"DEBUG: Pre-order created with ID: {order.id}")
             
@@ -6294,8 +6305,14 @@ def admin_view_pre_orders(request):
     """
     Admin view to display all pre-orders with customer and design details
     """
-    # Get all custom order items that are pre-orders
-    pre_order_items = CustomOrderItem.objects.filter(is_pre_order=True).select_related(
+    # Exclude specific Orders from the listing (temporary clean-up per request)
+    exclude_order_refs = ['OR5DF8BRS4V9', 'OR674F9DTV7Z']
+    exclude_order_ids = [1390, 1389, 1388]
+
+    # Get all custom order items that are pre-orders, excluding requested IDs
+    pre_order_items = CustomOrderItem.objects.filter(is_pre_order=True)\
+        .exclude(order__order_ref__in=exclude_order_refs)\
+        .exclude(order_id__in=exclude_order_ids).select_related(
         'order', 'order__customer', 'custom_design'
     ).order_by('-created_at')
     
