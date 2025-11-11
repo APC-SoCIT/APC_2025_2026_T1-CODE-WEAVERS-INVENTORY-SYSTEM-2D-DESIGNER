@@ -4,6 +4,8 @@ from django.core.validators import RegexValidator
 from django.utils import timezone
 from datetime import timedelta
 import uuid
+import random
+import string
 # Create your models here.
 class Customer(models.Model):
     REGION_CHOICES = [
@@ -241,6 +243,27 @@ class Orders(models.Model):
     refund_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, help_text='Amount refunded to customer')
     refund_processed_at = models.DateTimeField(null=True, blank=True, help_text='When refund was processed')
     refund_processed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='processed_refunds', help_text='Admin who processed the refund')
+
+    @classmethod
+    def generate_order_ref(cls, length: int = 10, prefix: str = "OR") -> str:
+        """
+        Generate a unique, human-friendly reference number.
+        Default format: 'OR' + 10 uppercase letters/digits = 12 chars.
+        Ensures uniqueness by checking existing records.
+        """
+        # Guard against invalid length given max_length=12
+        if prefix and length + len(prefix) > 12:
+            length = 12 - len(prefix)
+        while True:
+            code = prefix + ''.join(random.choices(string.ascii_uppercase + string.digits, k=length))
+            if not cls.objects.filter(order_ref=code).exists():
+                return code
+
+    def save(self, *args, **kwargs):
+        # Auto-assign order_ref if missing
+        if not self.order_ref:
+            self.order_ref = self.generate_order_ref()
+        super().save(*args, **kwargs)
     
     def __str__(self):
         return f"Order {self.order_ref or self.id} - {self.customer.user.username if self.customer else 'No Customer'}"

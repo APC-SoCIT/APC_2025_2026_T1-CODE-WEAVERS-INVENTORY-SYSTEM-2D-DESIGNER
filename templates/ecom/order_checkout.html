@@ -21,8 +21,11 @@
 <div class="checkout-container">
   <div class="checkout-header">
     <div>
-      <strong>Checkout — Order {{ order.order_ref|default:order.id }}</strong>
-      <span class="text-muted ml-2">Status: {{ order.status }}</span>
+      <strong>Checkout</strong>
+      <div class="text-muted mt-1">
+        Reference Number: <span class="font-weight-bold">{{ order.order_ref|default:order.id }}</span>
+        <span class="ml-3">Status: {{ order.status }}</span>
+      </div>
     </div>
     <a href="{% url 'my-order' %}" class="btn btn-outline-secondary btn-sm">Back to Orders</a>
   </div>

@@ -2682,13 +2682,8 @@ def payment_success_view(request):
         mobile = request.COOKIES.get('mobile', str(customer.mobile))
         address = request.COOKIES.get('address', customer.get_full_address)
 
-    # Generate a unique short order reference ID
-    import random
-    import string
-    def generate_order_ref(length=12):
-        return ''.join(random.choices(string.ascii_uppercase + string.digits, k=length))
-
-    order_ref = generate_order_ref()
+    # Generate a unique short order reference ID (OR + 10 alnum = 12 chars)
+    order_ref = models.Orders.generate_order_ref()
 
     # Calculate delivery fee using same logic as cart
     region = customer.region if hasattr(customer, 'region') else None
@@ -2873,13 +2868,8 @@ def place_order(request):
         mobile = request.COOKIES.get('mobile', customer.mobile)
         email = request.COOKIES.get('email', customer.user.email)
         
-        # Generate order reference
-        import random
-        import string
-        def generate_order_ref(length=12):
-            return ''.join(random.choices(string.ascii_uppercase + string.digits, k=length))
-        
-        order_ref = generate_order_ref()
+        # Generate order reference (OR + 10 alnum = 12 chars)
+        order_ref = models.Orders.generate_order_ref()
         
         # Calculate delivery fee
         region = customer.region if hasattr(customer, 'region') else None
@@ -2887,15 +2877,16 @@ def place_order(request):
         destination_region = region if region else "NCR"
         delivery_fee = get_shipping_fee(origin_region, destination_region, weight_kg=0.5)
         
-        # Create the main order
+        # Create the main order (COD checkout from cart goes straight to To Ship)
         order = models.Orders.objects.create(
             customer=customer,
             email=email,
             address=address,
             mobile=mobile,
-            status='Pending',
+            status='Order Confirmed',
             order_date=timezone.now(),
             status_updated_at=timezone.now(),
+            payment_method='cod',
             order_ref=order_ref,
             delivery_fee=delivery_fee,
             notes=f"Order Group ID: {order_ref}"
@@ -5672,10 +5663,7 @@ def admin_confirm_pre_order(request, order_id):
 
         # Ensure order has a reference ID; generate if missing
         if not getattr(order, 'order_ref', None):
-            import random, string
-            def _generate_order_ref(length=12):
-                return ''.join(random.choices(string.ascii_uppercase + string.digits, k=length))
-            order.order_ref = _generate_order_ref()
+            order.order_ref = models.Orders.generate_order_ref()
 
         # Keep the order in 'Pending' so the customer sees it under "To Pay"
         # The order will move to 'Order Confirmed' after successful payment.
@@ -5761,6 +5749,11 @@ def build_admin_reports_context(request):
     else:
         end_date = now.date()
         start_date = now.replace(day=1).date()
+
+    # Validate custom range: flag invalid when start date is after end date
+    invalid_range = False
+    if date_range == 'custom' and start_date and end_date and start_date > end_date:
+        invalid_range = True
 
     time_filter = Q(created_at__date__gte=start_date, created_at__date__lte=end_date)
     orders = models.Orders.objects.filter(status='Delivered').filter(time_filter).select_related('customer__user')
@@ -5941,6 +5934,7 @@ def build_admin_reports_context(request):
         'top_selling_products': get_top_selling_products(),
         'low_performing_products': get_low_performing_products(),
         'customers_list': [],
+        'invalid_range': invalid_range,
     }
     # Populate customers_list with spending stats
     customers_list = []

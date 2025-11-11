@@ -41,7 +41,7 @@
 
   <div class="orders-search">
     <i class="fa fa-search"></i>
-    <input type="text" placeholder="You can search by Seller Name, Order ID or Product name" />
+    <input type="text" placeholder="You can search by Seller Name, Reference Number or Product name" />
   </div>
 
   {% if not orders_with_items %}
@@ -53,7 +53,7 @@
       <div class="card-header">
         <div class="order-details">
           <div>
-            <strong>Order ID: {{ order_dict.order.order_ref|default:"N/A" }}</strong>
+            <strong>Reference Number: {{ order_dict.order.order_ref|default:"N/A" }}</strong>
             <span class="order-meta ml-3">Placed on {{ order_dict.order.created_at|date:"M d, Y" }}</span>
           </div>
           <span class="order-status status-{{ order_dict.order.status|slugify }}">{{ order_dict.order.status }}</span>
@@ -127,7 +127,7 @@
               {% if active_tab == 'to_receive' %}
                 <a href="{% url 'download-invoice' order_dict.order.id %}" target="_blank" class="btn btn-outline-primary btn-sm">Download Invoice</a>
               {% endif %}
-              {% if order_dict.order.status == 'Pending' and not order_dict.has_pending_preorder and order_dict.grand_total > 0 %}
+              {% if order_dict.order.status == 'Pending' and order_dict.order.payment_method != 'cod' and not order_dict.has_pending_preorder and order_dict.grand_total > 0 %}
                 <a href="{% url 'order_checkout' order_dict.order.id %}" class="btn btn-primary btn-sm">Pay Now</a>
               {% elif order_dict.order.status == 'Pending' and order_dict.has_pending_preorder %}
                 <span class="badge badge-info" title="Pre-order item awaiting staff confirmation">Awaiting confirmation</span>

@@ -488,6 +488,9 @@
             <button class="btn" onclick="toggleCustomDateRange()" id="customRangeBtn">
                 Custom Range
             </button>
+            <span id="customRangeError" style="display:{% if invalid_range %}inline-block{% else %}none{% endif %}; margin-left:10px; color:#B91C1C; border:1px solid #fecaca; background:#fee2e2; padding:6px 10px; border-radius:8px; font-weight:600;">
+                Invalid range: start date is after end date
+            </span>
             <div id="customDateRange" style="display: none; align-items: center; gap: 10px; margin-left: 10px;">
                 <label for="startDate">From:</label>
                 <input type="date" id="startDate" class="date-input">
@@ -1348,11 +1351,13 @@
         // Toggle custom date range display
         function toggleCustomDateRange() {
             const customDateRange = document.getElementById('customDateRange');
+            const errEl = document.getElementById('customRangeError');
             const urlParams = new URLSearchParams(window.location.search);
             const isCustomRange = urlParams.get('date_range') === 'custom';
             
             if (customDateRange.style.display === 'none' || customDateRange.style.display === '') {
                 customDateRange.style.display = 'flex';
+                if (errEl) errEl.style.display = 'none';
                 
                 // If we already have custom range parameters, use them
                 if (isCustomRange) {
@@ -1406,10 +1411,24 @@
         function applyCustomDateRange() {
             const startDate = document.getElementById('startDate').value;
             const endDate = document.getElementById('endDate').value;
+            const errEl = document.getElementById('customRangeError');
             
             if (!startDate || !endDate) {
                 alert('Please select both start and end dates');
                 return;
+            }
+
+            // Validate that start <= end
+            const start = new Date(startDate);
+            const end = new Date(endDate);
+            if (start > end) {
+                if (errEl) {
+                    errEl.textContent = 'Invalid range: start date is after end date';
+                    errEl.style.display = 'inline-block';
+                }
+                return;
+            } else if (errEl) {
+                errEl.style.display = 'none';
             }
             
             // Display the selected date range
