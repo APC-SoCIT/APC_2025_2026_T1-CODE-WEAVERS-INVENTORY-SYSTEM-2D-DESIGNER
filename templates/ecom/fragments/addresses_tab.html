@@ -5,7 +5,7 @@
   .addr-wrap { padding: 2px; }
   .addr-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; }
   .addr-title { font-size:1.4rem; font-weight:700; color:#111827; }
-  .addr-add-btn { background:#ef4444; color:#fff; border:none; padding:10px 14px; border-radius:8px; font-weight:700; font-size:1.05rem; }
+  .addr-add-btn { background:#348d22; color:#fff; border:none; padding:10px 14px; border-radius:8px; font-weight:700; font-size:1.05rem; }
   .addr-list { border:1px solid #e5e7eb; border-radius:12px; padding:14px; background:#fff; }
   .addr-item { display:flex; justify-content:space-between; gap:14px; padding:14px; border:1px solid #e5e7eb; border-radius:10px; background:#fafafa; margin-bottom:12px; }
   .addr-item.default { border-color:#10b981; background:#f8fffb; }
@@ -16,6 +16,7 @@
   .btn-danger { background:#dc2626; color:#fff; border:none; }
   .btn-primary { background:#2563eb; color:#fff; border:none; font-size:1.02rem; }
   .btn-success { background:#10b981; color:#fff; border:none; font-size:1.02rem; }
+  .btn-primary[disabled] { opacity:0.6; cursor:not-allowed; }
 
   /* Modal */
   .modal-mask { position:fixed; inset:0; background:rgba(0,0,0,.45); display:none; align-items:center; justify-content:center; z-index:1000; }
@@ -49,7 +50,11 @@
   <div class="addr-list">
     {% for address in saved_addresses %}
       <div class="addr-item {% if address.is_default %}default{% endif %}" data-id="{{ address.id }}"
-           data-region="{{ address.region }}" data-province="{{ address.province }}" data-citymun="{{ address.citymun }}" data-barangay="{{ address.barangay }}" data-postal="{{ address.postal_code }}" data-street="{{ address.street_address|escapejs }}">
+           data-region="{{ address.region }}" data-region-name="{{ address.region|region_name }}"
+           data-province="{{ address.province }}" data-province-name="{{ address.province|province_name }}"
+           data-citymun="{{ address.citymun }}" data-citymun-name="{{ address.citymun|citymun_name }}"
+           data-barangay="{{ address.barangay }}" data-barangay-name="{{ address.barangay|barangay_name }}"
+           data-postal="{{ address.postal_code }}" data-street="{{ address.street_address|escapejs }}">
         <div class="addr-lines">
           <div class="addr-name">{{ customer.user.first_name }} {{ customer.user.last_name }} <span style="color:#6b7280; font-weight:500;">({{ customer.mobile|ph_mobile_format }})</span></div>
           <div>{{ address.street_address }}, {{ address.barangay|barangay_name }}, {{ address.citymun|citymun_name }}, {{ address.province|province_name }}, {{ address.region|region_name }}, {{ address.postal_code }}</div>
@@ -146,6 +151,32 @@
   const titleEl = document.getElementById('modalTitle');
   const btnAdd = document.getElementById('btnAddAddress');
 
+  // Track original values to enable submit only after changes
+  let originalValues = null;
+  function snapshotValues(){
+    return {
+      fullName: document.getElementById('fullName').value || '',
+      phoneNumber: document.getElementById('phoneNumber').value || '',
+      region: document.getElementById('regionSel').value || '',
+      province: document.getElementById('provinceSel').value || '',
+      citymun: document.getElementById('citySel').value || '',
+      barangay: document.getElementById('barangaySel').value || '',
+      postal: document.getElementById('postalCode').value || '',
+      street: document.getElementById('streetAddress').value || ''
+    };
+  }
+  function setSubmitEnabled(on){ btnSubmit.disabled = !on; }
+  function checkChanges(){
+    if (!originalValues) { setSubmitEnabled(false); return; }
+    const current = snapshotValues();
+    const changed = Object.keys(originalValues).some(k => (originalValues[k]||'') !== (current[k]||''));
+    // For add mode, also require essential fields to be non-empty
+    const essentialsFilled = current.region && current.province && current.citymun && current.barangay && current.postal && current.street;
+    const mode = document.getElementById('formMode').value;
+    if (mode === 'add') setSubmitEnabled(essentialsFilled);
+    else setSubmitEnabled(changed);
+  }
+
   function openModal(mode, payload) {
     document.getElementById('formMode').value = mode;
     titleEl.textContent = mode === 'add' ? 'Add New Address' : 'Edit Address';
@@ -156,33 +187,103 @@
     document.getElementById('postalCode').value = payload?.postal || '';
     document.getElementById('streetAddress').value = payload?.street || '';
 
-    // Initialize address cascade
+    // Initially disable submit until a change is detected / fields filled
+    setSubmitEnabled(false);
+
+    // Prepare elements and attach listeners BEFORE initializing cascade
+    const r = document.getElementById('regionSel');
+    const p = document.getElementById('provinceSel');
+    const c = document.getElementById('citySel');
+    const b = document.getElementById('barangaySel');
+
+    // Immediately show existing values as single selected options (visible even if APIs fail)
+    function prefillSingleOption(selectEl, code, name, placeholder) {
+      if (!selectEl) return;
+      if (!code && !name) {
+        selectEl.innerHTML = `<option value="" disabled selected>${placeholder||'Select'}</option>`;
+        return;
+      }
+      const text = (name || code || '').toString();
+      const val = (code || '').toString();
+      selectEl.innerHTML = `<option value="${val}">${text}</option>`;
+      selectEl.value = val;
+    }
+
+    prefillSingleOption(r, payload?.region, payload?.region_name, 'Select Region');
+    prefillSingleOption(p, payload?.province, payload?.province_name, 'Select Province');
+    prefillSingleOption(c, payload?.citymun, payload?.citymun_name, 'Select City/Municipality');
+    prefillSingleOption(b, payload?.barangay, payload?.barangay_name, 'Select Barangay');
+
+    function onRegionsLoaded(){
+      const ok = selectOptionByValueOrText(r, payload?.region, payload?.region_name);
+      if (ok) r.dispatchEvent(new Event('change'));
+    }
+    function onProvincesLoaded(){
+      const ok = selectOptionByValueOrText(p, payload?.province, payload?.province_name);
+      if (ok) p.dispatchEvent(new Event('change'));
+    }
+    function onCitiesLoaded(){
+      const ok = selectOptionByValueOrText(c, payload?.citymun, payload?.citymun_name);
+      if (ok) c.dispatchEvent(new Event('change'));
+    }
+    function onBarangaysLoaded(){
+      selectOptionByValueOrText(b, payload?.barangay, payload?.barangay_name);
+      originalValues = snapshotValues();
+      checkChanges();
+    }
+
+    r.addEventListener('ph:regionsLoaded', onRegionsLoaded, { once: true });
+    p.addEventListener('ph:provincesLoaded', onProvincesLoaded, { once: true });
+    c.addEventListener('ph:citiesLoaded', onCitiesLoaded, { once: true });
+    b.addEventListener('ph:barangaysLoaded', onBarangaysLoaded, { once: true });
+
+    // Initialize address cascade AFTER listeners are attached
     window.initPHAddressCascadeAPI({
       region: 'regionSel', province: 'provinceSel', citymun: 'citySel', barangay: 'barangaySel'
     });
-    // After async load, set initial codes
-    setTimeout(() => {
-      const r = document.getElementById('regionSel');
-      const p = document.getElementById('provinceSel');
-      const c = document.getElementById('citySel');
-      const b = document.getElementById('barangaySel');
-      if (payload?.region) r.value = payload.region;
-      r.dispatchEvent(new Event('change'));
-      setTimeout(() => {
-        if (payload?.province) p.value = payload.province;
-        p.dispatchEvent(new Event('change'));
-        setTimeout(() => {
-          if (payload?.citymun) c.value = payload.citymun;
-          c.dispatchEvent(new Event('change'));
-          setTimeout(() => { if (payload?.barangay) b.value = payload.barangay; }, 250);
-        }, 250);
-      }, 250);
-    }, 250);
+
+    // Final fallback: retry preselect after short delay if still not set
+    // Robust retry: attempt preselect until lists are populated or max attempts
+    let attempts = 0;
+    const maxAttempts = 10;
+    const retry = () => {
+      attempts++;
+      // Region
+      if (!r.value && (payload?.region || payload?.region_name)) {
+        const ok = selectOptionByValueOrText(r, payload?.region, payload?.region_name);
+        if (ok) r.dispatchEvent(new Event('change'));
+      }
+      // Province
+      if (p.options.length > 1 && !p.value && (payload?.province || payload?.province_name)) {
+        const ok = selectOptionByValueOrText(p, payload?.province, payload?.province_name);
+        if (ok) p.dispatchEvent(new Event('change'));
+      }
+      // City/Municipality
+      if (c.options.length > 1 && !c.value && (payload?.citymun || payload?.citymun_name)) {
+        const ok = selectOptionByValueOrText(c, payload?.citymun, payload?.citymun_name);
+        if (ok) c.dispatchEvent(new Event('change'));
+      }
+      // Barangay
+      if (b.options.length > 1 && !b.value && (payload?.barangay || payload?.barangay_name)) {
+        selectOptionByValueOrText(b, payload?.barangay, payload?.barangay_name);
+      }
+      originalValues = snapshotValues();
+      checkChanges();
+
+      if ((!r.value || !c.value || !b.value) && attempts < maxAttempts) {
+        setTimeout(retry, 300);
+      }
+    };
+    setTimeout(retry, 400);
   }
 
   function closeModal() { modal.style.display = 'none'; }
 
   btnClose.onclick = closeModal; btnCancel.onclick = closeModal;
+
+  // Recalculate enable/disable when user edits any field
+  form.addEventListener('input', checkChanges);
+  form.addEventListener('change', checkChanges);
 
   // Edit buttons
   document.querySelectorAll('.btnEdit').forEach(btn => {
@@ -192,9 +293,13 @@
       const payload = {
         id: item.dataset.id,
         region: item.dataset.region,
+        region_name: item.dataset.regionName,
         province: item.dataset.province,
+        province_name: item.dataset.provinceName,
         citymun: item.dataset.citymun,
+        citymun_name: item.dataset.citymunName,
         barangay: item.dataset.barangay,
+        barangay_name: item.dataset.barangayName,
         postal: item.dataset.postal,
         street: item.dataset.street
       };
@@ -252,5 +357,51 @@
     // Re-fetch this tab via parent loader
     const evt = new CustomEvent('reload-addresses-tab');
     window.dispatchEvent(evt);
+  }
+</script>
+<script>
+  // Flexible matcher for codes and names across different datasets
+  function valuesMatch(a, b) {
+    a = String(a || '').trim();
+    b = String(b || '').trim();
+    if (!a || !b) return false;
+    if (a === b) return true;
+    const aNoZeros = a.replace(/^0+/, '');
+    const bNoZeros = b.replace(/^0+/, '');
+    if (aNoZeros === bNoZeros) return true;
+    return a.startsWith(b) || b.startsWith(a);
+  }
+
+  function selectOptionByValueOrText(selectEl, targetCode, targetName) {
+    if (!selectEl) return false;
+    const opts = Array.from(selectEl.options);
+    // Try by value/code with region code normalization support
+    let candidates = [];
+    if (targetCode) {
+      candidates.push(String(targetCode));
+      // If selecting region, normalize Django-style codes (e.g., 'NCR', 'R4A')
+      if (selectEl.id === 'regionSel') {
+        const MAP = {
+          'R1': '01', 'R2': '02', 'R3': '03', 'R4A': '04', 'R4B': '17', 'R5': '05', 'R6': '06', 'R7': '07', 'R8': '08', 'R9': '09', 'R10': '10', 'R11': '11', 'R12': '12', 'NCR': '13', 'CAR': '14', 'BARMM': '15', 'R13': '16'
+        };
+        const short = MAP[String(targetCode).toUpperCase()];
+        if (short) {
+          candidates.push(short);
+          // PSGC numeric variant (e.g., '13' -> '130000000')
+          candidates.push(short + '0000000');
+        }
+      }
+    }
+    let found = opts.find(o => candidates.some(c => valuesMatch(o.value, c)));
+    if (!found && targetName) {
+      found = opts.find(
+        o => (o.textContent || '').trim().toLowerCase() === String(targetName || '').trim().toLowerCase()
+      );
+    }
+    if (found) {
+      selectEl.value = found.value;
+      return true;
+    }
+    return false;
   }
 </script>
