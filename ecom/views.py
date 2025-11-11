@@ -1126,10 +1126,13 @@ def admin_view_delivered_orders(request):
 
 @admin_required
 def admin_view_cancelled_orders(request):
+    # Show Cancelled orders and display the exact count for this queryset
     orders = models.Orders.objects.filter(status='Cancelled').prefetch_related('orderitem_set').order_by('-created_at')
     counts = get_order_status_counts()
     context = {
-        'cancelled_count': counts.get('cancelled', 0),
+        # Use the queryset count so the "Cancelled" metric matches the list
+        'cancelled_count': orders.count(),
+        # Keep other cards using global counts
         'processing_count': counts.get('processing', 0),
         'confirmed_count': counts.get('confirmed', 0),
         'shipping_count': counts.get('shipping', 0),
@@ -1349,7 +1352,8 @@ def admin_view_cancelled_orders(request):
     orders = models.Orders.objects.filter(status='Cancelled')
     counts = get_order_status_counts()
     context = {
-        'cancelled_count': counts.get('cancelled', 0),
+        # Match the visible list count for Cancelled
+        'cancelled_count': orders.count(),
         'processing_count': counts.get('processing', 0),
         'confirmed_count': counts.get('confirmed', 0),
         'shipping_count': counts.get('shipping', 0),
