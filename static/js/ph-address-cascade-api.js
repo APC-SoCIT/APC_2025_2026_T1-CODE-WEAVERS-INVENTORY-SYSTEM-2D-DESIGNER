@@ -24,6 +24,12 @@ window.initPHAddressCascadeAPI = function(config) {
     sel.innerHTML = `<option value="" disabled selected>${placeholder}</option>`;
   }
 
+  // Detect NCR across different code formats (PSGC and regCode)
+  function isNCR(regionId) {
+    const id = String(regionId || '').trim();
+    return id === '13' || id === '130000000' || id.startsWith('130');
+  }
+
   async function populateRegions() {
     clearSelect(regionSel, 'Select Region');
     try {
@@ -93,7 +99,7 @@ window.initPHAddressCascadeAPI = function(config) {
     try {
       const provinces = await fetchJSON('/api/provinces/', { region_id: regionId });
 
-      if (provinces.length === 0 || regionId === "0400000000") {
+      if (provinces.length === 0 || isNCR(regionId)) {
         // NCR or similar region with no provinces
         provinceSel.disabled = true;
         provinceSel.innerHTML = '<option value="" disabled selected>No Province</option>';

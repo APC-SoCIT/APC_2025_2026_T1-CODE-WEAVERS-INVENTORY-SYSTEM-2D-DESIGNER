@@ -217,11 +217,12 @@
     if (!originalValues) { setSubmitEnabled(false); return; }
     const current = snapshotValues();
     const changed = Object.keys(originalValues).some(k => (originalValues[k]||'') !== (current[k]||''));
-    // For add mode, also require essential fields to be non-empty
-    const essentialsFilled = current.region && current.province && current.citymun && current.barangay && current.postal && current.street;
+    // Consider NCR where province may be disabled; treat it as filled
+    const provinceDisabled = document.getElementById('provinceSel').disabled;
+    const essentialsFilled = !!current.region && (provinceDisabled || !!current.province) && !!current.citymun && !!current.barangay && !!current.postal && !!current.street;
     const mode = document.getElementById('formMode').value;
     if (mode === 'add') setSubmitEnabled(essentialsFilled);
-    else setSubmitEnabled(changed);
+    else setSubmitEnabled(changed || essentialsFilled);
   }
 
   function openModal(mode, payload) {
@@ -406,3 +407,55 @@
     window.dispatchEvent(evt);
   }
 </script>
+<<<<<<< HEAD
+=======
+<script>
+  // Flexible matcher for codes and names across different datasets
+  function valuesMatch(a, b) {
+    a = String(a || '').trim();
+    b = String(b || '').trim();
+    if (!a || !b) return false;
+    if (a === b) return true;
+    const aNoZeros = a.replace(/^0+/, '');
+    const bNoZeros = b.replace(/^0+/, '');
+    if (aNoZeros === bNoZeros) return true;
+    return a.startsWith(b) || b.startsWith(a);
+  }
+
+  function selectOptionByValueOrText(selectEl, targetCode, targetName) {
+    if (!selectEl) return false;
+    const opts = Array.from(selectEl.options);
+    // Try by value/code with region code normalization support
+    let candidates = [];
+    if (targetCode) {
+      candidates.push(String(targetCode));
+      // If selecting region, normalize Django-style codes (e.g., 'NCR', 'R4A')
+      if (selectEl.id === 'regionSel') {
+        const MAP = {
+          'R1': '01', 'R2': '02', 'R3': '03', 'R4A': '04', 'R4B': '17', 'R5': '05', 'R6': '06', 'R7': '07', 'R8': '08', 'R9': '09', 'R10': '10', 'R11': '11', 'R12': '12', 'NCR': '13', 'CAR': '14', 'BARMM': '15', 'R13': '16'
+        };
+        const short = MAP[String(targetCode).toUpperCase()];
+        if (short) {
+          candidates.push(short);
+          // PSGC numeric variant (e.g., '13' -> '130000000')
+          candidates.push(short + '0000000');
+        }
+      }
+    }
+    let found = opts.find(o => candidates.some(c => valuesMatch(o.value, c)));
+    if (!found && targetName) {
+      const norm = (s) => String(s || '').toLowerCase().replace(/\(.*?\)/g, '').replace(/\s+/g, ' ').trim();
+      const targetNorm = norm(targetName);
+      found = opts.find(o => {
+        const txt = norm(o.textContent || '');
+        return txt === targetNorm || txt.includes(targetNorm) || targetNorm.includes(txt);
+      });
+    }
+    if (found) {
+      selectEl.value = found.value;
+      return true;
+    }
+    return false;
+  }
+</script>
+>>>>>>> 78d7d45f55da6db6c483f2cff60299ea0b64386c
