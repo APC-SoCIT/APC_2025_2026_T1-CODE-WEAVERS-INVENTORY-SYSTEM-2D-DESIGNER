@@ -131,6 +131,53 @@
 
 <script src="{% static 'js/ph-address-cascade-api.js' %}"></script>
 <script>
+  // Ensure helpers are globally available before cascade init and events fire
+  (function(){
+    if (typeof window.valuesMatch !== 'function') {
+      window.valuesMatch = function(a, b) {
+        a = String(a || '').trim();
+        b = String(b || '').trim();
+        if (!a || !b) return false;
+        if (a === b) return true;
+        const aNoZeros = a.replace(/^0+/, '');
+        const bNoZeros = b.replace(/^0+/, '');
+        if (aNoZeros === bNoZeros) return true;
+        return a.startsWith(b) || b.startsWith(a);
+      };
+    }
+    if (typeof window.selectOptionByValueOrText !== 'function') {
+      window.selectOptionByValueOrText = function(selectEl, targetCode, targetName) {
+        if (!selectEl) return false;
+        const opts = Array.from(selectEl.options);
+        let candidates = [];
+        if (targetCode) {
+          candidates.push(String(targetCode));
+          if (selectEl.id === 'regionSel') {
+            const MAP = {
+              'R1': '01', 'R2': '02', 'R3': '03', 'R4A': '04', 'R4B': '17', 'R5': '05', 'R6': '06', 'R7': '07', 'R8': '08', 'R9': '09', 'R10': '10', 'R11': '11', 'R12': '12', 'NCR': '13', 'CAR': '14', 'BARMM': '15', 'R13': '16'
+            };
+            const short = MAP[String(targetCode).toUpperCase()];
+            if (short) {
+              candidates.push(short);
+              candidates.push(short + '0000000');
+            }
+          }
+        }
+        let found = opts.find(o => candidates.some(c => window.valuesMatch(o.value, c)));
+        if (!found && targetName) {
+          found = opts.find(
+            o => (o.textContent || '').trim().toLowerCase() === String(targetName || '').trim().toLowerCase()
+          );
+        }
+        if (found) {
+          selectEl.value = found.value;
+          return true;
+        }
+        return false;
+      };
+    }
+  })();
+
   function autoFormatPHMobile(input) {
     let value = input.value.replace(/\D/g, '');
     if (value.startsWith('63')) value = value.slice(2);
@@ -357,51 +404,5 @@
     // Re-fetch this tab via parent loader
     const evt = new CustomEvent('reload-addresses-tab');
     window.dispatchEvent(evt);
-  }
-</script>
-<script>
-  // Flexible matcher for codes and names across different datasets
-  function valuesMatch(a, b) {
-    a = String(a || '').trim();
-    b = String(b || '').trim();
-    if (!a || !b) return false;
-    if (a === b) return true;
-    const aNoZeros = a.replace(/^0+/, '');
-    const bNoZeros = b.replace(/^0+/, '');
-    if (aNoZeros === bNoZeros) return true;
-    return a.startsWith(b) || b.startsWith(a);
-  }
-
-  function selectOptionByValueOrText(selectEl, targetCode, targetName) {
-    if (!selectEl) return false;
-    const opts = Array.from(selectEl.options);
-    // Try by value/code with region code normalization support
-    let candidates = [];
-    if (targetCode) {
-      candidates.push(String(targetCode));
-      // If selecting region, normalize Django-style codes (e.g., 'NCR', 'R4A')
-      if (selectEl.id === 'regionSel') {
-        const MAP = {
-          'R1': '01', 'R2': '02', 'R3': '03', 'R4A': '04', 'R4B': '17', 'R5': '05', 'R6': '06', 'R7': '07', 'R8': '08', 'R9': '09', 'R10': '10', 'R11': '11', 'R12': '12', 'NCR': '13', 'CAR': '14', 'BARMM': '15', 'R13': '16'
-        };
-        const short = MAP[String(targetCode).toUpperCase()];
-        if (short) {
-          candidates.push(short);
-          // PSGC numeric variant (e.g., '13' -> '130000000')
-          candidates.push(short + '0000000');
-        }
-      }
-    }
-    let found = opts.find(o => candidates.some(c => valuesMatch(o.value, c)));
-    if (!found && targetName) {
-      found = opts.find(
-        o => (o.textContent || '').trim().toLowerCase() === String(targetName || '').trim().toLowerCase()
-      );
-    }
-    if (found) {
-      selectEl.value = found.value;
-      return true;
-    }
-    return false;
   }
 </script>
