@@ -244,7 +244,8 @@ urlpatterns = [
     path('api/barangays/', api_views.get_barangays, name='api-barangays'),
 
     path('admin-reports', views.admin_report_view, name='admin-reports'),
-    path('admin/customer-transactions/<int:customer_id>/', views.get_customer_transactions, name='customer-transactions'),
+    # Move admin transactions API off the /admin/ prefix to avoid collision with Django admin site
+    path('admin-api/customer-transactions/<int:customer_id>/', views.get_customer_transactions, name='customer-transactions'),
     
     # Email Verification URLs
     path('verify-email/<uuid:token>/', email_verification_views.verify_email_view, name='verify_email'),

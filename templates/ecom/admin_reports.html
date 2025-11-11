@@ -1197,7 +1197,8 @@
                     showCustomerTransactions(selectedCustomerId, selectedCustomerName);
                 } else if (action === 'profile') {
                     // Redirect to user profile page
-                    window.location.href = `/admin/user-profile/${selectedCustomerId}/`;
+            // Use the correct route for user profile (avoid /admin/ prefix collision)
+            window.location.href = `/user-profile/${selectedCustomerId}/`;
                 }
             }
         });
@@ -1226,19 +1227,41 @@
                 </div>
             `;
             
-            // Fetch customer transactions via AJAX
-            fetch(`/admin/customer-transactions/${customerId}/`)
-                .then(response => response.json())
+            // Fetch customer transactions via AJAX with robust JSON handling
+            fetch(`/admin-api/customer-transactions/${customerId}/`, {
+                headers: { 'Accept': 'application/json' }
+            })
+                .then(async (response) => {
+                    const contentType = response.headers.get('content-type') || '';
+                    if (!response.ok) {
+                        // Try to parse JSON error; otherwise read text
+                        if (contentType.includes('application/json')) {
+                            const errData = await response.json().catch(() => null);
+                            const msg = (errData && (errData.error || errData.message)) || `Request failed (${response.status})`;
+                            throw new Error(msg);
+                        } else {
+                            const text = await response.text();
+                            throw new Error(text || `Request failed (${response.status})`);
+                        }
+                    }
+                    if (contentType.includes('application/json')) {
+                        return response.json();
+                    }
+                    // Non-JSON response (likely HTML redirect) -> show helpful error
+                    const html = await response.text();
+                    throw new Error('Unexpected non-JSON response. Please ensure you are logged in as Admin.');
+                })
                 .then(data => {
-                    if (data.success) {
+                    if (data && data.success) {
                         displayTransactions(data.transactions);
                     } else {
-                        showTransactionError(data.message || 'Failed to load transactions');
+                        showTransactionError((data && (data.message || data.error)) || 'Failed to load transactions');
                     }
                 })
                 .catch(error => {
                     console.error('Error fetching transactions:', error);
-                    showTransactionError('Network error occurred while loading transactions');
+                    const message = (error && error.message) ? error.message : 'Network error occurred while loading transactions';
+                    showTransactionError(message);
                 });
         }
 
@@ -1259,8 +1282,25 @@
             let transactionHtml = '<div class="space-y-4">';
             
             transactions.forEach(txn => {
-                const amountClass = txn.amount >= 0 ? 'text-green-600' : 'text-red-600';
-                const amountPrefix = txn.amount >= 0 ? '+' : '';
+                // Prefer server-provided total_amount; fall back to amount or recompute
+                const rawAmount = (txn.total_amount !== undefined && txn.total_amount !== null)
+                    ? txn.total_amount
+                    : txn.amount;
+                let amount = Number(rawAmount);
+                if (!Number.isFinite(amount)) {
+                    // Recompute from products + delivery_fee as a safety net
+                    try {
+                        const itemsTotal = Array.isArray(txn.products)
+                            ? txn.products.reduce((sum, p) => sum + (Number(p.price) || 0) * (Number(p.quantity) || 1), 0)
+                            : 0;
+                        const deliveryFee = Number(txn.delivery_fee) || 0;
+                        amount = itemsTotal + deliveryFee;
+                    } catch(_) {
+                        amount = 0;
+                    }
+                }
+                const amountClass = amount >= 0 ? 'text-green-600' : 'text-red-600';
+                const amountPrefix = amount >= 0 ? '+' : '';
                 
                 transactionHtml += `
                     <div class="p-4 border rounded-md flex justify-between items-center hover:bg-gray-50">
@@ -1270,7 +1310,7 @@
                             ${txn.status ? `<div class="text-xs"><span class="badge bg-blue-100 text-blue-800">${txn.status}</span></div>` : ''}
                         </div>
                         <div class="text-sm font-semibold ${amountClass}">
-                            ${amountPrefix}₱ ${Math.abs(txn.amount).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                            ${amountPrefix}₱ ${Math.abs(amount).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                         </div>
                     </div>
                 `;

@@ -138,7 +138,7 @@
               {% if active_tab == 'to_receive' %}
                 <a href="{% url 'download-invoice' order_dict.order.id %}" target="_blank" class="btn btn-outline-primary btn-sm">Download Invoice</a>
               {% endif %}
-              {% if order_dict.order.status == 'Pending' and order_dict.order.payment_method != 'cod' and not order_dict.has_pending_preorder and order_dict.grand_total > 0 %}
+              {% if order_dict.order.status == 'Pending' and not order_dict.has_pending_preorder and order_dict.grand_total > 0 %}
                 <a href="{% url 'order_checkout' order_dict.order.id %}" class="btn btn-primary btn-sm">Pay Now</a>
               {% elif order_dict.order.status == 'Pending' and order_dict.has_pending_preorder %}
                 <span class="badge badge-info" title="Pre-order item awaiting staff confirmation">Awaiting confirmation</span>

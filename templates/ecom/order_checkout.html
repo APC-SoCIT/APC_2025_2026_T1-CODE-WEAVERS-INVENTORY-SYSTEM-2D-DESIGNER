@@ -122,11 +122,27 @@
   const paypalArea = document.getElementById('paypalArea');
   const codBtn = document.getElementById('codMethod');
   const codArea = document.getElementById('codArea');
+  let paypalButtonsRendered = false;
 
   openBtn.addEventListener('click', () => { modal.style.display = 'flex'; });
   closeBtn.addEventListener('click', () => { modal.style.display = 'none'; });
-  paypalBtn.addEventListener('click', () => { paypalArea.style.display = 'block'; });
-  codBtn.addEventListener('click', () => { codArea.style.display = 'block'; });
+  paypalBtn.addEventListener('click', () => {
+    // Toggle visibility
+    paypalArea.style.display = 'block';
+    codArea.style.display = 'none';
+    // Render PayPal buttons only once to avoid errors
+    if (!paypalButtonsRendered && window.paypal) {
+      try {
+        paypalButtonsRendered = true;
+      } catch (e) {
+        console.error('PayPal init error:', e);
+      }
+    }
+  });
+  codBtn.addEventListener('click', () => {
+    codArea.style.display = 'block';
+    paypalArea.style.display = 'none';
+  });
 </script>
 
 {% if paypal_client_id %}
@@ -138,7 +154,7 @@
       createOrder: function(data, actions) {
         return actions.order.create({
           purchase_units: [{
-            amount: { currency_code: 'PHP', value: '{{ grand_total }}' },
+            amount: { currency_code: 'PHP', value: '{{ grand_total|floatformat:2 }}' },
             description: 'Order Payment (Order {{ order.order_ref|default:order.id }})'
           }]
         });
@@ -157,6 +173,15 @@
         });
       }
     }).render('#paypal-buttons');
+  } else {
+    // Helpful message if PayPal SDK failed to load (ad-block/CSP)
+    const area = document.getElementById('paypalArea');
+    if (area) {
+      const note = document.createElement('p');
+      note.className = 'text-danger';
+      note.textContent = 'PayPal failed to load. Please disable ad blockers or try again.';
+      area.appendChild(note);
+    }
   }
 </script>
 {% endif %}

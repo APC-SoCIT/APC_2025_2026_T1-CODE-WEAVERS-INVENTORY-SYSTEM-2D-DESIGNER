@@ -634,21 +634,38 @@ from django.contrib import messages
 def admin_required(view_func):
     """
     Decorator that ensures only admin users can access the view.
-    Non-admin users are logged out and redirected to admin login with error message.
+    Accepts both staff and SuperAdmin via has_admin_access.
+    For AJAX/JSON requests, returns a JSON error instead of HTML redirects.
     """
     @wraps(view_func)
     def wrapper(request, *args, **kwargs):
-        # Check if user is authenticated and is admin
+        from django.http import JsonResponse
+
+        def wants_json(r):
+            try:
+                # Detect common AJAX and JSON fetch headers
+                is_xhr = r.headers.get('X-Requested-With') == 'XMLHttpRequest'
+                accept = r.headers.get('Accept', '')
+                return is_xhr or ('application/json' in accept)
+            except Exception:
+                return False
+
+        # Check authentication
         if not request.user.is_authenticated:
+            if wants_json(request):
+                return JsonResponse({'success': False, 'error': 'Authentication required'}, status=401)
             messages.error(request, 'Access denied. Please log in as an administrator.')
             return redirect('adminlogin')
-        
-        if not is_admin(request.user):
+
+        # Check admin access (staff or SuperAdmin)
+        if not has_admin_access(request.user):
+            if wants_json(request):
+                return JsonResponse({'success': False, 'error': 'Admin privileges required'}, status=403)
             # Log out the non-admin user for security
             logout(request)
             messages.error(request, 'Access denied. You do not have administrator privileges. You have been logged out for security reasons.')
             return redirect('adminlogin')
-        
+
         return view_func(request, *args, **kwargs)
     return wrapper
 
@@ -5966,26 +5983,35 @@ def build_admin_reports_context(request):
             monthly_labels.append(calendar.day_abbr[day.weekday()])
             day += timedelta(days=1)
     elif date_range == 'month':
-        # Per-week labels within the month
-        week_totals = {}
+        # Aggregate into exactly 4 buckets for the current month:
+        # Week 1: days 1–7, Week 2: 8–14, Week 3: 15–21, Week 4: 22–end
+        week_totals = {
+            1: 0.0,
+            2: 0.0,
+            3: 0.0,
+            4: 0.0,
+        }
         day = start_date
         while day <= end_date:
-            week_index = ((day.day - 1) // 7) + 1
+            # Map day-of-month to 1..4 bucket; days 29–31 collapse into Week 4
+            bucket = ((day.day - 1) // 7) + 1
+            if bucket > 4:
+                bucket = 4
             day_orders = models.Orders.objects.filter(
                 status='Delivered',
                 created_at__date=day,
             )
             day_total = sum(order.get_total_amount() for order in day_orders)
-            week_totals[week_index] = float(week_totals.get(week_index, 0)) + float(day_total)
+            week_totals[bucket] = float(week_totals.get(bucket, 0)) + float(day_total)
             day += timedelta(days=1)
-        # Build labels Week 1..N in order
-        for w in sorted(week_totals.keys()):
-            monthly_labels.append(f"Week {w}")
-            monthly_sales_data.append(float(week_totals[w]))
-        # Ensure at least 4 weeks shown even if no data in latter weeks
-        if not week_totals:
-            monthly_labels = ["Week 1", "Week 2", "Week 3", "Week 4"]
-            monthly_sales_data = [0, 0, 0, 0]
+        # Always show exactly 4 labels in order
+        monthly_labels = ["Week 1", "Week 2", "Week 3", "Week 4"]
+        monthly_sales_data = [
+            float(week_totals[1]),
+            float(week_totals[2]),
+            float(week_totals[3]),
+            float(week_totals[4]),
+        ]
     else:
         # Default: per-month labels across the selected window
         cursor_year = start_date.year
