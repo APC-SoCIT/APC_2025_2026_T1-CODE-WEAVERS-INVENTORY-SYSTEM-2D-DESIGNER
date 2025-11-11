@@ -1386,6 +1386,25 @@ def update_order_view(request,pk):
         if orderForm.is_valid():
             # Save the form but don't commit yet
             updated_order = orderForm.save(commit=False)
+
+            # Enforce forward-only status transitions (no reverting to earlier states)
+            STATUS_RANK = {
+                'Pending': 0,
+                'Processing': 1,
+                'Order Confirmed': 2,
+                'Out for Delivery': 3,
+                'Delivered': 4,
+                'Cancelled': 5,
+            }
+            current_rank = STATUS_RANK.get(order.status, -1)
+            target_rank = STATUS_RANK.get(updated_order.status, -1)
+            # Allow cancellation from any status except Delivered; otherwise disallow regressions
+            if updated_order.status == 'Cancelled' and order.status == 'Delivered':
+                messages.error(request, 'Cannot cancel an order that is already delivered.')
+                return render(request, 'ecom/update_order.html', {'orderForm': orderForm, 'order': order})
+            if updated_order.status != 'Cancelled' and target_rank < current_rank:
+                messages.error(request, f'Invalid status change: cannot move from {order.get_status_display()} back to {updated_order.get_status_display()}.')
+                return render(request, 'ecom/update_order.html', {'orderForm': orderForm, 'order': order})
             
             # If status has changed, update the status_updated_at timestamp
             if updated_order.status != order.status:
@@ -1443,6 +1462,33 @@ def bulk_update_orders(request):
         if order_ids and new_status:
             orders = models.Orders.objects.filter(id__in=order_ids)
             current_time = timezone.now()
+
+            # Enforce forward-only transitions and disallow certain statuses in bulk updates
+            DISALLOWED_STATUSES = {"Order Confirmed", "Cancellation Requested"}
+            STATUS_RANK = {
+                'Pending': 0,
+                'Processing': 1,
+                'Order Confirmed': 2,
+                'Out for Delivery': 3,
+                'Delivered': 4,
+                'Cancelled': 5,
+            }
+
+            if new_status in DISALLOWED_STATUSES:
+                messages.error(request, f'Bulk update to "{new_status}" is not allowed.')
+                return redirect('admin-view-booking')
+
+            invalid_orders = []
+            for order in orders:
+                current_rank = STATUS_RANK.get(order.status, -1)
+                target_rank = STATUS_RANK.get(new_status, -1)
+                if new_status == 'Cancelled' and order.status == 'Delivered':
+                    invalid_orders.append(order.id)
+                elif new_status != 'Cancelled' and target_rank < current_rank:
+                    invalid_orders.append(order.id)
+            if invalid_orders:
+                messages.error(request, f'Invalid status change for {len(invalid_orders)} selected order(s). Cannot revert status or cancel delivered orders.')
+                return redirect('admin-view-booking')
             
             # Calculate estimated delivery date based on new status
             delivery_date = None
@@ -2690,7 +2736,8 @@ def payment_success_view(request):
     delivery_fee = get_shipping_fee(origin_region, destination_region, weight_kg=0.5)
 
     # Create the parent order entry with order_ref and delivery_fee
-    initial_status = 'Processing' if payment_method == 'paypal' else 'Pending'
+    # For paid methods (PayPal, GCash), mark as To Ship immediately
+    initial_status = 'Order Confirmed' if payment_method in ['paypal', 'gcash'] else 'Pending'
     parent_order = models.Orders.objects.create(
         customer=customer,
         status=initial_status,
@@ -3572,6 +3619,11 @@ def create_gcash_payment(request):
         "quantity": 1
     })
 
+    # Build success/cancel URLs using the current request host to preserve session
+    from django.urls import reverse
+    success_url = request.build_absolute_uri(reverse('payment_success')) + "?method=gcash"
+    cancel_url = request.build_absolute_uri(reverse('payment_cancel'))
+
     payload = {
         "data": {
             "attributes": {
@@ -3585,8 +3637,8 @@ def create_gcash_payment(request):
                 "line_items": product_details,
                 "payment_method_types": ["gcash"],
                 "description": f"GCash Payment for {len(product_details)} item(s)",
-                "success_url": "http://127.0.0.1:8000/payment-success/",
-                "cancel_url": "http://127.0.0.1:8000/payment-cancel/"
+                "success_url": success_url,
+                "cancel_url": cancel_url
             }
         }
     }
@@ -4290,8 +4342,12 @@ def create_gcash_order_payment(request, order_id):
         }
     ]
 
-    success_url = f"http://127.0.0.1:8000/orders/payment-success/?order_id={order.id}&method=gcash"
-    cancel_url = f"http://127.0.0.1:8000/orders/payment-cancel/?order_id={order.id}"
+    # Build success/cancel URLs using the current request host to preserve session
+    from django.urls import reverse
+    success_base = request.build_absolute_uri(reverse('order_payment_success'))
+    cancel_base = request.build_absolute_uri(reverse('order_payment_cancel'))
+    success_url = f"{success_base}?order_id={order.id}&method=gcash"
+    cancel_url = f"{cancel_base}?order_id={order.id}"
 
     payload = {
         "data": {
@@ -6356,7 +6412,7 @@ def admin_view_cancellation_requests(request):
         'delivered_count': counts.get('delivered', 0),
         'cancelled_count': counts.get('cancelled', 0),
     }
-    return prepare_admin_order_view(request, orders, 'Request Cancellation', 'ecom/admin_view_orders.html', extra_context=context)
+    return prepare_admin_order_view(request, orders, 'Cancellation Request', 'ecom/admin_view_orders.html', extra_context=context)
 
 
 @admin_required
@@ -6373,7 +6429,22 @@ def approve_cancellation_request(request, order_id):
     # Process approval and send customer notification
     try:
         order = models.Orders.objects.get(id=order_id, cancellation_status='requested')
-        admin_notes = request.POST.get('admin_notes', '')
+        # Require a reason before approving
+        admin_notes = (request.POST.get('admin_notes', '') or '').strip()
+        if not admin_notes and request.headers.get('Content-Type') == 'application/json':
+            # Fallback to JSON payload if sent via fetch
+            try:
+                import json
+                data = json.loads(request.body.decode('utf-8'))
+                admin_notes = (data.get('admin_notes') or '').strip()
+            except Exception:
+                admin_notes = ''
+        if not admin_notes:
+            # Enforce non-empty reason
+            if request.headers.get('Content-Type') == 'application/json':
+                return JsonResponse({'status': 'error', 'message': 'Reason is required to approve cancellation.'}, status=400)
+            messages.error(request, 'Reason is required to approve cancellation.')
+            return redirect('admin-view-cancellation-requests')
 
         # Approve the cancellation
         success = order.approve_cancellation(request.user, admin_notes)

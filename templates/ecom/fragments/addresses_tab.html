@@ -24,11 +24,14 @@
   .modal-title { font-size:1.18rem; font-weight:700; color:#111827; }
   .modal-body { padding:18px; }
   .modal-actions { display:flex; gap:12px; padding:16px 18px; border-top:1px solid #e5e7eb; justify-content:flex-end; }
-  .form-row { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
-  .form-group { margin-bottom:14px; }
-  .form-group label { display:block; font-weight:600; color:#374151; margin-bottom:8px; font-size:1.02rem; }
-  .form-control { width:100%; border:1px solid #d1d5db; border-radius:10px; padding:12px; background:#f9fafb; font-size:1.02rem; }
-  .form-control:focus { outline:none; border-color:#2563eb; background:#fff; }
+  .form-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .form-group { margin-bottom:16px; }
+  .form-group label { display:block; font-weight:600; color:#111827; margin-bottom:8px; font-size:1.06rem; }
+  .form-control { width:100%; border:1px solid #cbd5e1; border-radius:10px; padding:14px 12px; background:#ffffff; font-size:1.08rem; color:#111827; }
+  .form-control:focus { outline:none; border-color:#2563eb; box-shadow:0 0 0 3px rgba(37, 99, 235, 0.15); background:#fff; }
+  select.form-control { min-height:44px; }
+  .form-control::placeholder { color:#6b7280; opacity:0.95; }
+  select.form-control option[disabled] { color:#6b7280; }
   @media (max-width: 720px) { .form-row { grid-template-columns:1fr; } }
 </style>
 
