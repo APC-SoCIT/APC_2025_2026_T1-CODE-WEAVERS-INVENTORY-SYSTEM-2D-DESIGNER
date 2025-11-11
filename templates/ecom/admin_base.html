@@ -160,6 +160,17 @@
                     <button class="p-2 text-gray-400 hover:text-gray-600" title="Notifications">
                         <i data-lucide="bell" class="h-5 w-5"></i>
                     </button>
+                    <!-- Admin user icon + username -->
+                    <div class="flex items-center px-2 py-1 rounded-md hover:bg-gray-50" title="Logged in as">
+                        <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                            <i data-lucide="user" class="h-4 w-4 text-white"></i>
+                        </div>
+                        <span class="ml-2 text-sm font-medium text-gray-700">{{ request.user.username }}</span>
+                        <!-- Show admin role badge instead of selected customer name -->
+                        <span class="ml-2 text-xs px-2 py-1 rounded bg-gray-100 text-gray-600">
+                            {% if is_superadmin %}SuperAdmin{% elif is_manager %}Manager{% elif request.user.is_staff %}Staff{% else %}User{% endif %}
+                        </span>
+                    </div>
                 </div>
             </div>
         </header>
@@ -219,40 +230,6 @@
             initLucide();
         }
     </script>
-    <script>
-        // Populate the header icon label with the selected customer's name, if any
-        (function(){
-            function setHeaderCustomerName(name){
-                var el = document.getElementById('current-customer-name');
-                if (!el) return;
-                if (name && name.trim().length){
-                    el.textContent = name.trim();
-                    el.classList.remove('hidden');
-                } else {
-                    el.textContent = '';
-                    el.classList.add('hidden');
-                }
-            }
-            // Read persisted selection
-            try {
-                var stored = localStorage.getItem('selectedCustomerName');
-                setHeaderCustomerName(stored || '');
-            } catch(_){ /* ignore */ }
-
-            // Expose a global setter so pages can update it
-            window.__setSelectedCustomerName = function(name){
-                try { localStorage.setItem('selectedCustomerName', name || ''); } catch(_){}
-                setHeaderCustomerName(name || '');
-            };
-
-            // Global click handler: any element with data-customer-name updates header label
-            document.addEventListener('click', function(e){
-                var link = e.target.closest('[data-customer-name]');
-                if (!link) return;
-                var name = link.getAttribute('data-customer-name') || '';
-                window.__setSelectedCustomerName(name);
-            });
-        })();
-    </script>
+    <!-- Removed customer name header injection script to avoid conflicts -->
 </body>
 </html>
