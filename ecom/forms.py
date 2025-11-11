@@ -426,6 +426,42 @@ class FeedbackForm(forms.ModelForm):
 
 # For updating order status and delivery details
 class OrderForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Filter status choices to hide disallowed options in admin updates
+        # Remove "Order Confirmed - In Production" and "Waiting for approval of Cancellation"
+        disallowed = {"Order Confirmed", "Cancellation Requested"}
+        original_choices = list(models.Orders.STATUS)
+
+        # Determine forward-only allowed targets based on current instance status
+        instance = kwargs.get('instance', None)
+        STATUS_RANK = {
+            'Pending': 0,
+            'Processing': 1,
+            'Order Confirmed': 2,
+            'Out for Delivery': 3,
+            'Delivered': 4,
+            'Cancelled': 5,
+        }
+
+        def is_allowed_target(target_code: str, current_code: str) -> bool:
+            if target_code in disallowed:
+                return False
+            if target_code == 'Cancelled':
+                return current_code != 'Delivered'
+            # Cancellation Requested should never be presented in admin status updates
+            if target_code == 'Cancellation Requested':
+                return False
+            return STATUS_RANK.get(target_code, -1) >= STATUS_RANK.get(current_code, -1)
+
+        if instance and getattr(instance, 'status', None):
+            current_status = instance.status
+            filtered = [c for c in original_choices if is_allowed_target(c[0], current_status)]
+            self.fields['status'].choices = filtered
+        else:
+            # No instance context; simply remove disallowed entries
+            self.fields['status'].choices = [c for c in original_choices if c[0] not in disallowed]
+
     class Meta:
         model = models.Orders
         fields = ['status', 'estimated_delivery_date', 'tracking_url', 'notes']

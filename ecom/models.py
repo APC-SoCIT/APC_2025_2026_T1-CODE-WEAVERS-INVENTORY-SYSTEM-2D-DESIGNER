@@ -194,7 +194,7 @@ class CartItem(models.Model):
 class Orders(models.Model):
     STATUS = (
         ('Pending', 'Pending - Awaiting Payment'),
-        ('Processing', 'Processing - Payment Confirmed'),
+        ('Processing', 'Payment Confirmed - In Production'),
         ('Order Confirmed', 'Order Confirmed - In Production'),
         ('Out for Delivery', 'Out for Delivery'),
         ('Delivered', 'Delivered'),
