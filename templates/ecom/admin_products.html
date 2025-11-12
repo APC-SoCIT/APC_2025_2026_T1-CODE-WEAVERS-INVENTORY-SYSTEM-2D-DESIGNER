@@ -40,7 +40,6 @@
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Size</th>
                             <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                         </tr>
                     </thead>
@@ -80,9 +79,6 @@
                                     </span>
                                     {% endif %}
                                 </div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap align-middle text-left">
-                                <div class="text-sm text-gray-900">{{ product.size|default:"N/A" }}</div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium align-middle">
                                 <div class="flex justify-end space-x-2">
@@ -195,19 +191,7 @@
                                 <input type="number" id="productQuantity" name="quantity" min="0" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
                             </div>
                             
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Size</label>
-                                <select id="productSize" name="size" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                    <option value="">Select Size</option>
-                                    <option value="XS">XS</option>
-                                    <option value="S">S</option>
-                                    <option value="M">M</option>
-                                    <option value="L">L</option>
-                                    <option value="XL">XL</option>
-                                    <option value="XXL">XXL</option>
-                                    <option value="One Size">One Size</option>
-                                </select>
-                            </div>
+                            
                             
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Product Image</label>
@@ -259,10 +243,7 @@
                                     <!-- <label class="text-sm font-medium text-gray-500">Category</label>
                                     <p id="viewProductCategory" class="text-gray-900 capitalize"></p> -->
                                 </div>
-                                <div>
-                                    <label class="text-sm font-medium text-gray-500">Size</label>
-                                    <p id="viewProductSize" class="text-gray-900"></p>
-                                </div>
+                                
                             </div>
                         </div>
                     </div>
@@ -348,17 +329,12 @@
             const productPriceText = productRow.querySelector('td:nth-child(4)').textContent.trim();
             const productPrice = productPriceText.replace(/[^\d.]/g, ''); // Remove currency symbols
             const productQuantity = productRow.querySelector('td:nth-child(5) span').textContent.trim();
-            const productSize = productRow.querySelector('td:nth-child(6)').textContent.trim();
 
             // Set form fields with product data
             document.getElementById('productName').value = productName;
             document.getElementById('productDescription').value = productDescription;
             document.getElementById('productPrice').value = productPrice;
             document.getElementById('productQuantity').value = productQuantity;
-            const sizeSelect = document.getElementById('productSize');
-            for (let option of sizeSelect.options) {
-                option.selected = (option.value === productSize);
-            }
 
             // Set product image preview if available
             const productImageCell = productRow.querySelector('td:nth-child(1) img');
@@ -377,22 +353,6 @@
             const form = document.getElementById('productForm');
             form.action = `/update-product/${productId}`;
 
-            // Change button text based on size change
-            const submitBtn = document.getElementById('productSubmitBtn');
-            const originalSize = productSize;
-            sizeSelect.addEventListener('change', function() {
-                if (this.value !== originalSize) {
-                    submitBtn.textContent = 'Add this size';
-                    // Clear and require quantity input
-                    const quantityInput = document.getElementById('productQuantity');
-                    quantityInput.value = '';
-                    quantityInput.required = true;
-                } else {
-                    submitBtn.textContent = 'Update Product';
-                    const quantityInput = document.getElementById('productQuantity');
-                    quantityInput.required = true;
-                }
-            });
 
             // Show the modal
             document.getElementById('productModal').classList.remove('hidden');
@@ -565,7 +525,7 @@
         // Export Products
         function exportProducts() {
             let csvContent = "data:text/csv;charset=utf-8,";
-            csvContent += "Name,Description,Price,Quantity,Category,Size\n";
+            csvContent += "Name,Description,Price,Quantity,Category\n";
             
             const rows = document.querySelectorAll('#product-list-body tr');
             rows.forEach(row => {
@@ -576,8 +536,7 @@
                     cells[2].textContent.trim(),
                     cells[3].textContent.trim(),
                     cells[4].textContent.trim(),
-                    cells[5].textContent.trim(),
-                    cells[6].textContent.trim()
+                    cells[5].textContent.trim()
                 ];
                 csvContent += `"${rowData.join('","')}"\n`;
             });

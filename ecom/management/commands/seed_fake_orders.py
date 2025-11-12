@@ -77,14 +77,12 @@ class Command(BaseCommand):
 
         if not products:
             # Create 5 demo products
-            sizes = [s for s, _ in Product.SIZE_CHOICES]
             for i in range(5):
                 product = Product.objects.create(
                     name=f"Jersey {i+1}",
                     price=Decimal(random.choice([499, 599, 699, 799, 899])),
                     description="Demo jersey product",
                     quantity=100,
-                    size=random.choice(sizes),
                 )
                 products.append(product)
                 created_products += 1
@@ -177,13 +175,11 @@ class Command(BaseCommand):
                     product = random.choice(products)
                     price = Decimal(product.price)
                     qty = random.randint(1, 3)
-                    size_choice = random.choice([s for s, _ in Product.SIZE_CHOICES])
                     OrderItem.objects.create(
                         order=order,
                         product=product,
                         quantity=qty,
                         price=price,
-                        size=size_choice,
                     )
                     items_total += price * qty
 
@@ -219,4 +215,3 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(
             f"Seed complete for {created_days} day(s): orders={total_orders}, items={total_items}, revenue=₱{total_revenue:.2f}"
         ))
-

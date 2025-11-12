@@ -36,7 +36,6 @@
                                         <th>Design Preview</th>
                                         <th>Jersey Details</th>
                                         <th>Quantity</th>
-                                        <th>Size</th>
                                         <th>Price</th>
                                         <th>Status</th>
                                         <th>Date Ordered</th>
@@ -73,7 +72,6 @@
                                             </small>
                                         </td>
                                         <td>{{ pre_order.item.quantity }}</td>
-                                        <td>{{ pre_order.item.size }}</td>
                                         <td>
                                             {% if pre_order.item.pre_order_status == 'pending' %}
                                                 TBD
@@ -181,10 +179,7 @@
                                 <td><strong>Quantity:</strong></td>
                                 <td>{{ pre_order.item.quantity }}</td>
                             </tr>
-                            <tr>
-                                <td><strong>Size:</strong></td>
-                                <td>{{ pre_order.item.size }}</td>
-                            </tr>
+                            
                             <tr>
                                 <td><strong>Price:</strong></td>
                                 <td>

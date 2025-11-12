@@ -96,8 +96,8 @@ class ChatbotService:
             return "I can help you with order-related questions! To track your order, you'll need your order reference number. You can find this in your email confirmation or by logging into your account and checking 'My Orders'. If you need specific help with an order, please provide your order reference number."
         
         # Product-related queries
-        if any(word in message for word in ['product', 'jersey', 'shirt', 'size', 'color', 'design']):
-            return "I'd be happy to help you with our products! We offer custom jerseys and teamwear in various sizes (XS, S, M, L, XL) and colors. You can browse our product catalog on the main page, or use our AI Designer tool to create custom designs. What specific product information are you looking for?"
+        if any(word in message for word in ['product', 'jersey', 'shirt', 'color', 'design']):
+            return "I'd be happy to help you with our products! We offer custom jerseys and teamwear with flexible quantity options and color choices. You can browse our product catalog on the main page, or use our AI Designer tool to create custom designs. What specific product information are you looking for?"
         
         # Account-related queries
         if any(word in message for word in ['account', 'login', 'register', 'profile', 'password']):

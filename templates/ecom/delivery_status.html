@@ -139,7 +139,6 @@
                                     <thead>
                                         <tr>
                                             <th>Product</th>
-                                            <th>Size</th>
                                             <th>Quantity</th>
                                             <th>Price</th>
                                             <th>Total</th>
@@ -149,7 +148,6 @@
                                         {% for item in order_items %}
                                         <tr>
                                             <td>{{ item.product.product_name }}</td>
-                                            <td>{{ item.size|default:"N/A" }}</td>
                                             <td>{{ item.quantity }}</td>
                                             <td>₱{{ item.price|floatformat:2 }}</td>
                                             <td>₱{{ item.price|mul:item.quantity|floatformat:2 }}</td>

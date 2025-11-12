@@ -230,15 +230,7 @@
       right: 0;
     }
     
-    .size-badge {
-      display: inline-block;
-      background-color: #f8f9fa;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      padding: 2px 8px;
-      font-size: 12px;
-      margin-right: 5px;
-    }
+    
     
     .quantity-badge {
       display: inline-block;
@@ -550,7 +542,6 @@
           <th>Name</th>
           <th>Image</th>
           <th>Price</th>
-          <th>Size</th>
           <th>Quantity</th>    
         </tr>
       </thead>
@@ -559,7 +550,7 @@
           <td>
             <input type="checkbox"
                    class="select-product"
-                   data-key="product_{{ product.product.id }}_{{ product.size }}"
+                   data-key="product_{{ product.product.id }}"
                    data-price="{{ product.product.price }}" 
                    data-qty="{{ product.quantity }}"
                    title="Select this item" />
@@ -570,11 +561,10 @@
                      alt="Product Image" height="50px" width="50px">
               </td>
           <td>₱ {{ product.product.price|floatformat:2|intcomma }}</td>
-          <td><span class="size-badge">{{ product.size }}</span></td>
           <td><span class="quantity-badge">{{ product.quantity }}</span></td>
           <td>{{ product.product.description }}</td>
           <td>
-            <a class="btn btn-danger btn-xs" href="{% url 'remove-from-cart' product.product.id %}?size={{ product.size }}&next_page={{request.path}}">
+            <a class="btn btn-danger btn-xs" href="{% url 'remove-from-cart' product.product.id %}?next_page={{request.path}}">
               <span class="glyphicon glyphicon-trash"></span>
             </a>
           </td>
@@ -613,7 +603,6 @@
             {% endif %}
           </td>
           <td>₱ {{ custom_item.price|floatformat:2 }}</td>
-          <td><span class="size-badge">{{ custom_item.size }}</span></td>
           <td><span class="quantity-badge">{{ custom_item.quantity }}</span></td>
           <td>Custom jersey design with personalized elements</td>
           <td>

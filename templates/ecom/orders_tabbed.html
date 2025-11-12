@@ -67,7 +67,6 @@
                 <tr>
                   <th>Product</th>
                   <th>Image</th>
-                  <th>Size</th>
                   <th>Quantity</th>
                   <th>Price</th>
                   <th>Total</th>
@@ -84,7 +83,6 @@
                       <span class="text-muted">No image</span>
                     {% endif %}
                   </td>
-                  <td>{{ item.size }}</td>
                   <td>{{ item.quantity }}</td>
                   <td>₱{{ item.item.price|floatformat:2 }}</td>
                   <td>₱{{ item.line_total|floatformat:2 }}</td>
@@ -94,7 +92,6 @@
                 <tr>
                   <td>{{ custom.item.product_name|default:"Custom Jersey" }}</td>
                   <td><span class="text-muted">Custom</span></td>
-                  <td>{{ custom.size }}</td>
                   <td>{{ custom.quantity }}</td>
                   <td>
                     {% if custom.pending_pre_order %}

@@ -28,94 +28,7 @@
     align-items: center;
   }
 
-  /* Hero slider */
-  .slider-container {
-    height: 50vh;
-    min-height: 400px;
-    width: 100%;
-    position: relative;
-    overflow: hidden;
-    text-align: center;
-    margin-bottom: 30px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-    animation: fadeIn 1s ease-out;
-  }
-
-  .menu {
-    position: absolute;
-    left: 0;
-    z-index: 900;
-    width: 100%;
-    bottom: 20px;
-  }
-
-  .menu label {
-    cursor: pointer;
-    display: inline-block;
-    width: 12px;
-    height: 12px;
-    background: rgba(255, 255, 255, 0.6);
-    border-radius: 50px;
-    margin: 0 .2em 1em;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    animation: fadeInUp 0.5s ease-out;
-  }
-
-  .menu label:hover {
-    background: #fff;
-    transform: scale(1.2);
-  }
-
-  .slide {
-    width: 100%;
-    height: 100%;
-    position: absolute;
-    top: 0;
-    left: 100%;
-    z-index: 10;
-    background-size: cover;
-    background-position: center;
-    transition: left 0.75s cubic-bezier(0.4, 0, 0.2, 1);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    animation: fadeIn 0.5s ease-out;
-  }
-
-  .slide-content {
-    background-color: rgba(0, 0, 0, 0.5);
-    padding: 30px;
-    border-radius: 8px;
-    max-width: 600px;
-    text-align: center;
-    color: white;
-    transform: translateY(50px);
-    opacity: 0;
-    transition: all 0.5s ease 0.3s;
-  }
-
-  [id^="slide"]:checked + .slide .slide-content {
-    transform: translateY(0);
-    opacity: 1;
-  }
-
-  [id^="slide"]:checked + .slide {
-    left: 0;
-    z-index: 100;
-    transition: left .65s ease-out;
-  }
-
-  .slide-1 {
-    background-image: url("{% static 'images/b2.webp' %}");
-  }
-
-  .slide-2 {
-    background-image: url("{% static 'images/b4.webp' %}");
-  }
-
-  .slide-3 {
-    background-image: url("{% static 'images/b3.webp' %}");
-  }
+  
 
 
 
@@ -350,36 +263,7 @@
     font-size: 14px;
   }
 
-  .size-options {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 5px;
-    margin-bottom: 15px;
-  }
-
-  .size-option {
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 14px;
-    transition: all 0.2s ease;
-  }
-
-  .size-option:hover {
-    border-color: #96b3ef;
-    background-color: #f0f5ff;
-  }
-
-  .size-option.selected {
-    background-color: #3E454C;
-    color: white;
-    border-color: #3E454C;
-  }
+  
 
   .quantity-selector {
     display: flex;
@@ -538,16 +422,9 @@
 
   /* Responsive adjustments */
   @media (max-width: 991px) {
-    .slider-container {
-      height: 40vh;
-    }
   }
 
   @media (max-width: 767px) {
-    .slider-container {
-      height: 30vh;
-    }
-    
     .products-grid {
       grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
     }
@@ -775,61 +652,6 @@
   color: #333;
 }
 
-.size-option-group {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 5px;
-}
-
-.size-option-btn {
-  min-width: 45px;
-  height: 45px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid #ddd;
-  background-color: white;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: all 0.2s ease;
-  position: relative;
-}
-
-.size-option-btn:hover {
-  border-color: #333;
-}
-
-.size-option-btn.selected {
-  background-color: #333;
-  color: white;
-  border-color: #333;
-}
-
-/* Disabled size: not clickable with X overlay */
-.size-option-btn[disabled] {
-  cursor: not-allowed;
-  opacity: 0.6;
-  pointer-events: none;
-}
-.size-option-btn[disabled]::before,
-.size-option-btn[disabled]::after {
-  content: '';
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 70%;
-  height: 2px;
-  background-color: #999;
-  transform-origin: center;
-}
-.size-option-btn[disabled]::before {
-  transform: translate(-50%, -50%) rotate(45deg);
-}
-.size-option-btn[disabled]::after {
-  transform: translate(-50%, -50%) rotate(-45deg);
-}
 
 .option-message {
   font-size: 12px;
@@ -1019,41 +841,7 @@
 }
 </style>
 
-<!-- Hero Slider Section -->
-<div class="slider-container">
-  <div class="menu">
-    <label for="slide-dot-1"></label>
-    <label for="slide-dot-2"></label>
-    <label for="slide-dot-3"></label>
-  </div>
 
-  <input id="slide-dot-1" type="radio" name="slides" checked>
-  <div class="slide slide-1">
-    <div class="slide-content">
-      <h2>Premium Quality Jerseys</h2>
-      <p>Discover our collection of high-quality sports jerseys for all ages</p>
-      <button class="add-to-cart-btn" style="max-width: 200px; margin: 15px auto 0;">Shop Now</button>
-    </div>
-  </div>
-
-  <input id="slide-dot-2" type="radio" name="slides">
-  <div class="slide slide-2">
-    <div class="slide-content">
-      <h2>New Arrivals</h2>
-      <p>Check out our latest collection of team jerseys</p>
-      <button class="add-to-cart-btn" style="max-width: 200px; margin: 15px auto 0;">Explore</button>
-    </div>
-  </div>
-
-  <input id="slide-dot-3" type="radio" name="slides">
-  <div class="slide slide-3">
-    <div class="slide-content">
-      <h2>Special Offers</h2>
-      <p>Limited time discounts on selected items</p>
-      <button class="container" style="max-width: 200px; margin: 15px auto 0;">View Deals</button>
-    </div>
-  </div>
-</div>
 
 <!-- Products Section -->
 <div class="container">
@@ -1099,11 +887,6 @@
 
   <!-- Product data for modal logic -->
   <script>
-    var productStockData = {
-      {% for product in products %}
-        "{{ product.id }}": {{ product.get_size_stock_json|safe }},
-      {% endfor %}
-    };
     var productInfoData = {
       {% for product in products %}
         "{{ product.id }}": {
@@ -1111,12 +894,11 @@
           name: "{{ product.name|escapejs }}",
           price: "{{ product.price }}",
           description: "{{ product.description|escapejs }}",
-          image: "{% if product.product_image %}{{ product.product_image.url }}{% endif %}"
+          image: "{% if product.product_image %}{{ product.product_image.url }}{% endif %}",
+          quantity: "{{ product.quantity }}"
         },
       {% endfor %}
     };
-    var sizeLabels = { S: 'Small', XS: 'Extra Small', M: 'Medium', L: 'Large', XL: 'Extra Large' };
-    var sizeOrder = ['XS', 'S', 'M', 'L', 'XL'];
   </script>
 
   <div class="products-grid">
@@ -1232,22 +1014,7 @@
 {% endif %}
 
 <script>
-  // Functions for size and quantity selectors
-  function selectSize(element, size, productId) {
-    // Remove selected class from all size options in the same container
-    const container = element.closest('.size-options');
-    const options = container.querySelectorAll('.size-option');
-    options.forEach(option => option.classList.remove('selected'));
-    
-    // Add selected class to clicked element
-    element.classList.add('selected');
-    
-    // Update the hidden input value
-    document.getElementById('size-input-' + productId).value = size;
-    
-    // Reset any error styling
-    container.style.border = 'none';
-  }
+  // Quantity selectors
 
   function incrementQuantity(productId) {
     const input = document.getElementById('quantity-input-' + productId);
@@ -1266,17 +1033,7 @@
   }
   
   // Product detail modal functions
-  function selectDetailSize(element, size) {
-    // Remove selected class from all size options
-    const options = document.querySelectorAll('.size-option-btn');
-    options.forEach(option => option.classList.remove('selected'));
-    
-    // Add selected class to clicked element
-    element.classList.add('selected');
-    
-    // Update the hidden input value
-    document.getElementById('detail-size-input').value = size;
-  }
+  
   
   function incrementDetailQuantity() {
     const input = document.getElementById('detail-quantity-input');
@@ -1312,17 +1069,8 @@
   
   function openProductDetail(productId) {
     var product = productInfoData[productId];
-    var stock = productStockData[productId];
     var modal = document.getElementById('productDetailModal');
     var content = document.getElementById('productDetailContent');
-    var firstAvailableSize = null;
-    var sizeButtons = '';
-    sizeOrder.forEach(function(size) {
-      var stockCount = stock[size] || 0;
-      var disabled = stockCount < 1 ? 'disabled' : '';
-      if (!firstAvailableSize && stockCount > 0) firstAvailableSize = size;
-      sizeButtons += `<button type="button" class="size-option-btn" data-size="${size}" ${disabled} title="${stockCount < 1 ? 'Out of stock' : stockCount + ' in stock'}">${size}</button>`;
-    });
     var html = `
       <span class="product-detail-close" onclick="closeProductDetail()"><i class="fa fa-times"></i></span>
       <div class="product-detail-body">
@@ -1333,13 +1081,6 @@
           <div class="product-detail-title">${product.name}</div>
           <div class="product-detail-price">₱${product.price}</div>
           <div class="product-detail-description">${product.description}</div>
-          <div class="product-detail-options">
-            <div class="option-title">Select Size</div>
-            <div class="size-option-group" id="modalSizeOptions">
-              ${sizeButtons}
-            </div>
-            <div class="option-message" id="modalStockMessage"></div>
-          </div>
           <div class="quantity-control">
             <span class="quantity-label">Quantity</span>
             <div class="quantity-input-group">
@@ -1355,30 +1096,9 @@
     content.innerHTML = html;
     modal.classList.add('active');
 
-    // Modal state
-    var selectedSize = firstAvailableSize;
-    var maxQty = selectedSize ? stock[selectedSize] : 0;
+    var maxQty = parseInt(product.quantity) || 0;
     var qtyInput = document.getElementById('modalQtyInput');
     var addToCartBtn = document.getElementById('modalAddToCartBtn');
-    var stockMsg = document.getElementById('modalStockMessage');
-    var sizeBtns = document.querySelectorAll('#modalSizeOptions .size-option-btn');
-
-    // Highlight first available size
-    sizeBtns.forEach(function(btn) {
-      if (btn.getAttribute('data-size') === selectedSize) btn.classList.add('selected');
-      btn.addEventListener('click', function() {
-        if (btn.hasAttribute('disabled')) return;
-        sizeBtns.forEach(b => b.classList.remove('selected'));
-        btn.classList.add('selected');
-        selectedSize = btn.getAttribute('data-size');
-        maxQty = stock[selectedSize];
-        qtyInput.value = 1;
-        updateStockMsg();
-        updateAddToCartBtn();
-      });
-    });
-
-    // Quantity controls
     document.getElementById('modalQtyMinus').onclick = function() {
       var v = parseInt(qtyInput.value);
       if (v > 1) qtyInput.value = v - 1;
@@ -1398,7 +1118,7 @@
 
     // Add to cart button logic
     function updateAddToCartBtn() {
-      if (!selectedSize || maxQty < 1) {
+      if (maxQty < 1) {
         addToCartBtn.disabled = true;
         addToCartBtn.innerHTML = '<i class="fa fa-shopping-cart"></i> Out of Stock';
       } else if (parseInt(qtyInput.value) > maxQty) {
@@ -1409,16 +1129,6 @@
         addToCartBtn.innerHTML = '<i class="fa fa-shopping-cart"></i> Add to Cart';
       }
     }
-    function updateStockMsg() {
-      if (!selectedSize) {
-        stockMsg.textContent = 'Please select a size.';
-      } else if (maxQty < 1) {
-        stockMsg.textContent = 'Selected size is out of stock.';
-      } else {
-        stockMsg.textContent = 'Stock: ' + maxQty + ' for size ' + selectedSize;
-      }
-    }
-    updateStockMsg();
     updateAddToCartBtn();
 
     // Add to cart click (AJAX, no page reload)
@@ -1441,7 +1151,6 @@
           'Content-Type': 'application/x-www-form-urlencoded',
         },
         body: new URLSearchParams({
-          size: selectedSize || 'M',
           quantity: qtyInput.value || '1',
         })
       })
@@ -1493,17 +1202,7 @@
       });
     });
     
-    // Add form validation for detail modal (guard for initial absence)
-    const detailForm = document.getElementById('detail-add-to-cart-form');
-    if (detailForm) {
-      detailForm.addEventListener('submit', function(e) {
-        const sizeInput = this.querySelector('#detail-size-input');
-        if (!sizeInput || !sizeInput.value) {
-          e.preventDefault();
-          alert('Please select a size');
-        }
-      });
-    }
+    
     
     // Close modal on ESC key
     document.addEventListener('keydown', function(e) {
@@ -1753,8 +1452,7 @@
 
           const items = data.reviews.map(rv => {
             const date = rv.created_at || '';
-            const size = rv.size ? ` • Size: ${rv.size}` : '';
-            const qty = (rv.quantity || rv.quantity === 0) ? ` • Qty: ${rv.quantity}` : '';
+          const qty = (rv.quantity || rv.quantity === 0) ? ` • Qty: ${rv.quantity}` : '';
             const header = `
               <div style="display:flex; justify-content:space-between; align-items:center;">
                 <div style="font-weight:600; color:#111827;">${rv.customer_name || 'Customer'}</div>
@@ -1766,7 +1464,7 @@
             return `
               <div style="padding:12px 0; border-bottom:1px solid #eee;">
                 ${header}
-                <div style="margin-top:4px;">${ratingStars}<span style="color:#6b7280; margin-left:6px; font-size:12px;">${size}${qty}</span></div>
+                <div style="margin-top:4px;">${ratingStars}<span style="color:#6b7280; margin-left:6px; font-size:12px;">${qty}</span></div>
                 ${rv.review_text ? `<div style="margin-top:8px; color:#374151;">${rv.review_text}</div>` : ''}
               </div>
             `;

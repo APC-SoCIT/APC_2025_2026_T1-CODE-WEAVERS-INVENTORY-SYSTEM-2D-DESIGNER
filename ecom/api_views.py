@@ -9,23 +9,7 @@ PSGC_BASE_URL = "https://psgc.gitlab.io/api"
 
 # Allow region params like 'R2', 'NCR', etc. by mapping to PSGC numeric codes
 DJANGO_TO_PSGC_REGION = {
-    'R1': '010000000',
-    'R2': '020000000',
-    'R3': '030000000',
-    'R4A': '040000000',
-    'R4B': '170000000',
-    'R5': '050000000',
-    'R6': '060000000',
-    'R7': '070000000',
-    'R8': '080000000',
-    'R9': '090000000',
-    'R10': '100000000',
-    'R11': '110000000',
-    'R12': '120000000',
     'NCR': '130000000',
-    'CAR': '140000000',
-    'R13': '160000000',
-    'BARMM': '150000000',
 }
 
 def normalize_region_id(region_id: str) -> str:
@@ -44,7 +28,12 @@ def get_regions(request):
         response = requests.get(f"{PSGC_BASE_URL}/regions/")
         response.raise_for_status()
         data = response.json()
-        return JsonResponse(data, safe=False)
+        only_ncr = []
+        for d in data:
+            code = d.get('code') or d.get('id') or d.get('psgcCode')
+            if code == '130000000':
+                only_ncr.append(d)
+        return JsonResponse(only_ncr, safe=False)
     except requests.RequestException:
         return JsonResponse({"error": "Failed to fetch regions"}, status=500)
 

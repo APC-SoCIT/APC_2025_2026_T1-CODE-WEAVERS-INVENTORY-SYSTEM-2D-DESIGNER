@@ -35,8 +35,8 @@ class CustomerAdmin(admin.ModelAdmin):
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ['name', 'price', 'size']
-    list_filter = ['size']
+    list_display = ['name', 'price']
+    list_filter = []
     search_fields = ['name', 'description']
 
 class OrderItemInline(admin.TabularInline):

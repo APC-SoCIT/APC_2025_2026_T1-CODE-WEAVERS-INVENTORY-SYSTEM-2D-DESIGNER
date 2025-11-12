@@ -103,14 +103,7 @@
 .product-detail-price{ font-size:24px; font-weight:700; margin-bottom:20px; color:#333; }
 .product-detail-description{ font-size:14px; color:#666; margin-bottom:25px; line-height:1.6; }
 .option-title{ font-size:16px; font-weight:600; margin-bottom:10px; color:#333; }
-.size-option-group{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:5px; }
-.size-option-btn{ min-width:45px; height:45px; display:flex; align-items:center; justify-content:center; border:1px solid #ddd; background-color:white; border-radius:4px; cursor:pointer; font-size:14px; transition: all 0.2s ease; position:relative; }
-.size-option-btn:hover{ border-color:#333; }
-.size-option-btn.selected{ background-color:#333; color:white; border-color:#333; }
-.size-option-btn[disabled]{ cursor:not-allowed; opacity:0.6; pointer-events:none; }
-.size-option-btn[disabled]::before, .size-option-btn[disabled]::after{ content:''; position:absolute; left:50%; top:50%; width:70%; height:2px; background-color:#999; transform-origin:center; }
-.size-option-btn[disabled]::before{ transform: translate(-50%, -50%) rotate(45deg); }
-.size-option-btn[disabled]::after{ transform: translate(-50%, -50%) rotate(-45deg); }
+ 
 .option-message{ font-size:12px; color:#999; margin-top:5px; }
 .quantity-control{ display:flex; align-items:center; margin-bottom:25px; }
 .quantity-label{ font-size:16px; font-weight:600; margin-bottom:10px; color:#333; }
@@ -123,11 +116,6 @@
 
 <script>
 // Build product data for quick view
-var productStockData = {
-  {% for item in wishlist_items %}
-    "{{ item.product.id }}": {{ item.product.get_size_stock_json|safe }},
-  {% endfor %}
-};
 var productInfoData = {
   {% for item in wishlist_items %}
     "{{ item.product.id }}": {
@@ -135,25 +123,16 @@ var productInfoData = {
       name: "{{ item.product.name|escapejs }}",
       price: "{{ item.product.price }}",
       description: "{{ item.product.description|escapejs }}",
-      image: "{% if item.product.product_image %}{{ item.product.product_image.url }}{% endif %}"
+      image: "{% if item.product.product_image %}{{ item.product.product_image.url }}{% endif %}",
+      quantity: "{{ item.product.quantity }}"
     },
   {% endfor %}
 };
-var sizeOrder = ['XS', 'S', 'M', 'L', 'XL'];
 
 function openProductDetail(productId) {
   var product = productInfoData[productId];
-  var stock = productStockData[productId];
   var modal = document.getElementById('productDetailModal');
   var content = document.getElementById('productDetailContent');
-  var firstAvailableSize = null;
-  var sizeButtons = '';
-  sizeOrder.forEach(function(size) {
-    var stockCount = stock && stock[size] ? stock[size] : 0;
-    var disabled = stockCount < 1 ? 'disabled' : '';
-    if (!firstAvailableSize && stockCount > 0) firstAvailableSize = size;
-    sizeButtons += `<button type="button" class="size-option-btn" data-size="${size}" ${disabled} title="${stockCount < 1 ? 'Out of stock' : stockCount + ' in stock'}">${size}</button>`;
-  });
   var html = `
     <span class="product-detail-close" onclick="closeProductDetail()"><i class="fa fa-times"></i></span>
     <div class="product-detail-body">
@@ -164,13 +143,6 @@ function openProductDetail(productId) {
         <div class="product-detail-title">${product.name}</div>
         <div class="product-detail-price">₱${product.price}</div>
         <div class="product-detail-description">${product.description}</div>
-        <div class="product-detail-options">
-          <div class="option-title">Select Size</div>
-          <div class="size-option-group" id="modalSizeOptions">
-            ${sizeButtons}
-          </div>
-          <div class="option-message" id="modalStockMessage"></div>
-        </div>
         <div class="quantity-control">
           <span class="quantity-label">Quantity</span>
           <div class="quantity-input-group">
@@ -186,28 +158,9 @@ function openProductDetail(productId) {
   content.innerHTML = html;
   modal.classList.add('active');
 
-  // Modal state
-  var selectedSize = firstAvailableSize;
-  var maxQty = selectedSize && stock ? stock[selectedSize] : 0;
+  var maxQty = parseInt(product.quantity) || 0;
   var qtyInput = document.getElementById('modalQtyInput');
   var addToCartBtn = document.getElementById('modalAddToCartBtn');
-  var stockMsg = document.getElementById('modalStockMessage');
-  var sizeBtns = document.querySelectorAll('#modalSizeOptions .size-option-btn');
-
-  // Highlight first available size
-  sizeBtns.forEach(function(btn) {
-    if (btn.getAttribute('data-size') === selectedSize) btn.classList.add('selected');
-    btn.addEventListener('click', function() {
-      if (btn.hasAttribute('disabled')) return;
-      sizeBtns.forEach(b => b.classList.remove('selected'));
-      btn.classList.add('selected');
-      selectedSize = btn.getAttribute('data-size');
-      maxQty = stock[selectedSize];
-      qtyInput.value = 1;
-      updateStockMsg();
-      updateAddToCartBtn();
-    });
-  });
 
   // Quantity controls
   document.getElementById('modalQtyMinus').onclick = function() {
@@ -228,7 +181,7 @@ function openProductDetail(productId) {
   };
 
   function updateAddToCartBtn() {
-    if (!selectedSize || maxQty < 1) {
+    if (maxQty < 1) {
       addToCartBtn.disabled = true;
       addToCartBtn.innerHTML = '<i class="fa fa-shopping-cart"></i> Out of Stock';
     } else if (parseInt(qtyInput.value) > maxQty) {
@@ -239,23 +192,36 @@ function openProductDetail(productId) {
       addToCartBtn.innerHTML = '<i class="fa fa-shopping-cart"></i> Add to Cart';
     }
   }
-  function updateStockMsg() {
-    if (!selectedSize) {
-      stockMsg.textContent = 'Please select a size.';
-    } else if (maxQty < 1) {
-      stockMsg.textContent = 'Selected size is out of stock.';
-    } else {
-      stockMsg.textContent = 'Stock: ' + maxQty + ' for size ' + selectedSize;
-    }
-  }
-  updateStockMsg();
   updateAddToCartBtn();
 
   // Add to cart click
   addToCartBtn.onclick = function() {
     if (addToCartBtn.disabled) return;
-    // Basic post to add to cart (reuses existing add-to-cart URL via form or API if present)
-    alert('Add to cart from quick view is not wired to backend here. Use product page or cart add; can be extended to POST.');
+    function getCookie(name) {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop().split(';').shift();
+      return null;
+    }
+    const csrftoken = getCookie('csrftoken');
+    fetch('/add-to-cart/' + product.id + '/', {
+      method: 'POST',
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest',
+        'X-CSRFToken': csrftoken,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        quantity: qtyInput.value || '1',
+      })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data && data.success) {
+        // Optional notification handler can be present globally
+      }
+    })
+    .catch(() => {})
   };
 }
 

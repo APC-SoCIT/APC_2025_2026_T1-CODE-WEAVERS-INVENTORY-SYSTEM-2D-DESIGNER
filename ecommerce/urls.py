@@ -93,10 +93,8 @@ urlpatterns = [
     path('admin-view-cancellation-requests', views.admin_view_cancellation_requests, name='admin-view-cancellation-requests'),
     path('approve-cancellation/<int:order_id>/', views.approve_cancellation_request, name='approve-cancellation'),
     path('reject-cancellation/<int:order_id>/', views.reject_cancellation_request, name='reject-cancellation'),
-    path('admin-view-pre-orders', views.admin_view_pre_orders, name='admin-view-pre-orders'),
     # Avoid conflict with Django admin.site at 'admin/'; use 'admin-orders/' prefix
     path('admin-orders/<int:order_id>/detail/', views.admin_order_detail_ajax, name='admin-order-detail-ajax'),
-    path('admin-orders/<int:order_id>/confirm/', views.admin_confirm_pre_order, name='admin-confirm-pre-order'),
     path('delete-order/<int:pk>', views.delete_order_view,name='delete-order'),
     path('update-order/<int:pk>', views.update_order_view,name='update-order'),
 
@@ -140,8 +138,6 @@ urlpatterns = [
     path('customer-address', views.customer_address_view,name='customer-address'),
     path('payment-success/', views.payment_success_view,name='payment-success'),
     path('customizer/', views.jersey_customizer, name='customizer'),
-    path('3d-designer/', views.react_tshirt_designer, name='react_tshirt_designer'),
-    path('jersey-designer/', views.react_tshirt_designer, name='jersey-designer'),
     path('jersey-customizer/new/', views.jersey_customizer_new_view, name='jersey-customizer-new'),
 
     path('home', views.home,name='home'),
@@ -152,8 +148,6 @@ urlpatterns = [
     path('facebook/', RedirectView.as_view(url='https://www.facebook.com/worksteamwear'), name='facebook'),
     path('instagram/', RedirectView.as_view(url='https://www.instagram.com/worksteamwear/'), name='instagram'),
     path('create/', views.create, name='create'),
-    path('jersey-customizer/3d/', views.jersey_customizer_3d_view, name='jersey_customizer_3d'),
-    path('jersey-designer/', views.react_tshirt_designer, name='jersey_designer'),
     path('jersey-customizer/', views.jersey_customizer, name='jersey_customizer'),
     path('jersey-template/', views.jersey_template, name='jersey_template'),
     path('interactive-jersey/', views.interactive_jersey, name='interactive_jersey'),
@@ -173,11 +167,6 @@ urlpatterns = [
     path('get-saved-addresses/', views.get_saved_addresses, name='get-saved-addresses'),
     path('set-default-address/<int:address_id>/', views.set_default_address, name='set-default-address'),
     path('delete-address/<int:address_id>/', views.delete_address, name='delete-address'),
-    # Pre-order deposit checkout/payment routes
-    path('preorder/checkout/<int:order_id>/', views.preorder_checkout, name='preorder_checkout'),
-    path('preorder/pay-with-gcash/<int:order_id>/', views.create_gcash_preorder_payment, name='preorder_pay_with_gcash'),
-    path('preorder/payment-success/', views.preorder_payment_success, name='preorder_payment_success'),
-    path('preorder/payment-cancel/', views.preorder_payment_cancel, name='preorder_payment_cancel'),
     path('update-saved-address/<int:address_id>/', views.update_saved_address, name='update-saved-address'),
     
     # Wishlist functionality

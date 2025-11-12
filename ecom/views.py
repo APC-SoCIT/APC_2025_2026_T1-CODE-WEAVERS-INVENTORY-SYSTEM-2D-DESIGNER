@@ -946,7 +946,6 @@ def admin_add_product_view(request):
                     'description': new_product.description,
                     'price': new_product.price,
                     'quantity': new_product.quantity,
-                    'size': new_product.size,
                     'product_image_url': new_product.product_image.url if new_product.product_image else '',
                 }
                 return JsonResponse({'success': True, 'product': data})
@@ -1005,28 +1004,7 @@ def update_product_view(request, pk):
     if request.method == 'POST':
         productForm = forms.ProductForm(request.POST, request.FILES, instance=product)
         if productForm.is_valid():
-            new_size = productForm.cleaned_data.get('size')
-            product_name = productForm.cleaned_data.get('name')
-            # Check if size changed
-            if new_size != product.size:
-                # Check if product with same name and new size exists
-                try:
-                    existing_product = models.Product.objects.get(name=product_name, size=new_size)
-                    # Update existing product
-                    existing_product.description = productForm.cleaned_data.get('description')
-                    existing_product.price = productForm.cleaned_data.get('price')
-                    existing_product.quantity = productForm.cleaned_data.get('quantity')
-                    if 'product_image' in request.FILES:
-                        existing_product.product_image = request.FILES['product_image']
-                    existing_product.save()
-                except models.Product.DoesNotExist:
-                    # Create new product with new size
-                    new_product = productForm.save(commit=False)
-                    new_product.id = None  # Ensure new object
-                    new_product.save()
-            else:
-                # Size same, update current product
-                productForm.save()
+            productForm.save()
             return redirect('admin-products')
     else:
         productForm = forms.ProductForm(instance=product)
@@ -1215,7 +1193,7 @@ def prepare_admin_order_view(request, orders, status, template, extra_context=No
                     models.OrderItem.objects
                     .select_related('product')
                     .only(
-                        'id', 'order_id', 'product_id', 'quantity', 'price', 'size',
+                        'id', 'order_id', 'product_id', 'quantity', 'price',
                         'product__id', 'product__name', 'product__product_image'
                     )
                 )
@@ -1226,7 +1204,7 @@ def prepare_admin_order_view(request, orders, status, template, extra_context=No
                     models.CustomOrderItem.objects
                     .select_related('custom_design')
                     .only(
-                        'id', 'order_id', 'quantity', 'price', 'size', 'custom_design_id',
+                        'id', 'order_id', 'quantity', 'price', 'custom_design_id',
                         'custom_design__id', 'custom_design__design_image'
                     )
                 )
@@ -1290,7 +1268,6 @@ def prepare_admin_order_view(request, orders, status, template, extra_context=No
             items.append({
                 'product': item.product,
                 'quantity': qty,
-                'size': item.size,
                 'price': price,
                 'product_image': item.product.product_image.url if getattr(item.product, 'product_image', None) else None,
             })
@@ -1302,7 +1279,6 @@ def prepare_admin_order_view(request, orders, status, template, extra_context=No
             custom_items.append({
                 'custom_item': item,
                 'quantity': qty,
-                'size': item.size,
                 'price': price,
                 'design': item.custom_design,
                 'image_url': None,
@@ -1311,10 +1287,10 @@ def prepare_admin_order_view(request, orders, status, template, extra_context=No
         # Build a compact summary string to avoid heavy template loops
         try:
             product_labels = [
-                f"{it['product'].name} ({it['size']}) x{it['quantity']}" for it in items
+                f"{it['product'].name} x{it['quantity']}" for it in items
             ]
             custom_labels = [
-                f"Custom Jersey ({it['size']}) x{it['quantity']}" for it in custom_items
+                f"Custom Jersey x{it['quantity']}" for it in custom_items
             ]
             labels = product_labels + custom_labels
             items_count = len(labels)
@@ -1634,7 +1610,6 @@ def pending_orders_view(request):
             total += line_total
             products.append({
                 'item': item,
-                'size': item.size,
                 'quantity': item.quantity,
                 'line_total': line_total,
             })
@@ -1650,7 +1625,6 @@ def pending_orders_view(request):
                 print(f"DEBUG: Showing pending pre-order placeholder for item ID: {item.id}")
                 custom_items.append({
                     'item': item,
-                    'size': item.size,
                     'quantity': item.quantity,
                     'unit_price': None,
                     'line_total': Decimal('0.00'),
@@ -1658,13 +1632,12 @@ def pending_orders_view(request):
                 })
                 # Do not add to total
                 continue
-            print(f"DEBUG: Visible custom item - ID: {item.id}, Price: {item.price}, Quantity: {item.quantity}, Size: {item.size}")
+            print(f"DEBUG: Visible custom item - ID: {item.id}, Price: {item.price}, Quantity: {item.quantity}")
             # Use VAT-inclusive calculation (same as cart)
             line_total = Decimal(item.price) * item.quantity
             total += line_total
             custom_items.append({
                 'item': item,
-                'size': item.size,
                 'quantity': item.quantity,
                 'unit_price': item.price,
                 'line_total': line_total,
@@ -1739,7 +1712,6 @@ def to_ship_orders_view(request):
             total += line_total
             products.append({
                 'item': item,
-                'size': item.size,
                 'quantity': item.quantity,
                 'line_total': line_total,
             })
@@ -1753,7 +1725,6 @@ def to_ship_orders_view(request):
             total += line_total
             custom_items.append({
                 'item': item,
-                'size': item.size,
                 'quantity': item.quantity,
                 'unit_price': item.price,
                 'line_total': line_total,
@@ -1813,7 +1784,6 @@ def to_receive_orders_view(request):
             total += line_total
             products.append({
                 'item': item,
-                'size': item.size,
                 'quantity': item.quantity,
                 'line_total': line_total,
             })
@@ -1827,7 +1797,6 @@ def to_receive_orders_view(request):
             total += line_total
             custom_items.append({
                 'item': item,
-                'size': item.size,
                 'quantity': item.quantity,
                 'unit_price': item.price,
                 'line_total': line_total,
@@ -1887,7 +1856,6 @@ def delivered_orders_view(request):
             total += line_total
             products.append({
                 'item': item,
-                'size': item.size,
                 'quantity': item.quantity,
                 'line_total': line_total,
             })
@@ -1901,7 +1869,6 @@ def delivered_orders_view(request):
             total += line_total
             custom_items.append({
                 'item': item,
-                'size': item.size,
                 'quantity': item.quantity,
                 'unit_price': item.price,
                 'line_total': line_total,
@@ -1961,7 +1928,6 @@ def cancelled_orders_view(request):
             total += line_total
             products.append({
                 'item': item,
-                'size': item.size,
                 'quantity': item.quantity,
                 'line_total': line_total,
             })
@@ -1975,7 +1941,6 @@ def cancelled_orders_view(request):
             total += line_total
             custom_items.append({
                 'item': item,
-                'size': item.size,
                 'quantity': item.quantity,
                 'unit_price': item.price,
                 'line_total': line_total,
@@ -2036,7 +2001,6 @@ def waiting_for_cancellation_view(request):
             total += line_total
             products.append({
                 'item': item,
-                'size': item.size,
                 'quantity': item.quantity,
                 'line_total': line_total,
             })
@@ -2050,7 +2014,6 @@ def waiting_for_cancellation_view(request):
             total += line_total
             custom_items.append({
                 'custom_item': item,
-                'size': item.size,
                 'quantity': item.quantity,
                 'price': item.price,
                 'line_total': line_total,
@@ -2151,15 +2114,14 @@ def search_view(request):
 def add_to_cart_view(request, pk):
     products = models.Product.objects.all()
     
-    # Get size and quantity from form if available
-    size = request.POST.get('size', 'M')  # Default to M if not provided
-    quantity = int(request.POST.get('quantity', 1))  # Default to 1 if not provided
+    # Get quantity from form if available
+    quantity = int(request.POST.get('quantity', 1))
     
-    # Check if product with given id and size exists
+    # Check if product with given id exists
     try:
-        product = models.Product.objects.get(id=pk, size=size)
+        product = models.Product.objects.get(id=pk)
     except models.Product.DoesNotExist:
-        messages.error(request, f'Sorry, size {size} is not available for this product.')
+        messages.error(request, 'Product not found.')
         return redirect('customer-home')
     
     # Prepare response depending on request type (AJAX vs normal)
@@ -2180,13 +2142,16 @@ def add_to_cart_view(request, pk):
     # Get next_page from POST or GET with a fallback to home page
     next_page = request.POST.get('next_page') or request.GET.get('next_page', '/')
 
-    # Use consistent cookie key with size
-    cookie_key = f'product_{pk}_{size}_details'
+    # Use consistent cookie key without size
+    cookie_key = f'product_{pk}_details'
     existing_quantity = 0
     if cookie_key in request.COOKIES:
-        details = request.COOKIES[cookie_key].split(':')
-        if len(details) == 2:
-            existing_quantity = int(details[1])
+        try:
+            existing_quantity = int(request.COOKIES[cookie_key])
+        except ValueError:
+            parts = request.COOKIES[cookie_key].split(':')
+            if len(parts) == 2:
+                existing_quantity = int(parts[1])
 
     # Compute new quantity while respecting available stock
     available_stock = int(product.quantity)
@@ -2207,10 +2172,10 @@ def add_to_cart_view(request, pk):
         from django.http import JsonResponse
         # Build message depending on whether quantity was limited
         if limited and new_quantity == existing_quantity:
-            msg = f"Maximum stock reached: {available_stock} pcs available for {product.name} (Size: {size})."
+            msg = f"Maximum stock reached: {available_stock} pcs available for {product.name}."
             added = False
         else:
-            msg = f"{product.name} (Size: {size}) added to cart successfully!"
+            msg = f"{product.name} added to cart successfully!"
             added = True
         response = JsonResponse({
             'success': True,  # Always true; convey state via 'added' and 'limited'
@@ -2218,25 +2183,24 @@ def add_to_cart_view(request, pk):
             'limited': limited,
             'message': msg,
             'product_id': pk,
-            'size': size,
             'quantity': new_quantity,
             'available_stock': available_stock,
         })
     else:
         # Non-AJAX: show message using Django messages framework
         if limited:
-            messages.warning(request, f'Maximum stock reached: {available_stock} pcs available for {product.name} (Size: {size}).')
+            messages.warning(request, f'Maximum stock reached: {available_stock} pcs available for {product.name}.')
         else:
-            messages.success(request, f'{product.name} (Size: {size}) added to cart successfully!')
+            messages.success(request, f'{product.name} added to cart successfully!')
         response = render(request, 'ecom/index.html', {
             'products': products,
             'product_count_in_cart': product_count_in_cart,
             'redirect_to': next_page
         })
-    response.set_cookie(cookie_key, f"{size}:{new_quantity}")
+    response.set_cookie(cookie_key, str(new_quantity))
 
-    # Update product_ids cookie to include product_{pk}_{size}
-    product_key = f'product_{pk}_{size}'
+    # Update product_ids cookie to include product_{pk}
+    product_key = f'product_{pk}'
     if 'product_ids' in request.COOKIES:
         product_ids = request.COOKIES['product_ids']
         if product_ids:  # Check if product_ids is not empty
@@ -2308,42 +2272,33 @@ def cart_view(request):
     # Get regular products from cookies
     if 'product_ids' in request.COOKIES:
         product_ids = request.COOKIES['product_ids']
-        if product_ids:  # Check if product_ids is not empty
+        if product_ids:
             product_keys = product_ids.split('|')
         else:
             product_keys = []
         product_ids_only = set()
         for key in product_keys:
             parts = key.split('_')
-            if len(parts) >= 3:
+            if len(parts) >= 2 and parts[0] == 'product':
                 product_id = parts[1]
-                size = '_'.join(parts[2:])
-                product_ids_only.add(product_id)
-            else:
-                product_id = parts[1]
-                size = 'M'
                 product_ids_only.add(product_id)
         db_products = models.Product.objects.filter(id__in=product_ids_only)
         for p in db_products:
-            for key in product_keys:
-                if key.startswith(f'product_{p.id}_'):
-                    size = key[len(f'product_{p.id}_'):]
-
-                    cookie_key = f'{key}_details'
-                    if cookie_key in request.COOKIES:
-                        details = request.COOKIES[cookie_key].split(':')
-                        if len(details) == 2:
-                            size = details[0]
-                            requested_qty = int(details[1])
-                            # Clamp quantity to available stock
-                            available = int(getattr(p, 'quantity', 0))
-                            quantity = max(0, min(requested_qty, available))
-                            total += p.price * quantity
-                            products.append({
-                                'product': p,
-                                'size': size,
-                                'quantity': quantity
-                            })
+            key = f'product_{p.id}'
+            cookie_key = f'{key}_details'
+            if cookie_key in request.COOKIES:
+                try:
+                    requested_qty = int(request.COOKIES[cookie_key])
+                except ValueError:
+                    details = request.COOKIES[cookie_key].split(':')
+                    requested_qty = int(details[-1]) if details else 0
+                available = int(getattr(p, 'quantity', 0))
+                quantity = max(0, min(requested_qty, available))
+                total += p.price * quantity
+                products.append({
+                    'product': p,
+                    'quantity': quantity
+                })
     
     # Get custom jersey items from pending orders
     if request.user.is_authenticated and customer:
@@ -2363,7 +2318,6 @@ def cart_view(request):
                 total += item_total
                 custom_items.append({
                     'custom_item': item,
-                    'size': item.size,
                     'quantity': item.quantity,
                     'price': item.price,
                     'total': item_total
@@ -2400,8 +2354,7 @@ def cart_view(request):
 
 
 def remove_from_cart_view(request, pk):
-    size = request.GET.get('size', 'M')  # Get size from request, default to M
-    
+    # Remove product from cart by id (no size handling)
     # For counter in cart
     if 'product_ids' in request.COOKIES:
         product_ids = request.COOKIES['product_ids']
@@ -2414,8 +2367,8 @@ def remove_from_cart_view(request, pk):
         product_keys = []
         product_count_in_cart = 0
 
-    # Remove only the specific product with the matching size
-    specific_key = f'product_{pk}_{size}'
+    # Remove only the specific product id
+    specific_key = f'product_{pk}'
     product_keys_remaining = [key for key in product_keys if key != specific_key]
 
     products = []
@@ -2435,21 +2388,19 @@ def remove_from_cart_view(request, pk):
     db_products = models.Product.objects.filter(id__in=product_ids_only)
 
     for p in db_products:
-        for key in product_keys_remaining:
-            if key.startswith(f'product_{p.id}_'):
-                size = key[len(f'product_{p.id}_'):]
-                cookie_key = f'{key}_details'
-                if cookie_key in request.COOKIES:
-                    details = request.COOKIES[cookie_key].split(':')
-                    if len(details) == 2:
-                        size = details[0]
-                        quantity = int(details[1])
-                        total += p.price * quantity
-                        products.append({
-                            'product': p,
-                            'size': size,
-                            'quantity': quantity
-                        })
+        key = f'product_{p.id}'
+        cookie_key = f'{key}_details'
+        if cookie_key in request.COOKIES:
+            try:
+                quantity = int(request.COOKIES[cookie_key])
+            except ValueError:
+                details = request.COOKIES[cookie_key].split(':')
+                quantity = int(details[-1]) if details else 0
+            total += p.price * quantity
+            products.append({
+                'product': p,
+                'quantity': quantity
+            })
 
     # Get next_page from GET with a fallback
     next_page = request.GET.get('next_page', '/')
@@ -2490,7 +2441,7 @@ def remove_from_cart_view(request, pk):
         'region_choices': region_choices,
     })
 
-    # Remove cookie for the specific product-size combination
+    # Remove cookie for the specific product id
     cookie_key = f'{specific_key}_details'
     response.delete_cookie(cookie_key)
 
@@ -2811,16 +2762,17 @@ def payment_success_view(request):
 
     # Create order items linked to the parent order
     for product in (products or []):
-        quantity = 1  # Default quantity to 1
-        size = 'M'  # Default size
+        quantity = 1
         for key in product_keys:
             if key.startswith(f'product_{product.id}_'):
                 cookie_key = f'{key}_details'
                 if cookie_key in request.COOKIES:
                     details = request.COOKIES[cookie_key].split(':')
-                    if len(details) == 2:
-                        size = details[0]
-                        quantity = int(details[1])
+                    if len(details) >= 1:
+                        try:
+                            quantity = int(details[-1])
+                        except Exception:
+                            quantity = 1
                 # Clamp quantity to available stock before creating order item
                 available = int(getattr(product, 'quantity', 0))
                 quantity = max(0, min(quantity, available))
@@ -2828,13 +2780,12 @@ def payment_success_view(request):
                     # Skip creating order item if no stock
                     continue
 
-                # Create order item linked to parent order with size
+                # Create order item linked to parent order
                 models.OrderItem.objects.create(
                     order=parent_order,
                     product=product,
                     quantity=quantity,
-                    price=product.price,
-                    size=size
+                    price=product.price
                 )
 
                 # Decrease product quantity
@@ -2974,8 +2925,7 @@ def place_order(request):
         
         # Process regular products and create order items
         for product in products:
-            quantity = 1  # Default quantity
-            size = 'M'  # Default size
+            quantity = 1
             
             # Get product details from cookies
             for key in product_keys:
@@ -2983,9 +2933,11 @@ def place_order(request):
                     cookie_key = f'{key}_details'
                     if cookie_key in request.COOKIES:
                         details = request.COOKIES[cookie_key].split(':')
-                        if len(details) == 2:
-                            size = details[0]
-                            quantity = int(details[1])
+                        if len(details) >= 1:
+                            try:
+                                quantity = int(details[-1])
+                            except Exception:
+                                quantity = 1
             
             # Clamp quantity to available stock and create order item
             available = int(getattr(product, 'quantity', 0))
@@ -2995,8 +2947,7 @@ def place_order(request):
                     order=order,
                     product=product,
                     quantity=quantity,
-                    price=product.price,
-                    size=size
+                    price=product.price
                 )
                 
                 # Update product inventory
@@ -3143,7 +3094,6 @@ def my_order_view(request):
             total += line_total
             products.append({
                 'item': item,
-                'size': item.size,
                 'quantity': item.quantity,
                 'line_total': line_total,
             })
@@ -3156,7 +3106,6 @@ def my_order_view(request):
             if item.is_pre_order and (item.pre_order_status or 'pending') == 'pending':
                 custom_items.append({
                     'item': item,
-                    'size': item.size,
                     'quantity': item.quantity,
                     'unit_price': None,
                     'line_total': Decimal('0.00'),
@@ -3167,7 +3116,6 @@ def my_order_view(request):
             total += line_total
             custom_items.append({
                 'item': item,
-                'size': item.size,
                 'quantity': item.quantity,
                 'unit_price': item.price,
                 'line_total': line_total,
@@ -3296,7 +3244,6 @@ def download_invoice_view(request, order_id):
         subtotal += line_total
         products.append({
             'item': item,
-            'size': item.size,
             'quantity': item.quantity,
             'unit_price': Decimal(item.price),
             'line_total': line_total,
@@ -3592,28 +3539,33 @@ def create_gcash_payment(request):
     for key in product_keys:
         cookie_key = f"{key}_details"
         if cookie_key in request.COOKIES:
-            details = request.COOKIES[cookie_key].split(':')
-            if len(details) == 2:
-                size = details[0]
-                quantity = int(details[1])
-                # Extract product id from key format: product_{id}_{size}
-                parts = key.split('_')
-                if len(parts) >= 2:
-                    product_id = parts[1]
+            raw = request.COOKIES[cookie_key]
+            try:
+                quantity = int(raw)
+            except ValueError:
+                parts_val = raw.split(':')
+                if len(parts_val) == 2:
                     try:
-                        product = models.Product.objects.get(id=product_id)
-                        # Ensure product.price is decimal or float, convert to int cents properly
-                        unit_price_cents = int(round(float(product.price) * 100))
-                        subtotal_amount += unit_price_cents * quantity
-                        print(f"DEBUG: Product: {product.name}, Unit Price: {product.price}, Quantity: {quantity}, Amount (cents): {unit_price_cents * quantity}")
-                        product_details.append({
-                            "currency": "PHP",
-                            "amount": unit_price_cents,
-                            "name": f"{product.name} (Size: {size})",
-                            "quantity": quantity
-                        })
-                    except models.Product.DoesNotExist:
+                        quantity = int(parts_val[1])
+                    except Exception:
                         continue
+                else:
+                    continue
+            parts = key.split('_')
+            if len(parts) >= 2:
+                product_id = parts[1]
+                try:
+                    product = models.Product.objects.get(id=product_id)
+                    unit_price_cents = int(round(float(product.price) * 100))
+                    subtotal_amount += unit_price_cents * quantity
+                    product_details.append({
+                        "currency": "PHP",
+                        "amount": unit_price_cents,
+                        "name": f"{product.name}",
+                        "quantity": quantity
+                    })
+                except models.Product.DoesNotExist:
+                    continue
 
     if not product_details:
         return JsonResponse({"error": "No valid products found"}, status=400)
@@ -5093,7 +5045,7 @@ def admin_transactions_view(request):
                 queryset=(
                     models.OrderItem.objects
                     .select_related('product')
-                    .only('order_id', 'product_id', 'size', 'quantity', 'product__name')
+                    .only('order_id', 'product_id', 'quantity', 'product__name')
                 )
             )
         )
@@ -5220,7 +5172,7 @@ def admin_transactions_view(request):
         product_details = []
         for item in order.orderitem_set.all():
             product_name = getattr(item.product, 'name', 'Unknown')
-            product_details.append(f"{product_name} (Size: {item.size}, Qty: {item.quantity})")
+            product_details.append(f"{product_name} (Qty: {item.quantity})")
         products_text = ', '.join(product_details) if product_details else 'No products'
 
         payment_type = 'COD' if order.payment_method == 'cod' else 'Credit'
@@ -5385,7 +5337,6 @@ def add_custom_tshirt_to_cart(request):
                 order=cart_order,
                 custom_design=custom_design,
                 quantity=data.get('quantity', 1),
-                size=data.get('size', 'M'),
                 price=data.get('unit_price', 899.00),
                 additional_info=data.get('additional_info', ''),
                 is_pre_order=False
@@ -5454,15 +5405,11 @@ def add_custom_order(request):
         
         # Extract order data
         quantity = int(data.get('quantity', 1))
-        size = data.get('size', '')
         additional_info = data.get('additionalInfo', '')
         design_config = data.get('designConfig', {})
         order_type = data.get('orderType', 'pre-order')  # 'pre-order' or 'cart'
         
         # Validate required fields
-        if not size or size not in [choice[0] for choice in Product.SIZE_CHOICES]:
-            return JsonResponse({'success': False, 'message': 'Valid size is required'})
-        
         if quantity < 1 or quantity > 99:
             return JsonResponse({'success': False, 'message': 'Quantity must be between 1 and 99'})
         
@@ -5529,7 +5476,6 @@ def add_custom_order(request):
                 order=order,
                 custom_design=custom_design,
                 quantity=quantity,
-                size=size,
                 # For pre-orders, do not set a price yet; admin will confirm later
                 price=decimal.Decimal('0.00'),
                 additional_info=additional_info,
@@ -5593,7 +5539,6 @@ def add_custom_order(request):
                 order=cart_order,
                 custom_design=custom_design,
                 quantity=quantity,
-                size=size,
                 price=base_price,
                 additional_info=additional_info,
                 is_pre_order=False
@@ -5651,7 +5596,6 @@ def admin_order_detail_ajax(request, order_id):
             items_data.append({
                 'product_name': item.product.name,
                 'product_image': item.product.product_image.url if item.product.product_image else None,
-                'size': item.size,
                 'quantity': item.quantity,
                 'price': item.price,
                 'total': item.price * item.quantity,
@@ -5663,7 +5607,6 @@ def admin_order_detail_ajax(request, order_id):
             items_data.append({
                 'product_name': f"Custom Jersey Design - {item.custom_design.back_name if item.custom_design.back_name else 'Custom Design'}",
                 'product_image': item.custom_design.design_image.url if item.custom_design.design_image else None,
-                'size': item.size,
                 'quantity': item.quantity,
                 'price': item.price,
                 'total': item.price * item.quantity,
@@ -5706,7 +5649,7 @@ def admin_order_detail_ajax(request, order_id):
                             <tr>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Image</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Size</th>
+                                
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
@@ -5740,7 +5683,7 @@ def admin_order_detail_ajax(request, order_id):
                             <tr>
                                 <td class="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{item['product_name']}</td>
                                 <td class="px-4 py-4 whitespace-nowrap">{image_html}</td>
-                                <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{item['size'] or 'N/A'}</td>
+                                
                                 <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{item['quantity']}</td>
                                 <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-500">₱{item['price']:,.2f}</td>
                                 <td class="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">₱{item['total']:,.2f}</td>
@@ -6163,7 +6106,29 @@ def build_admin_reports_context(request):
             'total_spending': total_spending_c,
             'status': getattr(customer, 'status', 'active')
         })
-    context['customers_list'] = customers_list
+    # Paginate customers_list: 10 items per page
+    try:
+        customers_page = int(request.GET.get('customers_page', '1'))
+    except (TypeError, ValueError):
+        customers_page = 1
+    if customers_page < 1:
+        customers_page = 1
+
+    page_size = 10
+    total_items = len(customers_list)
+    total_pages = (total_items + page_size - 1) // page_size if total_items > 0 else 1
+    if customers_page > total_pages:
+        customers_page = total_pages
+
+    start_idx = (customers_page - 1) * page_size
+    end_idx = start_idx + page_size
+    context['customers_list'] = customers_list[start_idx:end_idx]
+    context['customers_page'] = customers_page
+    context['customers_total_pages'] = total_pages
+    context['customers_has_prev'] = customers_page > 1
+    context['customers_has_next'] = customers_page < total_pages
+    context['customers_page_size'] = page_size
+    context['customers_total_items'] = total_items
     return context
 
 @admin_required

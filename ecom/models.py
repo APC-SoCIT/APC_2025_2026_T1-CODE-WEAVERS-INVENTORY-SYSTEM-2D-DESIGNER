@@ -10,22 +10,6 @@ import string
 class Customer(models.Model):
     REGION_CHOICES = [
         ('NCR', 'National Capital Region'),
-        ('CAR', 'Cordillera Administrative Region'),
-        ('R1', 'Ilocos Region'),
-        ('R2', 'Cagayan Valley'),
-        ('R3', 'Central Luzon'),
-        ('R4A', 'CALABARZON'),
-        ('R4B', 'MIMAROPA'),
-        ('R5', 'Bicol Region'),
-        ('R6', 'Western Visayas'),
-        ('R7', 'Central Visayas'),
-        ('R8', 'Eastern Visayas'),
-        ('R9', 'Zamboanga Peninsula'),
-        ('R10', 'Northern Mindanao'),
-        ('R11', 'Davao Region'),
-        ('R12', 'SOCCSKSARGEN'),
-        ('R13', 'Caraga'),
-        ('BARMM', 'Bangsamoro Autonomous Region in Muslim Mindanao'),
     ]
     
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -147,47 +131,24 @@ class Product(models.Model):
     price = models.PositiveIntegerField()
     description = models.CharField(max_length=40)
     quantity = models.PositiveIntegerField(default=0)
-    SIZE_CHOICES = (
-        ('S', 'Small'),
-        ('XS', 'Extra Small'),
-        ('M', 'Medium'),
-        ('L', 'Large'),
-        ('XL', 'Extra Large'),
-    )
-    size = models.CharField(max_length=2, choices=SIZE_CHOICES, default='M')
     # Archive flag to hide products from customer-facing listings
     is_archived = models.BooleanField(default=False, db_index=True)
     
     def __str__(self):
         return self.name
 
-    def get_size_stock(self):
-        stock = {size: 0 for size, _ in self.SIZE_CHOICES}
-        for size, _ in self.SIZE_CHOICES:
-            item = InventoryItem.objects.filter(name=f"{self.name} - {size}").first()
-            if item:
-                stock[size] = item.quantity
-            elif self.size == size:
-                stock[size] = self.quantity
-        return stock
-
-    def get_size_stock_json(self):
-        import json
-        return json.dumps(self.get_size_stock())
-
 class CartItem(models.Model):
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    size = models.CharField(max_length=5, choices=Product.SIZE_CHOICES)
     quantity = models.PositiveIntegerField(default=1)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
-        unique_together = ('customer', 'product', 'size')
+        unique_together = ('customer', 'product')
     
     def __str__(self):
-        return f"{self.customer.user.username} - {self.product.name} ({self.size})"
+        return f"{self.customer.user.username} - {self.product.name}"
 
 
 
@@ -345,10 +306,9 @@ class OrderItem(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     quantity = models.IntegerField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
-    size = models.CharField(max_length=5, choices=Product.SIZE_CHOICES, null=True, blank=True)
     
     def __str__(self):
-        return f"{self.product.name} ({self.size}) x{self.quantity} - Order {self.order.order_ref or self.order.id}"
+        return f"{self.product.name} x{self.quantity} - Order {self.order.order_ref or self.order.id}"
     
     def get_total_price(self):
         """Calculate total price for this order item"""
@@ -637,7 +597,6 @@ class CustomOrderItem(models.Model):
     order = models.ForeignKey(Orders, on_delete=models.CASCADE)
     custom_design = models.ForeignKey(CustomJerseyDesign, on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField(default=1)
-    size = models.CharField(max_length=5, choices=Product.SIZE_CHOICES)
     price = models.DecimalField(max_digits=10, decimal_places=2)
     additional_info = models.TextField(blank=True, null=True)
     is_pre_order = models.BooleanField(default=False)
@@ -645,7 +604,7 @@ class CustomOrderItem(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     
     def __str__(self):
-        return f"Custom Jersey ({self.size}) x{self.quantity} - Order {self.order.order_ref or self.order.id}"
+        return f"Custom Jersey x{self.quantity} - Order {self.order.order_ref or self.order.id}"
     
     def get_total_price(self):
         """Calculate total price for this custom order item"""

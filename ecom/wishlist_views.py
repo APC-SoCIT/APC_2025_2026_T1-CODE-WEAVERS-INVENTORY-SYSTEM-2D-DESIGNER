@@ -147,7 +147,6 @@ def product_detail_view(request, product_id):
         wishlist_product_ids = []
         can_review = False
         review_mode = False
-        purchased_size = None
         purchased_quantity = None
         if request.user.is_authenticated and is_customer(request.user):
             try:
@@ -181,7 +180,6 @@ def product_detail_view(request, product_id):
                         order_item_qs = order_item_qs.filter(id=order_item_id)
                     order_item = order_item_qs.order_by('-id').first()
                     if order_item:
-                        purchased_size = order_item.size
                         purchased_quantity = order_item.quantity
             except models.Customer.DoesNotExist:
                 pass
@@ -209,7 +207,6 @@ def product_detail_view(request, product_id):
             'wishlist_product_ids': wishlist_product_ids,
             'can_review': can_review,
             'review_mode': review_mode,
-            'purchased_size': purchased_size,
             'purchased_quantity': purchased_quantity,
         }
         return render(request, 'ecom/product_detail.html', context)
@@ -254,7 +251,6 @@ def product_reviews_api(request, product_id):
                 'rating': r.rating,
                 'review_text': r.review_text or '',
                 'created_at': r.created_at.strftime('%Y-%m-%d %H:%M'),
-                'size': getattr(order_item, 'size', None),
                 'quantity': getattr(order_item, 'quantity', None),
             })
 

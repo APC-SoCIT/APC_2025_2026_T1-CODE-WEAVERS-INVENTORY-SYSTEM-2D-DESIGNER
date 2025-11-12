@@ -86,7 +86,7 @@
         </div>
         <div class="bg-gray-100 rounded p-2 mb-2">
             {% for item in order.orderitem_set.all %}
-            <div>{{ item.product.name }} ({{ item.size }}) × {{ item.quantity }}</div>
+            <div>{{ item.product.name }} × {{ item.quantity }}</div>
             {% endfor %}
             <div class="font-semibold">Total: R {{ order.orderitem_set.all|calc_order_total }}</div>
         </div>

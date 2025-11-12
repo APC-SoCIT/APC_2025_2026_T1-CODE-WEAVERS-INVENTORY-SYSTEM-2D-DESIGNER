@@ -104,23 +104,7 @@ class CustomerForm(forms.ModelForm):
 
     # PSGC to Django region code mapping
     PSGC_TO_DJANGO_REGION = {
-        '010000000': 'R1',   # Ilocos Region
-        '020000000': 'R2',   # Cagayan Valley
-        '030000000': 'R3',   # Central Luzon
-        '040000000': 'R4A',  # CALABARZON
-        '170000000': 'R4B',  # MIMAROPA
-        '050000000': 'R5',   # Bicol Region
-        '060000000': 'R6',   # Western Visayas
-        '070000000': 'R7',   # Central Visayas
-        '080000000': 'R8',   # Eastern Visayas
-        '090000000': 'R9',   # Zamboanga Peninsula
-        '100000000': 'R10',  # Northern Mindanao
-        '110000000': 'R11',  # Davao Region
-        '120000000': 'R12',  # SOCCSKSARGEN
         '130000000': 'NCR',  # National Capital Region
-        '140000000': 'CAR',  # Cordillera Administrative Region
-        '160000000': 'R13',  # Caraga
-        '150000000': 'BARMM' # Bangsamoro Autonomous Region in Muslim Mindanao
     }
 
     def __init__(self, *args, **kwargs):
@@ -383,18 +367,11 @@ class ShippingAddressForm(forms.ModelForm):
 
 # Product creation and update form
 class ProductForm(forms.ModelForm):
-    size = forms.ChoiceField(choices=[
-        ('XS', 'Extra Small'),
-        ('S', 'Small'),
-        ('M', 'Medium'),
-        ('L', 'Large'),
-        ('XL', 'Extra Large'),
-    ], required=True)
     quantity = forms.IntegerField(min_value=0, required=False)
 
     class Meta:
         model = models.Product
-        fields = ['name', 'price', 'description', 'product_image', 'quantity', 'size']
+        fields = ['name', 'price', 'description', 'product_image', 'quantity']
 
 
 # Address form during checkout or delivery

@@ -105,7 +105,6 @@
                                     <tr>
                                         <th>Product</th>
                                         <th>Image</th>
-                                        <th>Size</th>
                                         <th>Quantity</th>
                                         <th>Price</th>
                                         <th>Total</th>
@@ -134,7 +133,6 @@
                                                 </div>
                                             {% endif %}
                                         </td>
-                                        <td>{% if item.size %}{{ item.size }}{% else %}{{ item.item.product.size }}{% endif %}</td>
                                         <td>{{ item.quantity }}</td>
                                         <td>₱{{ item.unit_price|floatformat:2|intcomma }}</td>
                                         <td>₱{{ item.line_total|floatformat:2|intcomma }}</td>
@@ -164,7 +162,6 @@
                                                 </div>
                                             {% endif %}
                                         </td>
-                                        <td>{{ custom_item.size }}</td>
                                         <td>{{ custom_item.quantity }}</td>
                                         <td>₱{{ custom_item.price|floatformat:2|intcomma }}</td>
                                         <td>₱{{ custom_item.line_total|floatformat:2|intcomma }}</td>

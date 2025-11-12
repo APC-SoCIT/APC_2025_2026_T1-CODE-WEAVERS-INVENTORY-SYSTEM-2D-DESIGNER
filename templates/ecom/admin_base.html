@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>Admin Panel - WorksTeamWear</title>
+    <title>Admin Panel - TorrecampsMarketing</title>
     <link rel="icon" type="image/x-icon" href="static/images/new logo.png">
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -46,7 +46,7 @@
     <!-- Sidebar -->
     <div id="sidebar" class="fixed inset-y-0 left-0 z-50 w-72 bg-white border-r border-gray-200 sidebar-transition transform -translate-x-full lg:translate-x-0">
         <div class="flex h-16 items-center border-b border-gray-200 px-12">
-            <h1 class="text-xl font-bold text-gray-900"> WorksTeamWear</h1>
+            <h1 class="text-xl font-bold text-gray-900"> TorrecampsMarketing</h1>
             <button id="close-sidebar" class="ml-auto lg:hidden">
                 <i data-lucide="x" class="h-6 w-6"></i>
             </button>
@@ -65,10 +65,7 @@
                 <i data-lucide="shopping-cart" class="mr-3 h-5 w-5"></i>
                 Order
             </a>
-            <a href="{% url 'admin-view-pre-orders' %}" class="nav-item {% if request.resolver_match.url_name == 'admin-view-pre-orders' %}bg-blue-50 text-blue-700{% else %}text-gray-600 hover:bg-gray-50 hover:text-gray-900{% endif %} group flex items-center px-2 py-2 text-sm font-medium rounded-md">
-                <i data-lucide="clock" class="mr-3 h-5 w-5"></i>
-                Pre-Order
-            </a>
+            
             <a href="{% url 'admin-products' %}" class="nav-item {% if request.resolver_match.url_name == 'admin-products' %}bg-blue-50 text-blue-700{% else %}text-gray-600 hover:bg-gray-50 hover:text-gray-900{% endif %} group flex items-center px-2 py-2 text-sm font-medium rounded-md">
                 <i data-lucide="shirt" class="mr-3 h-5 w-5"></i>
                 Product

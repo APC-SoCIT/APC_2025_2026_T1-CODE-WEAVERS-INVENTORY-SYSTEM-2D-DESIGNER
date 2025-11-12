@@ -110,18 +110,11 @@ class CustomerSignupForm(CustomerForm):
 
 # Product creation and update form
 class ProductForm(forms.ModelForm):
-    size = forms.ChoiceField(choices=[
-        ('XS', 'Extra Small'),
-        ('S', 'Small'),
-        ('M', 'Medium'),
-        ('L', 'Large'),
-        ('XL', 'Extra Large'),
-    ], required=True)
     quantity = forms.IntegerField(min_value=0, required=False)
 
     class Meta:
         model = models.Product
-        fields = ['name', 'price', 'description', 'product_image', 'quantity', 'size']
+        fields = ['name', 'price', 'description', 'product_image', 'quantity']
 
 
 # Address form during checkout or delivery

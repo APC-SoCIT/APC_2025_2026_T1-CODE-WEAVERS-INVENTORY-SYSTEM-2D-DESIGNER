@@ -650,74 +650,11 @@
 
             <!-- Customers Tab -->
             <div id="customers" class="tab-content">
-                <!-- Customer Selection Header -->
-                <div class="card mb-6">
-                    <div class="card-header">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center space-x-4">
-                                <i data-lucide="user" class="h-8 w-8 text-gray-600"></i>
-                                <div>
-                                    <h2 id="selected-customer-name" class="text-xl font-semibold">Select a Customer</h2>
-                                    <p class="text-sm text-gray-500">Choose an action to view customer details</p>
-                                </div>
-                            </div>
-                            <div class="flex items-center space-x-3">
-                                <select id="customer-action-select" class="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                    <option value="">Select Action</option>
-                                    <option value="transactions">View Transactions</option>
-                                    <option value="profile">View Profile</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Transaction Display Area -->
-                <div id="transaction-display" class="card mb-6" style="display: none;">
-                    <div class="card-header">
-                        <h2>Transaction History</h2>
-                        <p id="transaction-subtitle">Customer transaction details</p>
-                    </div>
-                    <div class="card-content">
-                        <div id="transaction-content">
-                            <div class="text-center py-8">
-                                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                                <p class="text-gray-500">Loading transactions...</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="chart-grid">
-                    <div class="card">
-                        <div class="card-header">
-                            <h2>Customer Growth</h2>
-                            <p>New customers over time</p>
-                        </div>
-                        <div class="card-content">
-                            <div class="chart-container">
-                                <canvas id="customerGrowthChart"></canvas>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="card">
-                        <div class="card-header">
-                            <h2>Customer Segments</h2>
-                            <p>Customer distribution</p>
-                        </div>
-                        <div class="card-content">
-                            <div class="chart-container">
-                                <canvas id="customerSegmentChart"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
+                <!-- Customer List at Top -->
                 <div class="card">
                     <div class="card-header">
                         <h2>Customer List</h2>
-                        <p>Select a customer to view details</p>
+                        <p>Select a customer to view details (10 per page)</p>
                     </div>
                     <div class="card-content">
                         <div class="table-wrapper">
@@ -755,6 +692,73 @@
                                     {% endfor %}
                                 </tbody>
                             </table>
+                        </div>
+                        <!-- Pagination Controls -->
+                        <div class="flex justify-between items-center mt-4">
+                            <div class="text-sm text-gray-600">Page {{ customers_page|default:1 }} of {{ customers_total_pages|default:1 }}</div>
+                            <div class="space-x-2">
+                                <button onclick="changeCustomersPage(-1)" class="px-3 py-1 border rounded-md bg-white hover:bg-gray-100" {% if not customers_has_prev %}disabled{% endif %}>Prev</button>
+                                <button onclick="changeCustomersPage(1)" class="px-3 py-1 border rounded-md bg-white hover:bg-gray-100" {% if not customers_has_next %}disabled{% endif %}>Next</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Transaction Modal -->
+                <div id="transactionModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" style="display:none;">
+                    <div class="bg-white w-full max-w-3xl rounded-lg shadow-lg">
+                        <div class="p-4 border-b flex justify-between items-center">
+                            <div>
+                                <h2 class="text-lg font-semibold">Transaction History</h2>
+                                <p id="transaction-modal-subtitle" class="text-sm text-gray-500">Customer transaction details</p>
+                            </div>
+                            <button type="button" onclick="closeTransactionModal()" aria-label="Close" class="px-3 py-1 rounded-md border hover:bg-gray-100">✕</button>
+                        </div>
+                        <div class="p-4" id="transaction-modal-content" style="overflow-y:auto; max-height:70vh; overscroll-behavior:contain; -webkit-overflow-scrolling:touch;">
+                            <div class="text-center py-8">
+                                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                                <p class="text-gray-500">Loading transactions...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <style>
+                    /* Clean table styling for transactions */
+                    .transaction-table { width: 100%; border-collapse: collapse; }
+                    .transaction-table thead th { position: sticky; top: 0; background: #ffffff; z-index: 1; border-bottom: 1px solid #e5e7eb; padding: 10px; text-align: left; font-weight: 600; font-size: 14px; }
+                    .transaction-table tbody td { border-bottom: 1px solid #f1f5f9; padding: 10px; font-size: 13px; color: #374151; }
+                    .transaction-table tbody tr:nth-child(odd) { background-color: #f9fafb; }
+                    .amount-pos { color: #16a34a; font-weight: 600; }
+                    .amount-neg { color: #dc2626; font-weight: 600; }
+                    .status-badge { display:inline-block; padding:2px 8px; border-radius:9999px; font-size:12px; }
+                    .status-delivered { background:#dbeafe; color:#1e40af; }
+                    .status-pending { background:#fef3c7; color:#92400e; }
+                    .status-cancelled { background:#fee2e2; color:#991b1b; }
+                    /* Smooth scrollbar styling (WebKit) */
+                    #transaction-modal-content::-webkit-scrollbar { width: 8px; }
+                    #transaction-modal-content::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 9999px; }
+                    #transaction-modal-content::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+                    #transaction-modal-content::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+                </style>
+
+                <!-- Customer Selection Header (actions at bottom) -->
+                <div class="card mb-6">
+                    <div class="card-header">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-4">
+                                <i data-lucide="user" class="h-8 w-8 text-gray-600"></i>
+                                <div>
+                                    <h2 id="selected-customer-name" class="text-xl font-semibold">Select a Customer</h2>
+                                    <p class="text-sm text-gray-500">Choose an action to view customer details</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-3">
+                                <select id="customer-action-select" class="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <option value="">Select Action</option>
+                                    <option value="transactions">View Transactions</option>
+                                    <option value="profile">View Profile</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1174,11 +1178,8 @@
                     actionSelect.value = '';
                 }
                 
-                // Hide transaction display
-                const transactionDisplay = document.getElementById('transaction-display');
-                if (transactionDisplay) {
-                    transactionDisplay.style.display = 'none';
-                }
+                // Close transaction modal if open
+                closeTransactionModal();
             }
         });
 
@@ -1203,16 +1204,30 @@
             }
         });
 
-        // Function to show customer transactions
+        // Transaction modal helpers
+        function openTransactionModal() {
+            const modal = document.getElementById('transactionModal');
+            if (modal) modal.style.display = 'flex';
+            // Lock background scroll while modal is open
+            try { document.body.style.overflow = 'hidden'; } catch(e) {}
+        }
+
+        function closeTransactionModal() {
+            const modal = document.getElementById('transactionModal');
+            if (modal) modal.style.display = 'none';
+            // Restore background scroll
+            try { document.body.style.overflow = ''; } catch(e) {}
+        }
+
+        // Function to show customer transactions (in modal)
         function showCustomerTransactions(customerId, customerName) {
-            const transactionDisplay = document.getElementById('transaction-display');
-            const transactionContent = document.getElementById('transaction-content');
-            const transactionSubtitle = document.getElementById('transaction-subtitle');
+            const transactionContent = document.getElementById('transaction-modal-content');
+            const transactionSubtitle = document.getElementById('transaction-modal-subtitle');
             
-            if (!transactionDisplay || !transactionContent) return;
+            if (!transactionContent) return;
             
-            // Show the transaction display area
-            transactionDisplay.style.display = 'block';
+            // Open modal
+            openTransactionModal();
             
             // Update subtitle
             if (transactionSubtitle) {
@@ -1267,7 +1282,7 @@
 
         // Function to display transactions
         function displayTransactions(transactions) {
-            const transactionContent = document.getElementById('transaction-content');
+            const transactionContent = document.getElementById('transaction-modal-content');
             
             if (!transactions || transactions.length === 0) {
                 transactionContent.innerHTML = `
@@ -1278,17 +1293,28 @@
                 `;
                 return;
             }
-            
-            let transactionHtml = '<div class="space-y-4">';
-            
+
+            // Build a clean, scroll-friendly table
+            let tableHtml = `
+                <table class="transaction-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Reference</th>
+                            <th>Status</th>
+                            <th>Items</th>
+                            <th class="text-right">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
             transactions.forEach(txn => {
-                // Prefer server-provided total_amount; fall back to amount or recompute
                 const rawAmount = (txn.total_amount !== undefined && txn.total_amount !== null)
                     ? txn.total_amount
                     : txn.amount;
                 let amount = Number(rawAmount);
                 if (!Number.isFinite(amount)) {
-                    // Recompute from products + delivery_fee as a safety net
                     try {
                         const itemsTotal = Array.isArray(txn.products)
                             ? txn.products.reduce((sum, p) => sum + (Number(p.price) || 0) * (Number(p.quantity) || 1), 0)
@@ -1299,40 +1325,60 @@
                         amount = 0;
                     }
                 }
-                const amountClass = amount >= 0 ? 'text-green-600' : 'text-red-600';
-                const amountPrefix = amount >= 0 ? '+' : '';
-                
-                transactionHtml += `
-                    <div class="p-4 border rounded-md flex justify-between items-center hover:bg-gray-50">
-                        <div>
-                            <div class="font-semibold">${txn.product_name || txn.description || 'Transaction'}</div>
-                            <div class="text-xs text-gray-500">${txn.date} • ${txn.reference || 'N/A'}</div>
-                            ${txn.status ? `<div class="text-xs"><span class="badge bg-blue-100 text-blue-800">${txn.status}</span></div>` : ''}
-                        </div>
-                        <div class="text-sm font-semibold ${amountClass}">
-                            ${amountPrefix}₱ ${Math.abs(amount).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
-                        </div>
-                    </div>
+                const amountClass = amount >= 0 ? 'amount-pos' : 'amount-neg';
+                const amountStr = `₱ ${Math.abs(amount).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                const dateStr = txn.date || '—';
+                const refStr = txn.reference || '—';
+                const statusStr = (txn.status || '—').toLowerCase();
+                const statusClass = statusStr.includes('deliver') ? 'status-delivered' : statusStr.includes('pend') ? 'status-pending' : statusStr.includes('cancel') ? 'status-cancelled' : '';
+                const productsArr = Array.isArray(txn.products) ? txn.products : [];
+                const itemsCount = productsArr.length;
+                const firstItem = productsArr[0] ? `${productsArr[0].name} ×${productsArr[0].quantity ?? productsArr[0].qty ?? 1}` : '—';
+                const itemsTitle = productsArr.map(p => `${p.name} ×${p.quantity ?? p.qty ?? 1}`).join(', ');
+
+                tableHtml += `
+                    <tr>
+                        <td>${dateStr}</td>
+                        <td>${refStr}</td>
+                        <td><span class="status-badge ${statusClass}">${txn.status || '—'}</span></td>
+                        <td title="${itemsTitle}">${itemsCount} ${itemsCount ? `• ${firstItem}` : ''}</td>
+                        <td class="text-right ${amountClass}">${amountStr}</td>
+                    </tr>
                 `;
             });
-            
-            transactionHtml += '</div>';
-            transactionContent.innerHTML = transactionHtml;
+
+            tableHtml += `
+                    </tbody>
+                </table>
+            `;
+
+            transactionContent.innerHTML = tableHtml;
         }
 
         // Function to show transaction error
         function showTransactionError(message) {
-            const transactionContent = document.getElementById('transaction-content');
+            const transactionContent = document.getElementById('transaction-modal-content');
             transactionContent.innerHTML = `
                 <div class="text-center py-8">
                     <i data-lucide="alert-circle" class="h-12 w-12 text-red-400 mx-auto mb-4"></i>
                     <p class="text-red-600">${message}</p>
-                    <button onclick="location.reload()" class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
-                        Retry
+                    <button onclick="closeTransactionModal()" class="mt-4 px-4 py-2 border rounded-md hover:bg-gray-100">
+                        Close
                     </button>
                 </div>
             `;
         }
+
+        // Allow closing modal by clicking backdrop or pressing Escape
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeTransactionModal();
+        });
+        document.addEventListener('click', function(e) {
+            const modal = document.getElementById('transactionModal');
+            if (modal && modal.style.display !== 'none' && e.target === modal) {
+                closeTransactionModal();
+            }
+        });
 
         // Function to handle tab switching and chart resizing
         function handleTabSwitch() {
@@ -1349,6 +1395,19 @@
             // Redirect to current URL with export=csv parameter
             const currentUrl = new URL(window.location);
             currentUrl.searchParams.set('export', 'csv');
+            window.location.href = currentUrl.toString();
+        }
+
+        // Change Customers page (pagination)
+        function changeCustomersPage(delta) {
+            const currentUrl = new URL(window.location);
+            const current = parseInt(currentUrl.searchParams.get('customers_page') || '1', 10);
+            let next = current + delta;
+            if (!Number.isFinite(next)) next = 1;
+            if (next < 1) next = 1;
+            currentUrl.searchParams.set('customers_page', String(next));
+            // Ensure Customers tab stays active on reload
+            currentUrl.searchParams.set('tab', 'customers');
             window.location.href = currentUrl.toString();
         }
 
@@ -1501,6 +1560,16 @@
             
             // Check if custom date range is active
             const urlParams = new URLSearchParams(window.location.search);
+
+            // Initialize active tab from URL parameter (fallback to localStorage or default)
+            const tabParam = urlParams.get('tab');
+            if (tabParam) {
+                switchTab(tabParam);
+            } else {
+                let storedTab = null;
+                try { storedTab = localStorage.getItem('admin_active_tab'); } catch(e) {}
+                switchTab(storedTab || 'sales');
+            }
 
             // Initialize the date range dropdown to reflect the current selection
             const dateRangeElement = document.getElementById('dateRange');

@@ -16,7 +16,7 @@
                     <i class="fa fa-robot" id="chat-avatar-icon"></i>
                 </div>
                 <div class="chat-info">
-                    <h4 id="chat-title">WorksTeamWear Assistant</h4>
+                    <h4 id="chat-title">TorrecampsMarketing Assistant</h4>
                     <span id="chat-status" class="chat-status">Online</span>
                 </div>
             </div>
@@ -41,7 +41,7 @@
                     <i class="fa fa-robot"></i>
                 </div>
                 <div class="message-content">
-                    <p>Hello! Welcome to WorksTeamWear! I'm here to help you with any questions about our products, orders, or services. How can I assist you today?</p>
+                    <p>Hello! Welcome to TorrecampsMarketing! I'm here to help you with any questions about our products, orders, or services. How can I assist you today?</p>
                     <span class="message-time">Just now</span>
                 </div>
             </div>
@@ -677,7 +677,7 @@
         chatMode = 'bot';
         
         // Update UI
-        document.getElementById('chat-title').textContent = 'WorksTeamWear Assistant';
+        document.getElementById('chat-title').textContent = 'TorrecampsMarketing Assistant';
         document.getElementById('chat-avatar-icon').className = 'fa fa-robot';
         document.getElementById('chat-status').textContent = 'Online';
         document.getElementById('quick-actions').style.display = 'flex';
@@ -704,7 +704,7 @@
     
     function showWelcomeMessage() {
         const welcomeMessage = {
-            message: "Hello! Welcome to WorksTeamWear! I'm here to help you with any questions about our products, orders, or services. How can I assist you today?",
+            message: "Hello! Welcome to TorrecampsMarketing! I'm here to help you with any questions about our products, orders, or services. How can I assist you today?",
             sender: 'bot',
             timestamp: new Date().toISOString()
         };
@@ -1572,7 +1572,7 @@ class UnifiedChatWidget {
     getSenderName(type) {
         switch (type) {
             case 'user': return null; // User messages don't show sender name
-            case 'bot': return 'WorksTeamWear Assistant';
+            case 'bot': return 'TorrecampsMarketing Assistant';
             case 'admin': return 'Support Agent';
             case 'system': return null;
             default: return null;
@@ -1705,12 +1705,12 @@ class UnifiedChatWidget {
         switch (newStatus) {
             case 'bot':
                 this.currentMode = 'bot';
-                titleElement.textContent = 'WorksTeamWear Assistant';
+                titleElement.textContent = 'TorrecampsMarketing Assistant';
                 statusElement.textContent = 'Online';
                 avatarIcon.className = 'fa fa-robot';
                 supportActions.style.display = 'block';
                 newAgentBtn.style.display = 'none';
-                poweredBy.textContent = 'Powered by WorksTeamWear AI';
+                poweredBy.textContent = 'Powered by TorrecampsMarketing AI';
                 break;
                 
             case 'requested':
@@ -1720,7 +1720,7 @@ class UnifiedChatWidget {
                 avatarIcon.className = 'fa fa-clock';
                 supportActions.style.display = 'none';
                 newAgentBtn.style.display = 'none';
-                poweredBy.textContent = 'WorksTeamWear Support';
+                poweredBy.textContent = 'TorrecampsMarketing Support';
                 break;
                 
             case 'admin':
@@ -1730,17 +1730,17 @@ class UnifiedChatWidget {
                 avatarIcon.className = 'fa fa-user';
                 supportActions.style.display = 'none';
                 newAgentBtn.style.display = 'inline-block';
-                poweredBy.textContent = 'WorksTeamWear Support';
+                poweredBy.textContent = 'TorrecampsMarketing Support';
                 break;
                 
             case 'resolved':
                 this.currentMode = 'bot';
-                titleElement.textContent = 'WorksTeamWear Assistant';
+                titleElement.textContent = 'TorrecampsMarketing Assistant';
                 statusElement.textContent = 'Online';
                 avatarIcon.className = 'fa fa-robot';
                 supportActions.style.display = 'block';
                 newAgentBtn.style.display = 'none';
-                poweredBy.textContent = 'Powered by WorksTeamWear AI';
+                poweredBy.textContent = 'Powered by TorrecampsMarketing AI';
                 this.addMessage('The support session has been resolved. I\'m back to help you with any other questions!', 'system');
                 break;
         }
